@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "trace_id": "task_001__trace",
+  "agent_name": "mock_agent",
+  "agent_version": "v1",
+  "task_id": "task_001",
+  "workspace_dir": "<workspace_dir>",
+  "tool_catalog_id": "mock_agent__task_001__catalog",
+  "status": "completed",
+  "final_diff": "diff --git a/README.md b/README.md\n",
+  "verifier_result": {
+    "passed": true,
+    "score": 1.0,
+    "stdout": "ok",
+    "stderr": ""
+  },
+  "metadata": {
+    "source_type": "synthetic",
+    "task_prompt": "Inspect the repo and run tests."
+  }
+}

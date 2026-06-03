@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "trace_id": "task_001__trace",
+  "catalog_id": "mock_agent__task_001__catalog",
+  "mapped_events": [
+    "event_004",
+    "event_007",
+    "event_008",
+    "event_011"
+  ],
+  "unmapped_events": [
+    "event_013"
+  ],
+  "ambiguous_events": [],
+  "warnings": [],
+  "errors": []
+}

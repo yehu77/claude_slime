@@ -1,0 +1,255 @@
+# Mutation v1 config: defines variant candidates for tool profile sampling.
+#
+# Builtin canonical tools are the single source of truth for base names,
+# descriptions, and schemas. This file only stores mutation deltas.
+#
+# The sampler prepends the canonical base value at runtime. Legacy configs
+# that still include the base variant remain supported, but new configs
+# should only list non-base alternatives here.
+
+profile_id_prefix: mutation
+
+tool_variants:
+  list_files:
+    name_candidates:
+      - browse_tree
+      - show_files
+    description_candidates:
+      - "Browse the directory tree of the project workspace."
+      - "Display files in the repository."
+    schema_candidates:
+      - input_schema:
+          type: object
+          properties:
+            root:
+              type: string
+              description: "Starting directory path."
+            deep:
+              type: boolean
+              description: "Whether to recurse into subdirectories."
+          required: []
+        adapter:
+          exposed_to_canonical:
+            root: path
+            deep: recursive
+      - input_schema:
+          type: object
+          properties:
+            directory:
+              type: string
+              description: "Folder to explore."
+            walk:
+              type: boolean
+              description: "Traverse subfolders recursively."
+          required: []
+        adapter:
+          exposed_to_canonical:
+            directory: path
+            walk: recursive
+
+  read_file:
+    name_candidates:
+      - open_source
+      - inspect_file
+    description_candidates:
+      - "Inspect source code by filename and optional line window."
+      - "View the contents of a source file."
+    schema_candidates:
+      - input_schema:
+          type: object
+          properties:
+            target:
+              type: string
+              description: "File to inspect."
+            line_range:
+              type: object
+              properties:
+                begin:
+                  type: integer
+                  description: "First line (1-based)."
+                end:
+                  type: integer
+                  description: "Last line (1-based)."
+          required:
+            - target
+        adapter:
+          exposed_to_canonical:
+            target: path
+            line_range.begin: start_line
+            line_range.end: end_line
+      - input_schema:
+          type: object
+          properties:
+            file:
+              type: string
+              description: "Path of the file to view."
+            lines:
+              type: object
+              properties:
+                from:
+                  type: integer
+                  description: "Starting line number."
+                to:
+                  type: integer
+                  description: "Ending line number."
+          required:
+            - file
+        adapter:
+          exposed_to_canonical:
+            file: path
+            lines.from: start_line
+            lines.to: end_line
+
+  search_code:
+    name_candidates:
+      - find_text
+      - grep_code
+    description_candidates:
+      - "Locate text patterns within the codebase."
+      - "Find matching strings across project files."
+    schema_candidates:
+      - input_schema:
+          type: object
+          properties:
+            query:
+              type: string
+              description: "Search pattern."
+            scope:
+              type: string
+              description: "Directory to search within."
+            filter:
+              type: string
+              description: "File glob pattern."
+          required:
+            - query
+        adapter:
+          exposed_to_canonical:
+            query: query
+            scope: path
+            filter: glob_pattern
+      - input_schema:
+          type: object
+          properties:
+            term:
+              type: string
+              description: "Text to search for."
+            location:
+              type: string
+              description: "Folder to look in."
+            glob:
+              type: string
+              description: "File name filter."
+          required:
+            - term
+        adapter:
+          exposed_to_canonical:
+            term: query
+            location: path
+            glob: glob_pattern
+
+  apply_patch:
+    name_candidates:
+      - edit_diff
+      - patch_code
+    description_candidates:
+      - "Apply a code change via unified diff format."
+      - "Modify files using a diff patch."
+    schema_candidates:
+      - input_schema:
+          type: object
+          properties:
+            patch:
+              type: string
+              description: "Unified diff text."
+          required:
+            - patch
+        adapter:
+          exposed_to_canonical:
+            patch: diff
+      - input_schema:
+          type: object
+          properties:
+            changes:
+              type: string
+              description: "Diff content to apply."
+          required:
+            - changes
+        adapter:
+          exposed_to_canonical:
+            changes: diff
+
+  run_command:
+    name_candidates:
+      - exec_shell
+      - shell_exec
+    description_candidates:
+      - "Run a shell command in the project workspace."
+      - "Execute a terminal command in the sandbox."
+    schema_candidates:
+      - input_schema:
+          type: object
+          properties:
+            cmd:
+              type: string
+              description: "Command string to execute."
+            time_limit:
+              type: integer
+              description: "Max execution time in seconds."
+            working_dir:
+              type: string
+              description: "Workspace-relative working directory."
+          required:
+            - cmd
+        adapter:
+          exposed_to_canonical:
+            cmd: command
+            time_limit: timeout
+            working_dir: cwd
+      - input_schema:
+          type: object
+          properties:
+            instruction:
+              type: string
+              description: "Shell instruction to execute."
+            max_wait:
+              type: integer
+              description: "Maximum wait time in seconds."
+            directory:
+              type: string
+              description: "Working directory inside the workspace."
+          required:
+            - instruction
+        adapter:
+          exposed_to_canonical:
+            instruction: command
+            max_wait: timeout
+            directory: cwd
+
+  finish:
+    name_candidates:
+      - submit_result
+      - complete_task
+    description_candidates:
+      - "Submit the final result and complete the task."
+      - "Mark the task as done with a summary."
+    schema_candidates:
+      - input_schema:
+          type: object
+          properties:
+            summary:
+              type: string
+              description: "Final answer or description of changes."
+          required: []
+        adapter:
+          exposed_to_canonical:
+            summary: answer
+      - input_schema:
+          type: object
+          properties:
+            result:
+              type: string
+              description: "Outcome or conclusion of the task."
+          required: []
+        adapter:
+          exposed_to_canonical:
+            result: answer

@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "trace_id": "task_001__trace",
+  "task_id": "task_001",
+  "agent_name": "mock_agent",
+  "agent_version": "v1",
+  "actions": [
+    {
+      "action_id": "action_1",
+      "capability": "READ_FILE",
+      "canonical_args": {
+        "path": "README.md"
+      },
+      "raw_event_refs": [
+        "event_004"
+      ],
+      "raw_tool_name": "read_file",
+      "mapping_confidence": 1.0,
+      "normalization_notes": [],
+      "metadata": {
+        "tool_call_event_id": "event_004"
+      }
+    },
+    {
+      "action_id": "action_2",
+      "capability": "RUN_COMMAND",
+      "canonical_args": {
+        "command": "pytest -q",
+        "cwd": "."
+      },
+      "raw_event_refs": [
+        "event_007",
+        "event_008"
+      ],
+      "raw_tool_name": "run_command",
+      "mapping_confidence": 1.0,
+      "normalization_notes": [],
+      "metadata": {
+        "tool_call_event_id": "event_007"
+      }
+    },
+    {
+      "action_id": "action_3",
+      "capability": "FINISH",
+      "canonical_args": {
+        "summary": "Completed the requested mock task."
+      },
+      "raw_event_refs": [
+        "event_011"
+      ],
+      "raw_tool_name": "finish",
+      "mapping_confidence": 1.0,
+      "normalization_notes": [],
+      "metadata": {
+        "tool_call_event_id": "event_011"
+      }
+    }
+  ],
+  "final_diff": "diff --git a/README.md b/README.md\n",
+  "verifier_result": {
+    "passed": true,
+    "score": 1.0,
+    "stdout": "ok",
+    "stderr": ""
+  },
+  "status": "completed",
+  "metadata": {
+    "source": "mock_normalizer",
+    "source_type": "synthetic",
+    "task_prompt": "Inspect the repo and run tests."
+  }
+}

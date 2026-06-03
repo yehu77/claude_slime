@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "catalog_id": "claude_code_public_catalog_v1",
+  "agent_name": "claude_code",
+  "agent_version": "public_catalog_v1",
+  "capture_mode": "static",
+  "source_kind": "checked_in_manifest",
+  "captured_at": null,
+  "tools": [
+    {
+      "raw_tool_name": "bash",
+      "description": "Run a shell command in the working directory.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "Command to execute."
+          },
+          "cwd": {
+            "type": "string",
+            "description": "Optional working directory."
+          },
+          "timeout_ms": {
+            "type": "integer",
+            "description": "Optional timeout in milliseconds."
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "output_format_hint": "shell text",
+      "availability_conditions": {
+        "requires_local_execution": true
+      },
+      "tool_family": "execution",
+      "canonical_name": "run_command",
+      "version": "public_catalog_v1",
+      "metadata": {
+        "mapping_status": "mapped",
+        "evidence": "public_docs_curated"
+      }
+    },
+    {
+      "raw_tool_name": "read_file",
+      "description": "Read a file from the workspace.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "File path to read."
+          },
+          "start_line": {
+            "type": "integer",
+            "description": "Optional first line."
+          },
+          "end_line": {
+            "type": "integer",
+            "description": "Optional last line."
+          }
+        },
+        "required": [
+          "path"
+        ]
+      },
+      "output_format_hint": "file text",
+      "availability_conditions": {},
+      "tool_family": "file_read",
+      "canonical_name": "read_file",
+      "version": "public_catalog_v1",
+      "metadata": {
+        "mapping_status": "mapped",
+        "evidence": "public_docs_curated"
+      }
+    },
+    {
+      "raw_tool_name": "edit_file",
+      "description": "Apply an edit to a workspace file.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "File path to edit."
+          },
+          "old_text": {
+            "type": "string",
+            "description": "Text to replace."
+          },
+          "new_text": {
+            "type": "string",
+            "description": "Replacement text."
+          }
+        },
+        "required": [
+          "path",
+          "old_text",
+          "new_text"
+        ]
+      },
+      "output_format_hint": "edit confirmation",
+      "availability_conditions": {},
+      "tool_family": "file_edit",
+      "canonical_name": null,
+      "version": "public_catalog_v1",
+      "metadata": {
+        "mapping_status": "unmapped",
+        "evidence": "public_docs_curated"
+      }
+    },
+    {
+      "raw_tool_name": "search_files",
+      "description": "Search the workspace for matching text.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search query."
+          },
+          "path": {
+            "type": "string",
+            "description": "Optional root path."
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "output_format_hint": "search results",
+      "availability_conditions": {},
+      "tool_family": "workspace_search",
+      "canonical_name": "search_code",
+      "version": "public_catalog_v1",
+      "metadata": {
+        "mapping_status": "mapped",
+        "evidence": "public_docs_curated"
+      }
+    }
+  ],
+  "metadata": {
+    "surface_status": "curated_static_manifest",
+    "coverage": "partial",
+    "notes": [
+      "This manifest is a checked-in public-surface approximation for catalog-only integration.",
+      "It is not runtime observed and should not be treated as a full internal Claude Code tool inventory."
+    ],
+    "manifest_path": "<repo_root>\\configs\\agent_catalogs\\claude_code_public_catalog_v1.json",
+    "provider_kind": "static_manifest",
+    "requested_task_id": "external_smoke_task",
+    "requested_workspace_dir": "<workspace_dir>",
+    "requested_run_id": "claude_wrapper_smoke_004"
+  }
+}

@@ -1,0 +1,110 @@
+# Legacy explicit base profile snapshot for direct loading.
+# Runtime and sampler base truth now comes from builtin canonical tools.
+profile_id: base
+
+tools:
+  - canonical: list_files
+    exposed_name: list_files
+    description: "List files in the workspace directory."
+    input_schema:
+      type: object
+      properties:
+        path:
+          type: string
+          description: "Root directory to list (default '.')."
+        recursive:
+          type: boolean
+          description: "Recurse into subdirectories."
+      required: []
+    adapter: {}
+    version: default
+
+  - canonical: read_file
+    exposed_name: read_file
+    description: "Read a file from the workspace."
+    input_schema:
+      type: object
+      properties:
+        path:
+          type: string
+          description: "File path to read."
+        start_line:
+          type: integer
+          description: "First line to include (1-based)."
+        end_line:
+          type: integer
+          description: "Last line to include (1-based)."
+      required:
+        - path
+    adapter: {}
+    version: default
+
+  - canonical: search_code
+    exposed_name: search_code
+    description: "Search for text in workspace files."
+    input_schema:
+      type: object
+      properties:
+        query:
+          type: string
+          description: "Text to search for."
+        path:
+          type: string
+          description: "Root directory to search (default '.')."
+        glob_pattern:
+          type: string
+          description: "Optional glob to filter filenames (e.g. '*.py')."
+      required:
+        - query
+    adapter: {}
+    version: default
+
+  - canonical: apply_patch
+    exposed_name: apply_patch
+    description: "Apply a unified diff patch to workspace files."
+    input_schema:
+      type: object
+      properties:
+        diff:
+          type: string
+          description: "Unified diff string to apply."
+      required:
+        - diff
+    adapter: {}
+    version: default
+
+  - canonical: run_command
+    exposed_name: run_command
+    description: "Execute a controlled command within the workspace."
+    input_schema:
+      type: object
+      properties:
+        command:
+          type: string
+          description: "Command string parsed as argv; shell control syntax is not allowed."
+        timeout:
+          type: integer
+          description: "Timeout in seconds (default 60)."
+        cwd:
+          type: string
+          description: "Working directory for the command (must be within workspace)."
+      required:
+        - command
+    adapter: {}
+    version: default
+
+  - canonical: finish
+    exposed_name: finish
+    description: "Signal task completion with an optional answer."
+    input_schema:
+      type: object
+      properties:
+        answer:
+          type: string
+          description: "Final answer or description of what was done."
+        summary:
+          type: string
+          description: "Optional summary of the solution."
+      required: []
+    adapter: {}
+    version: default

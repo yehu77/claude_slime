@@ -1,0 +1,22 @@
+{
+  "study_id": "first_mutation_sensitivity",
+  "tasks_path": "datasets/tasks/toy_tasks.jsonl",
+  "profile_modes": [
+    "base",
+    "name_only",
+    "schema_only",
+    "name_description_schema"
+  ],
+  "baseline_mode": "base",
+  "seeds": [0, 1, 2],
+  "output_root": "runs/studies",
+  "max_tasks": null,
+  "task_ids": null,
+  "notes": "First mutation sensitivity study. Compares base tool schema against name-mutated, schema-mutated, and fully-mutated profiles across the shared 12-task toy dataset with 3 seeds each.",
+  "metadata": {
+    "purpose": "Measure how tool schema mutation affects coding agent pass@1, reward, and error rates",
+    "dataset": "toy_tasks.jsonl (12 Python tasks across bugfix, lint_format, type_fix, and small_feature)",
+    "modes_tested": "base vs name_only vs schema_only vs name_description_schema",
+    "seed_count": 3
+  }
+}
