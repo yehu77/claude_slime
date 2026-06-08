@@ -85,6 +85,21 @@ from pycodeagent.rl.native_transformed_sft_smoke import (
     select_native_transformed_probe_samples,
     trim_native_transformed_sample_for_smoke,
 )
+from pycodeagent.rl.native_transformed_rl_dataset import (
+    NativeTransformedExpectedToolCall,
+    NativeTransformedRLDatasetBuildResult,
+    NativeTransformedRLPromptSample,
+    NativeTransformedRewardReference,
+    build_native_transformed_rl_prompt_sample,
+    export_native_transformed_rl_dataset,
+    read_native_transformed_rl_jsonl,
+    render_native_transformed_rl_prompt_text,
+    write_native_transformed_rl_jsonl,
+)
+from pycodeagent.rl.native_transformed_reward import (
+    NativeTransformedRLRewardCase,
+    evaluate_native_transformed_rl_completion,
+)
 from pycodeagent.rl.dataset_manifest import (
     DatasetManifest,
     FilterConfig,
@@ -339,6 +354,17 @@ __all__ = [
     "run_native_transformed_sft_smoke",
     "select_native_transformed_probe_samples",
     "trim_native_transformed_sample_for_smoke",
+    "NativeTransformedExpectedToolCall",
+    "NativeTransformedRewardReference",
+    "NativeTransformedRLPromptSample",
+    "NativeTransformedRLDatasetBuildResult",
+    "build_native_transformed_rl_prompt_sample",
+    "export_native_transformed_rl_dataset",
+    "read_native_transformed_rl_jsonl",
+    "render_native_transformed_rl_prompt_text",
+    "write_native_transformed_rl_jsonl",
+    "NativeTransformedRLRewardCase",
+    "evaluate_native_transformed_rl_completion",
     # Dataset builder
     "DatasetBuildResult",
     "RolloutDatasetBuilder",

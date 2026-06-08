@@ -3,6 +3,11 @@
 This document describes the narrowest end-to-end path from a **real Claude API
 trace** to a **training-prep output** for the native-transformed SFT line.
 
+For the repository-level training infrastructure view, see
+[agent_training_infra_architecture.md](./agent_training_infra_architecture.md).
+For the prompt-only RL path built from the same native-transformed samples, see
+[native_transformed_rl_pipeline.md](./native_transformed_rl_pipeline.md).
+
 The scope here is intentionally narrow:
 
 - source: real Claude API trace captured by `claude_gateway_proxy.py`
@@ -41,6 +46,21 @@ The important identity of this pipeline is:
 - preserve the **native tool schema actually shown to the model**
 - transform that schema into alternate surface views
 - keep tool-use supervision aligned with the transformed visible schema
+
+## Downstream Consumers
+
+The SFT artifacts currently feed three different downstream checks:
+
+- HF SFT smoke: a lightweight local check that the tokenized native-transformed
+  samples can be consumed by the existing Hugging Face causal LM SFT path.
+- slime offline SFT smoke: a Megatron/slime path that consumes
+  `tokenized.jsonl` or `smoke_tokenized.jsonl` directly through
+  `slime.rollout.pycodeagent_offline.PyCodeAgentPreparedDataSource`.
+- RL prompt export: a prompt-only conversion that writes `rl_prompts.jsonl` for
+  online rollout and reward scoring.
+
+Only the first two are SFT consumers. The RL path does not reuse SFT loss masks;
+it reuses the same native-transformed source samples as reward references.
 
 ## Step 1: Capture Real Claude API Trace
 
@@ -305,3 +325,11 @@ Current status is narrower and explicit:
 - surface-level schema view transformation
 - transformed tool-use training sample export
 - validated reuse of existing training-prep infrastructure
+- tokenized sample adaptation for slime offline SFT smoke
+- prompt-only RL dataset export for slime online RL smoke
+
+Not yet proven in remote training:
+
+- a completed slime/Megatron offline SFT optimizer step on A800
+- a completed slime/Megatron online RL optimizer step on A800
+- post-training model quality improvement

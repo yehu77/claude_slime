@@ -23,6 +23,7 @@ is narrower and more defensible:
 7. Reuse the existing serializer, tokenizer, loss-mask, packing, and
    contract-checking stack.
 8. Prepare slime-compatible downstream training bundles.
+9. Expose native-transformed SFT and RL smoke paths for slime/Megatron.
 
 Primary design guidance lives in [CLAUDE.MD](./CLAUDE.MD). The current
 repository-level target architecture lives in
@@ -77,6 +78,10 @@ The repo already has the core foundation for:
 - repo hygiene checks and machine-local config/model path support
 - schema-following synthetic and trajectory-derived data generation
 - schema-following local SFT and before/after evaluation reports
+- native-transformed SFT dataset export from real Claude API traces
+- tokenized native-transformed SFT adaptation for slime offline training
+- prompt-only native-transformed RL dataset export
+- rule-based tool-call reward evaluation for slime online RL smoke
 
 The current downstream schema-following pipeline is already implemented.
 It should now be treated as downstream infrastructure, not the repo's primary
@@ -98,6 +103,9 @@ The API-trace-only Claude gateway usage is documented in
 [docs/claude_gateway_proxy.md](./docs/claude_gateway_proxy.md).
 That path is a useful auxiliary trace source, not the main repository
 positioning.
+
+The current training infrastructure architecture is summarized in
+[docs/agent_training_infra_architecture.md](./docs/agent_training_infra_architecture.md).
 
 ## Near-Term Roadmap
 
@@ -130,12 +138,14 @@ Current claims should stay narrow:
 - "multi-agent raw trace ingestion"
 - "native tool schema preservation"
 - "tool-schema mutation and view transformation"
+- "slime SFT/RL smoke integration"
 
 Avoid overstating the repo as:
 
 - a full coding-agent RL system
 - a production sandbox
 - a benchmark-first coding product
+- a completed remote Megatron/slime training validation
 
 ## Minimal Developer Loop
 
@@ -225,14 +235,17 @@ loop.
 Owned here:
 
 - `slime-main/slime/rollout/pycodeagent_offline.py`
+- `slime-main/slime/rollout/pycodeagent_native_rl.py`
 - `slime-main/examples/pycodeagent_offline/`
 - repo-side bridge and contract compatibility work needed for offline rollout
-  export
+  export, tokenized SFT ingestion, and native-transformed RL reward integration
 
 Not yet true:
 
 - `pytest slime-main/tests -q` is not part of the default green path
 - vendored slime sync/update policy is still intentionally lightweight
+- remote A800 slime optimizer-step validation is still pending environment
+  setup
 
 See [slime-main/VENDORING.md](./slime-main/VENDORING.md) and
 [slime-main/examples/pycodeagent_offline/README.md](./slime-main/examples/pycodeagent_offline/README.md).
@@ -246,9 +259,14 @@ See [slime-main/VENDORING.md](./slime-main/VENDORING.md) and
 - [docs/claude_gateway_proxy.md](./docs/claude_gateway_proxy.md):
   API-trace-only local gateway for Claude Code session JSONL capture as an
   auxiliary ingestion path
+- [docs/agent_training_infra_architecture.md](./docs/agent_training_infra_architecture.md):
+  current architecture and status of the native-transformed SFT/RL training
+  infrastructure
 - [docs/native_transformed_sft_pipeline.md](./docs/native_transformed_sft_pipeline.md):
   minimal end-to-end path from real Claude API trace to native-transformed SFT
   training-prep output
+- [docs/native_transformed_rl_pipeline.md](./docs/native_transformed_rl_pipeline.md):
+  prompt-only RL dataset, reward function, and slime online RL smoke runbook
 
 ## Notes
 
