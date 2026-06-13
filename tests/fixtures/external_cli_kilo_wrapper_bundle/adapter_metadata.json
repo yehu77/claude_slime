@@ -1,0 +1,23 @@
+{
+  "agent_id": "kilo_code",
+  "agent_version": "raw_trace_v1",
+  "argv": [
+    "python",
+    "<repo_root>\\examples\\external_wrappers\\kilo_code_sidecar_wrapper.py",
+    "Inspect the repo and run tests."
+  ],
+  "timeout_seconds": 900,
+  "sidecar_raw_trace_detected": true,
+  "sidecar_catalog_detected": false,
+  "returncode": 0,
+  "status": "completed",
+  "error": null,
+  "sidecar_protocol_env": {
+    "PYCODEAGENT_AGENT_ID": "kilo_code",
+    "PYCODEAGENT_RUN_DIR": "<run_dir>",
+    "PYCODEAGENT_WORKSPACE_DIR": "<workspace_dir>",
+    "PYCODEAGENT_RAW_TRACE_PATH": "<run_dir>\\raw_trace.jsonl",
+    "PYCODEAGENT_RAW_TRACE_SUMMARY_PATH": "<run_dir>\\raw_trace_summary.json",
+    "PYCODEAGENT_TOOL_CATALOG_PATH": "<run_dir>\\tool_catalog.json"
+  }
+}

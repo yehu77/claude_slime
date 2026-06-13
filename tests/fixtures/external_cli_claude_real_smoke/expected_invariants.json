@@ -1,0 +1,28 @@
+{
+  "agent": "claude_code",
+  "agent_version": "raw_trace_v1",
+  "prompt": "Inspect the repo and run tests.",
+  "test_command": "python -m pytest -q",
+  "command_flags": [
+    "--bare",
+    "--print",
+    "--output-format",
+    "text",
+    "--dangerously-skip-permissions"
+  ],
+  "expected_status": "completed",
+  "expected_capture_mode": "observed_fallback",
+  "expected_sidecar_raw_trace_detected": false,
+  "expected_sidecar_catalog_detected": false,
+  "expected_event_kinds": [
+    "message",
+    "process_exec",
+    "stdout_capture",
+    "run_end"
+  ],
+  "expected_diff_contains": [
+    "def inclusive_count(n: int) -> list[int]:",
+    "-    return list(range(n))",
+    "+    return list(range(n + 1))"
+  ]
+}

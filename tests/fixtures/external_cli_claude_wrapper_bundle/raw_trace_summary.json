@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "trace_id": "claude_code_wrapper_trace",
+  "agent_name": "claude_code",
+  "agent_version": "raw_trace_v1",
+  "task_id": "external_smoke_task",
+  "workspace_dir": "<workspace_dir>",
+  "tool_catalog_id": null,
+  "status": "completed",
+  "final_diff": "",
+  "verifier_result": {
+    "passed": true,
+    "score": 1.0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "metadata": {
+    "capture_mode": "sidecar",
+    "wrapper": "claude_code_sidecar_wrapper"
+  }
+}

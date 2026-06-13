@@ -1,0 +1,43 @@
+{
+  "source_type": "schema_following",
+  "source_path": "<raw_dataset_dir>",
+  "dataset_dir": "<prepared_dir>",
+  "sample_count": 8,
+  "rollout_count": 0,
+  "tokenized_count": 8,
+  "packed_sequence_count": 2,
+  "loaded_example_count": 8,
+  "task_ids": [
+    "task_arg_seed1",
+    "task_base_seed0",
+    "task_nds_seed0",
+    "task_order_seed1"
+  ],
+  "profile_ids": [
+    "base",
+    "mutation_argument_rename_7867bfe2",
+    "mutation_name_description_schema_43cc1852",
+    "mutation_tool_reorder_7a9cb44f"
+  ],
+  "status_counts": {},
+  "reward_summary": {
+    "count": 0,
+    "min": 0,
+    "max": 0,
+    "mean": 0.0
+  },
+  "token_length_summary": {
+    "count": 8,
+    "min": 315,
+    "max": 341,
+    "mean": 327.5
+  },
+  "trainable_token_summary": {
+    "count": 8,
+    "min": 21,
+    "max": 23,
+    "mean": 22.0
+  },
+  "issues": [],
+  "children": []
+}

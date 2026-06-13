@@ -1,0 +1,78 @@
+{
+  "candidate_turn_indices": [],
+  "carried_forward_state_planned": false,
+  "compacted_turn_indices": [],
+  "compaction_artifact": null,
+  "compaction_backend_failure_kind": null,
+  "compaction_backend_mode": null,
+  "compaction_considered": false,
+  "compaction_considered_reason": "full_history_policy",
+  "compaction_decision": "skipped",
+  "compaction_skip_reason": null,
+  "context_selection": {
+    "compacted_message_count": 0,
+    "compaction_applied": false,
+    "compaction_reason": null,
+    "context_max_tokens": null,
+    "estimated_omitted_tokens": 0,
+    "estimated_selected_tokens": 281,
+    "first_included_index": 0,
+    "included_message_indices": [
+      0,
+      1
+    ],
+    "included_role_counts": {
+      "system": 1,
+      "user": 1
+    },
+    "last_included_index": 1,
+    "max_messages": null,
+    "omitted_message_count": 0,
+    "policy_mode": "full_history",
+    "response_token_reserve": 0,
+    "token_budget_satisfied": true,
+    "token_overflow": 0,
+    "tool_token_reserve": 0
+  },
+  "fallback_applied": false,
+  "fallback_policy": null,
+  "fallback_reason": null,
+  "model_backed_requested": false,
+  "model_backed_used": false,
+  "pinned_message_indices": [],
+  "policy_mode": "full_history",
+  "preserved_from_turn": null,
+  "replacement_summary_planned": false,
+  "request_history_item_count_before_snapshot": 2,
+  "selected_message_count_after_selection": 2,
+  "selected_messages": [
+    {
+      "canonical_name": null,
+      "content": "You are a coding agent working inside a repository workspace.\n\nThe available tools are provided through the runtime's native tool-calling interface.\nUse only the exact tool names and argument shapes from those provided tools.\n\nOperating rules:\n1. When you need to inspect files, edit the workspace, run validation, or finish the task, call the appropriate native tool directly.\n2. Do not emit literal <|tool|>, <|end|>, <tool_call>, or <tool_result> tags in assistant text.\n3. If a tool call is rejected or malformed, issue a corrected native tool call instead of stopping.\n4. If a validation or test-running action fails, inspect the returned output, revise the workspace, and rerun validation before signaling completion.\n5. Do not claim success or completion unless the relevant tool result has already been returned by the environment.\n6. If a task requires validation evidence, do not call finish until a successful validation result has already been returned.\n7. If you include normal assistant text, use it only to explain the next concrete action.\n",
+      "metadata": {},
+      "role": "system",
+      "tool_call_id": null,
+      "tool_calls": [],
+      "tool_name": null,
+      "tool_version": null
+    },
+    {
+      "canonical_name": null,
+      "content": "Inspect main.py and finish through native tool calling.",
+      "metadata": {},
+      "role": "user",
+      "tool_call_id": null,
+      "tool_calls": [],
+      "tool_name": null,
+      "tool_version": null
+    }
+  ],
+  "selected_request_item_indices": [
+    0,
+    1
+  ],
+  "synthetic_summary_message": null,
+  "trigger_message_overflow": false,
+  "trigger_token_overflow": false,
+  "turn_index": 1
+}

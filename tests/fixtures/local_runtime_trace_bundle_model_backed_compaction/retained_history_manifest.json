@@ -1,0 +1,17 @@
+{
+  "ended_at_unix_ms": 1700000000083,
+  "entry_counts_by_kind": {
+    "carry_forward_state": 1,
+    "history_control": 5,
+    "replacement_summary": 1,
+    "source_message": 10
+  },
+  "entry_log_path": "retained_history.jsonl",
+  "last_entry_id": "retained_entry_000017",
+  "run_id": "output",
+  "schema_version": 1,
+  "started_at_unix_ms": 1700000000001,
+  "task_id": "trace_model_backed_compaction_task",
+  "total_entries": 17,
+  "workspace_root": "C:\\Users\\86177\\AppData\\Local\\Temp\\pycodeagent-test-artifacts\\runtime_trace_golden\\runtime_trace_golden_3a151ea2\\output\\w\\abc123def456"
+}

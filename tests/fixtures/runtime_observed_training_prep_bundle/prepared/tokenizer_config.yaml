@@ -1,0 +1,13 @@
+tokenizer_name: fake
+max_length: 2048
+truncation: true
+padding: do_not_pad
+bos_token_id: null
+eos_token_id: null
+pad_token_id: null
+add_special_tokens: true
+metadata:
+  prepared_from: <raw_dataset_dir>
+  source_type: schema_following
+  source_split: train
+  canonical_sample_input: train.jsonl

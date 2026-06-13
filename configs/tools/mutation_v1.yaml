@@ -1,0 +1,628 @@
+profile_id_prefix: mutation
+
+tool_variants:
+  list_files:
+    name_candidates:
+      - id: list_files_name_browse_tree
+        value: browse_tree
+      - id: list_files_name_show_files
+        value: show_files
+    description_candidates:
+      - id: list_files_desc_browse_tree
+        value: "Browse the directory tree of the project workspace."
+      - id: list_files_desc_display_repo
+        value: "Display files in the repository."
+    schema_variants:
+      - variant_id: list_files_schema_root_deep
+        category: argument_rename
+        input_schema:
+          type: object
+          properties:
+            root:
+              type: string
+              description: "Starting directory path."
+            deep:
+              type: boolean
+              description: "Whether to recurse into subdirectories."
+          required: []
+        adapter:
+          exposed_to_canonical:
+            root: path
+            deep: recursive
+      - variant_id: list_files_schema_directory_walk
+        category: argument_rename
+        input_schema:
+          type: object
+          properties:
+            directory:
+              type: string
+              description: "Folder to explore."
+            walk:
+              type: boolean
+              description: "Traverse subfolders recursively."
+          required: []
+        adapter:
+          exposed_to_canonical:
+            directory: path
+            walk: recursive
+      - variant_id: list_files_schema_scope_options
+        category: schema_flat_to_nested
+        input_schema:
+          type: object
+          properties:
+            scope:
+              type: object
+              properties:
+                path:
+                  type: string
+                  description: "Starting directory path."
+            options:
+              type: object
+              properties:
+                recursive:
+                  type: boolean
+                  description: "Whether to recurse into subdirectories."
+          required: []
+        adapter:
+          exposed_to_canonical:
+            scope.path: path
+            options.recursive: recursive
+
+  read_file:
+    name_candidates:
+      - id: read_file_name_open_source
+        value: open_source
+      - id: read_file_name_inspect_file
+        value: inspect_file
+    description_candidates:
+      - id: read_file_desc_inspect_source
+        value: "Inspect source code by filename and optional line window."
+      - id: read_file_desc_view_source
+        value: "View the contents of a source file."
+    schema_variants:
+      - variant_id: read_file_schema_target_line_range
+        category: schema_flat_to_nested
+        input_schema:
+          type: object
+          properties:
+            target:
+              type: string
+              description: "File to inspect."
+            line_range:
+              type: object
+              properties:
+                begin:
+                  type: integer
+                  description: "First line (1-based)."
+                end:
+                  type: integer
+                  description: "Last line (1-based)."
+          required:
+            - target
+        adapter:
+          exposed_to_canonical:
+            target: path
+            line_range.begin: start_line
+            line_range.end: end_line
+      - variant_id: read_file_schema_file_path_start_stop
+        category: argument_rename
+        input_schema:
+          type: object
+          properties:
+            file_path:
+              type: string
+              description: "Path of the file to view."
+            start:
+              type: integer
+              description: "Starting line number."
+            stop:
+              type: integer
+              description: "Ending line number."
+          required:
+            - file_path
+        adapter:
+          exposed_to_canonical:
+            file_path: path
+            start: start_line
+            stop: end_line
+      - variant_id: read_file_schema_file_lines
+        category: schema_flat_to_nested
+        input_schema:
+          type: object
+          properties:
+            file:
+              type: string
+              description: "Path of the file to view."
+            lines:
+              type: object
+              properties:
+                from:
+                  type: integer
+                  description: "Starting line number."
+                to:
+                  type: integer
+                  description: "Ending line number."
+          required:
+            - file
+        adapter:
+          exposed_to_canonical:
+            file: path
+            lines.from: start_line
+            lines.to: end_line
+
+  write_file:
+    name_candidates:
+      - id: write_file_name_save_file
+        value: save_file
+      - id: write_file_name_overwrite_file
+        value: overwrite_file
+    description_candidates:
+      - id: write_file_desc_save_existing
+        value: "Save full replacement text into an existing workspace file."
+      - id: write_file_desc_overwrite_workspace
+        value: "Overwrite an existing file with new contents."
+    schema_variants:
+      - variant_id: write_file_schema_file_text
+        category: argument_rename
+        input_schema:
+          type: object
+          properties:
+            file:
+              type: string
+              description: "Existing file path to overwrite."
+            text:
+              type: string
+              description: "Full replacement file content."
+          required:
+            - file
+            - text
+        adapter:
+          exposed_to_canonical:
+            file: path
+            text: content
+      - variant_id: write_file_schema_target_body
+        category: schema_flat_to_nested
+        input_schema:
+          type: object
+          properties:
+            target:
+              type: object
+              properties:
+                path:
+                  type: string
+                  description: "Existing file path to overwrite."
+              required:
+                - path
+            body:
+              type: object
+              properties:
+                text:
+                  type: string
+                  description: "Full replacement file content."
+              required:
+                - text
+          required:
+            - target
+            - body
+        adapter:
+          exposed_to_canonical:
+            target.path: path
+            body.text: content
+
+  create_file:
+    name_candidates:
+      - id: create_file_name_make_file
+        value: make_file
+      - id: create_file_name_new_file
+        value: new_file
+    description_candidates:
+      - id: create_file_desc_make_workspace
+        value: "Create a fresh file in the workspace, creating parent folders if needed."
+      - id: create_file_desc_new_file
+        value: "Create a new workspace file with optional initial text."
+    schema_variants:
+      - variant_id: create_file_schema_file_text
+        category: argument_rename
+        input_schema:
+          type: object
+          properties:
+            file:
+              type: string
+              description: "New file path to create."
+            text:
+              type: string
+              description: "Initial file content."
+          required:
+            - file
+        adapter:
+          exposed_to_canonical:
+            file: path
+            text: content
+      - variant_id: create_file_schema_target_body
+        category: schema_flat_to_nested
+        input_schema:
+          type: object
+          properties:
+            target:
+              type: object
+              properties:
+                path:
+                  type: string
+                  description: "New file path to create."
+              required:
+                - path
+            body:
+              type: object
+              properties:
+                text:
+                  type: string
+                  description: "Initial file content."
+          required:
+            - target
+        adapter:
+          exposed_to_canonical:
+            target.path: path
+            body.text: content
+
+  search_code:
+    name_candidates:
+      - id: search_code_name_find_text
+        value: find_text
+      - id: search_code_name_grep_code
+        value: grep_code
+    description_candidates:
+      - id: search_code_desc_locate_patterns
+        value: "Locate text patterns within the codebase."
+      - id: search_code_desc_find_strings
+        value: "Find matching strings across project files."
+    schema_variants:
+      - variant_id: search_code_schema_query_scope_filter
+        category: argument_rename
+        input_schema:
+          type: object
+          properties:
+            query:
+              type: string
+              description: "Search pattern."
+            scope:
+              type: string
+              description: "Directory to search within."
+            filter:
+              type: string
+              description: "File glob pattern."
+          required:
+            - query
+        adapter:
+          exposed_to_canonical:
+            query: query
+            scope: path
+            filter: glob_pattern
+      - variant_id: search_code_schema_term_location_glob
+        category: argument_rename
+        input_schema:
+          type: object
+          properties:
+            term:
+              type: string
+              description: "Text to search for."
+            location:
+              type: string
+              description: "Folder to look in."
+            glob:
+              type: string
+              description: "File name filter."
+          required:
+            - term
+        adapter:
+          exposed_to_canonical:
+            term: query
+            location: path
+            glob: glob_pattern
+      - variant_id: search_code_schema_pattern_scope_filters
+        category: schema_flat_to_nested
+        input_schema:
+          type: object
+          properties:
+            pattern:
+              type: object
+              properties:
+                query:
+                  type: string
+                  description: "Search pattern."
+              required:
+                - query
+            scope:
+              type: object
+              properties:
+                path:
+                  type: string
+                  description: "Directory to search within."
+            filters:
+              type: object
+              properties:
+                glob:
+                  type: string
+                  description: "File glob pattern."
+          required:
+            - pattern
+        adapter:
+          exposed_to_canonical:
+            pattern.query: query
+            scope.path: path
+            filters.glob: glob_pattern
+
+  apply_patch:
+    name_candidates:
+      - id: apply_patch_name_edit_diff
+        value: edit_diff
+      - id: apply_patch_name_patch_code
+        value: patch_code
+    description_candidates:
+      - id: apply_patch_desc_unified_diff
+        value: "Apply a code change via unified diff format."
+      - id: apply_patch_desc_modify_patch
+        value: "Modify files using a diff patch."
+    schema_variants:
+      - variant_id: apply_patch_schema_patch
+        category: argument_rename
+        input_schema:
+          type: object
+          properties:
+            patch:
+              type: string
+              description: "Unified diff text."
+          required:
+            - patch
+        adapter:
+          exposed_to_canonical:
+            patch: diff
+      - variant_id: apply_patch_schema_changes
+        category: argument_rename
+        input_schema:
+          type: object
+          properties:
+            changes:
+              type: string
+              description: "Diff content to apply."
+          required:
+            - changes
+        adapter:
+          exposed_to_canonical:
+            changes: diff
+      - variant_id: apply_patch_schema_patch_diff
+        category: schema_flat_to_nested
+        input_schema:
+          type: object
+          properties:
+            patch:
+              type: object
+              properties:
+                diff:
+                  type: string
+                  description: "Diff content to apply."
+              required:
+                - diff
+          required:
+            - patch
+        adapter:
+          exposed_to_canonical:
+            patch.diff: diff
+
+  run_command:
+    name_candidates:
+      - id: run_command_name_exec_shell
+        value: exec_shell
+      - id: run_command_name_shell_exec
+        value: shell_exec
+    description_candidates:
+      - id: run_command_desc_workspace
+        value: "Run a shell command in the project workspace."
+      - id: run_command_desc_terminal
+        value: "Execute a terminal command in the sandbox."
+    schema_variants:
+      - variant_id: run_command_schema_cmd_time_limit
+        category: argument_rename
+        input_schema:
+          type: object
+          properties:
+            cmd:
+              type: string
+              description: "Command string to execute."
+            time_limit:
+              type: integer
+              description: "Max execution time in seconds."
+            working_dir:
+              type: string
+              description: "Workspace-relative working directory."
+          required:
+            - cmd
+        adapter:
+          exposed_to_canonical:
+            cmd: command
+            time_limit: timeout
+            working_dir: cwd
+      - variant_id: run_command_schema_instruction_max_wait
+        category: argument_rename
+        input_schema:
+          type: object
+          properties:
+            instruction:
+              type: string
+              description: "Shell instruction to execute."
+            max_wait:
+              type: integer
+              description: "Maximum wait time in seconds."
+            directory:
+              type: string
+              description: "Working directory inside the workspace."
+          required:
+            - instruction
+        adapter:
+          exposed_to_canonical:
+            instruction: command
+            max_wait: timeout
+            directory: cwd
+      - variant_id: run_command_schema_command_options
+        category: schema_flat_to_nested
+        input_schema:
+          type: object
+          properties:
+            command:
+              type: object
+              properties:
+                text:
+                  type: string
+                  description: "Command string to execute."
+              required:
+                - text
+            options:
+              type: object
+              properties:
+                timeout:
+                  type: integer
+                  description: "Maximum wait time in seconds."
+                cwd:
+                  type: string
+                  description: "Working directory inside the workspace."
+          required:
+            - command
+        adapter:
+          exposed_to_canonical:
+            command.text: command
+            options.timeout: timeout
+            options.cwd: cwd
+
+  python_run:
+    name_candidates:
+      - id: python_run_name_py_exec
+        value: py_exec
+      - id: python_run_name_run_python
+        value: run_python
+    description_candidates:
+      - id: python_run_desc_run_python
+        value: "Run a Python entrypoint or a narrow allowed Python test module inside the workspace."
+      - id: python_run_desc_execute_python
+        value: "Execute a Python file or limited test module with structured options."
+    schema_variants:
+      - variant_id: python_run_schema_entry_params
+        category: argument_rename
+        input_schema:
+          type: object
+          properties:
+            entry:
+              type: string
+              description: "Workspace .py file, or an allowed module name."
+            params:
+              type: array
+              items:
+                type: string
+              description: "Command-line args passed to the script or module."
+            module_mode:
+              type: boolean
+              description: "When true, run `python -m <entry>` for an allowed module."
+            max_wait:
+              type: integer
+              description: "Timeout in seconds (default 60)."
+            directory:
+              type: string
+              description: "Working directory for execution (must remain in workspace)."
+          required:
+            - entry
+        adapter:
+          exposed_to_canonical:
+            entry: target
+            params: args
+            module_mode: run_as_module
+            max_wait: timeout
+            directory: cwd
+      - variant_id: python_run_schema_execution_options
+        category: schema_flat_to_nested
+        input_schema:
+          type: object
+          properties:
+            execution:
+              type: object
+              properties:
+                target:
+                  type: string
+                  description: "Workspace .py file, or an allowed module name."
+                run_as_module:
+                  type: boolean
+                  description: "When true, run `python -m <target>` for an allowed module."
+              required:
+                - target
+            options:
+              type: object
+              properties:
+                args:
+                  type: array
+                  items:
+                    type: string
+                  description: "Command-line args passed to the script or module."
+                timeout:
+                  type: integer
+                  description: "Timeout in seconds (default 60)."
+                cwd:
+                  type: string
+                  description: "Working directory for execution (must remain in workspace)."
+          required:
+            - execution
+        adapter:
+          exposed_to_canonical:
+            execution.target: target
+            execution.run_as_module: run_as_module
+            options.args: args
+            options.timeout: timeout
+            options.cwd: cwd
+
+  finish:
+    name_candidates:
+      - id: finish_name_submit_result
+        value: submit_result
+      - id: finish_name_complete_task
+        value: complete_task
+    description_candidates:
+      - id: finish_desc_submit_result
+        value: "Submit the final result and complete the task."
+      - id: finish_desc_mark_done
+        value: "Mark the task as done with a summary."
+    schema_variants:
+      - variant_id: finish_schema_summary
+        category: argument_rename
+        input_schema:
+          type: object
+          properties:
+            summary:
+              type: string
+              description: "Final answer or description of changes."
+          required: []
+        adapter:
+          exposed_to_canonical:
+            summary: answer
+      - variant_id: finish_schema_result
+        category: argument_rename
+        input_schema:
+          type: object
+          properties:
+            result:
+              type: string
+              description: "Outcome or conclusion of the task."
+          required: []
+        adapter:
+          exposed_to_canonical:
+            result: answer
+      - variant_id: finish_schema_final_answer_text
+        category: schema_flat_to_nested
+        input_schema:
+          type: object
+          properties:
+            final:
+              type: object
+              properties:
+                answer_text:
+                  type: string
+                  description: "Outcome or conclusion of the task."
+          required: []
+        adapter:
+          exposed_to_canonical:
+            final.answer_text: answer

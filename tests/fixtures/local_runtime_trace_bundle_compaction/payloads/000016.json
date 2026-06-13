@@ -1,0 +1,30 @@
+{
+  "accepted_tool_call_count": 1,
+  "assistant_content": "Inspecting again.",
+  "fallback_allowed": false,
+  "fallback_parser_used": false,
+  "fallback_reason": null,
+  "finish_reason": "tool_calls",
+  "format_family": "native_tool_calling",
+  "parse_errors": [],
+  "parse_status": "ok",
+  "protocol_decision": "accept_native",
+  "protocol_error_kind": null,
+  "protocol_errors": [],
+  "provider_response_id": "resp_2",
+  "raw_provider_payload": null,
+  "rejected_tool_call_candidate_count": 0,
+  "text_fallback_used": false,
+  "tool_call_candidate_count": 1,
+  "tool_calls": [
+    {
+      "arguments": {
+        "path": "."
+      },
+      "canonical_name": null,
+      "id": "c2",
+      "name": "list_files"
+    }
+  ],
+  "transport_mode": "native_tool_calling"
+}

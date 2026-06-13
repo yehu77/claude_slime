@@ -1,0 +1,20 @@
+{
+  "canonical_name": null,
+  "content": "[compacted runtime context]\ncovered_turns=1-2\ncompletion_evidence_status=not_required\nvalidation_phase=idle\npending_issue=none\nturn=1:tools=read_file:stop=continue_with_tool_calls\nturn=2:tools=list_files:stop=continue_with_tool_calls\nnote=Compacted turns 1-2",
+  "metadata": {
+    "source_message_indices": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "summary_kind": "deterministic_turn_compaction",
+    "summary_slot_id": "summary_slot_turn_004",
+    "synthetic": true
+  },
+  "role": "system",
+  "tool_call_id": null,
+  "tool_calls": [],
+  "tool_name": null,
+  "tool_version": null
+}

@@ -1,0 +1,26 @@
+{
+  "assistant_text": "I will inspect the file.",
+  "finish_reason": "tool_calls",
+  "provider_metadata": {},
+  "raw_provider_payload": null,
+  "raw_text": null,
+  "reasoning_content": null,
+  "request_kind": "agent_turn",
+  "response_id": "resp_native_1",
+  "structured_output": null,
+  "structured_output_parse_error": null,
+  "text": "I will inspect the file.",
+  "tool_calls": [
+    {
+      "arguments_obj": {
+        "path": "main.py"
+      },
+      "arguments_parse_error": null,
+      "arguments_raw": "{\"path\":\"main.py\"}",
+      "call_id": "c1",
+      "name": "read_file",
+      "source": "native"
+    }
+  ],
+  "transport_mode": "native_tool_calling"
+}

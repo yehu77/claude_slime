@@ -1,0 +1,47 @@
+{
+  "cases": [
+    {
+      "task_id": "realistic_revise_add_one_001",
+      "responses": [
+        "<|tool|>\n{\"id\":\"c1\",\"name\":\"create_file\",\"arguments\":{\"path\":\"generated.py\",\"content\":\"def add_one(x):\\n    return x + 2\\n\"}}\n<|end|>",
+        "<|tool|>\n{\"id\":\"c2\",\"name\":\"python_run\",\"arguments\":{\"target\":\"pytest\",\"run_as_module\":true,\"args\":[\"-q\",\"-p\",\"no:cacheprovider\",\"test_generated.py\"]}}\n<|end|>",
+        "<|tool|>\n{\"id\":\"c3\",\"name\":\"finish\",\"arguments\":{\"answer\":\"Done\"}}\n<|end|>",
+        "<|tool|>\n{\"id\":\"c4\",\"name\":\"write_file\",\"arguments\":{\"path\":\"generated.py\",\"content\":\"def add_one(x):\\n    return x + 1\\n\"}}\n<|end|>",
+        "<|tool|>\n{\"id\":\"c5\",\"name\":\"python_run\",\"arguments\":{\"target\":\"pytest\",\"run_as_module\":true,\"args\":[\"-q\",\"-p\",\"no:cacheprovider\",\"test_generated.py\"]}}\n<|end|>",
+        "<|tool|>\n{\"id\":\"c6\",\"name\":\"finish\",\"arguments\":{\"answer\":\"Created generated.py, recovered from the failed test, and revalidated the fix.\"}}\n<|end|>"
+      ],
+      "expected_tool_names": ["create_file", "python_run", "finish", "write_file", "python_run", "finish"],
+      "expected_files": {
+        "generated.py": "def add_one(x):\n    return x + 1\n"
+      }
+    },
+    {
+      "task_id": "realistic_patch_calculator_001",
+      "responses": [
+        "<|tool|>\n{\"id\":\"c1\",\"name\":\"read_file\",\"arguments\":{\"path\":\"calculator.py\"}}\n<|end|>",
+        "<|tool|>\n{\"id\":\"c2\",\"name\":\"python_run\",\"arguments\":{\"target\":\"pytest\",\"run_as_module\":true,\"args\":[\"-q\",\"-p\",\"no:cacheprovider\",\"test_calculator.py\"]}}\n<|end|>",
+        "<|tool|>\n{\"id\":\"c3\",\"name\":\"write_file\",\"arguments\":{\"path\":\"calculator.py\",\"content\":\"def add(a, b):\\n    return a + b\\n\"}}\n<|end|>",
+        "<|tool|>\n{\"id\":\"c4\",\"name\":\"python_run\",\"arguments\":{\"target\":\"pytest\",\"run_as_module\":true,\"args\":[\"-q\",\"-p\",\"no:cacheprovider\",\"test_calculator.py\"]}}\n<|end|>",
+        "<|tool|>\n{\"id\":\"c5\",\"name\":\"finish\",\"arguments\":{\"answer\":\"Confirmed the failure, rewrote calculator.py, and revalidated it with pytest.\"}}\n<|end|>"
+      ],
+      "expected_tool_names": ["read_file", "python_run", "write_file", "python_run", "finish"],
+      "expected_files": {
+        "calculator.py": "def add(a, b):\n    return a + b\n"
+      }
+    },
+    {
+      "task_id": "realistic_subdir_formatter_001",
+      "responses": [
+        "<|tool|>\n{\"id\":\"c1\",\"name\":\"read_file\",\"arguments\":{\"path\":\"app/formatter.py\"}}\n<|end|>",
+        "<|tool|>\n{\"id\":\"c2\",\"name\":\"python_run\",\"arguments\":{\"target\":\"app/check_formatter.py\",\"cwd\":\"app\"}}\n<|end|>",
+        "<|tool|>\n{\"id\":\"c3\",\"name\":\"write_file\",\"arguments\":{\"path\":\"app/formatter.py\",\"content\":\"def title_line(name: str) -> str:\\n    return f\\\"== {name.title()} ==\\\"\\n\"}}\n<|end|>",
+        "<|tool|>\n{\"id\":\"c4\",\"name\":\"python_run\",\"arguments\":{\"target\":\"app/check_formatter.py\",\"cwd\":\"app\"}}\n<|end|>",
+        "<|tool|>\n{\"id\":\"c5\",\"name\":\"finish\",\"arguments\":{\"answer\":\"Fixed the formatter and reran the app-local validation successfully.\"}}\n<|end|>"
+      ],
+      "expected_tool_names": ["read_file", "python_run", "write_file", "python_run", "finish"],
+      "expected_files": {
+        "app/formatter.py": "def title_line(name: str) -> str:\n    return f\"== {name.title()} ==\"\n"
+      }
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "source_type": "schema_following",
+  "source_path": "<raw_dataset_dir>",
+  "split": "train",
+  "prepared_dataset_dir": "<prepared_dir>",
+  "canonical_sample_input": "train.jsonl",
+  "canonical_training_input": "tokenized.jsonl",
+  "recommended_max_length": 2048,
+  "recommended_batch_size": 8,
+  "recommended_learning_rate": 0.0001,
+  "prepared_sample_count": 2,
+  "tokenized_example_count": 2,
+  "contract_ok": true,
+  "contract_report_path": "<prepared_dir>\\contract_report.json",
+  "tokenizer_config_path": "<prepared_dir>\\tokenizer_config.yaml",
+  "train_config_path": "<prepared_dir>\\train_config.json",
+  "notes": [
+    "Use the selected split JSONL as the canonical upstream schema-following input.",
+    "Prepared samples keep only assistant_tool_call trainable under the current loss mask policy.",
+    "Use tokenized.jsonl as the direct TrainDataset input for the current training loop."
+  ]
+}

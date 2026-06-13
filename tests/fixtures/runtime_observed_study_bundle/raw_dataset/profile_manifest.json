@@ -1,0 +1,1816 @@
+{
+  "profiles": [
+    {
+      "compat_mode": null,
+      "mode": "argument_rename",
+      "mutation_axes": [
+        "argument_rename"
+      ],
+      "mutation_manifest_version": 1,
+      "profile_id": "mutation_argument_rename_7867bfe2",
+      "reorder_anchor_policy": "finish_last",
+      "schema_variant_categories": {
+        "apply_patch": "argument_rename",
+        "create_file": "argument_rename",
+        "finish": "argument_rename",
+        "list_files": "argument_rename",
+        "python_run": "argument_rename",
+        "read_file": "argument_rename",
+        "run_command": "argument_rename",
+        "search_code": "argument_rename",
+        "write_file": "argument_rename"
+      },
+      "seed": 1,
+      "selected_variant_ids": {
+        "apply_patch": {
+          "description_variant_id": "apply_patch_description_base",
+          "name_variant_id": "apply_patch_name_base",
+          "schema_variant_id": "apply_patch_schema_patch"
+        },
+        "create_file": {
+          "description_variant_id": "create_file_description_base",
+          "name_variant_id": "create_file_name_base",
+          "schema_variant_id": "create_file_schema_file_text"
+        },
+        "finish": {
+          "description_variant_id": "finish_description_base",
+          "name_variant_id": "finish_name_base",
+          "schema_variant_id": "finish_schema_summary"
+        },
+        "list_files": {
+          "description_variant_id": "list_files_description_base",
+          "name_variant_id": "list_files_name_base",
+          "schema_variant_id": "list_files_schema_root_deep"
+        },
+        "python_run": {
+          "description_variant_id": "python_run_description_base",
+          "name_variant_id": "python_run_name_base",
+          "schema_variant_id": "python_run_schema_entry_params"
+        },
+        "read_file": {
+          "description_variant_id": "read_file_description_base",
+          "name_variant_id": "read_file_name_base",
+          "schema_variant_id": "read_file_schema_file_path_start_stop"
+        },
+        "run_command": {
+          "description_variant_id": "run_command_description_base",
+          "name_variant_id": "run_command_name_base",
+          "schema_variant_id": "run_command_schema_cmd_time_limit"
+        },
+        "search_code": {
+          "description_variant_id": "search_code_description_base",
+          "name_variant_id": "search_code_name_base",
+          "schema_variant_id": "search_code_schema_query_scope_filter"
+        },
+        "write_file": {
+          "description_variant_id": "write_file_description_base",
+          "name_variant_id": "write_file_name_base",
+          "schema_variant_id": "write_file_schema_file_text"
+        }
+      },
+      "tool_order_seed": null,
+      "tools": [
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {
+              "deep": "recursive",
+              "root": "path"
+            }
+          },
+          "canonical_name": "list_files",
+          "description": "List files in the workspace directory.",
+          "exposed_name": "list_files",
+          "input_schema": {
+            "properties": {
+              "deep": {
+                "description": "Whether to recurse into subdirectories.",
+                "type": "boolean"
+              },
+              "root": {
+                "description": "Starting directory path.",
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "list_files_description_base",
+            "name_mutated": false,
+            "name_variant_id": "list_files_name_base",
+            "schema_mutated": true,
+            "schema_variant_category": "argument_rename",
+            "schema_variant_id": "list_files_schema_root_deep",
+            "tool_order_index_base": 0,
+            "tool_order_index_exposed": 0,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {
+              "file_path": "path",
+              "start": "start_line",
+              "stop": "end_line"
+            }
+          },
+          "canonical_name": "read_file",
+          "description": "Read a file from the workspace.",
+          "exposed_name": "read_file",
+          "input_schema": {
+            "properties": {
+              "file_path": {
+                "description": "Path of the file to view.",
+                "type": "string"
+              },
+              "start": {
+                "description": "Starting line number.",
+                "type": "integer"
+              },
+              "stop": {
+                "description": "Ending line number.",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "file_path"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "read_file_description_base",
+            "name_mutated": false,
+            "name_variant_id": "read_file_name_base",
+            "schema_mutated": true,
+            "schema_variant_category": "argument_rename",
+            "schema_variant_id": "read_file_schema_file_path_start_stop",
+            "tool_order_index_base": 1,
+            "tool_order_index_exposed": 1,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {
+              "file": "path",
+              "text": "content"
+            }
+          },
+          "canonical_name": "write_file",
+          "description": "Write text to an existing file in the workspace.",
+          "exposed_name": "write_file",
+          "input_schema": {
+            "properties": {
+              "file": {
+                "description": "Existing file path to overwrite.",
+                "type": "string"
+              },
+              "text": {
+                "description": "Full replacement file content.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "file",
+              "text"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "write_file_description_base",
+            "name_mutated": false,
+            "name_variant_id": "write_file_name_base",
+            "schema_mutated": true,
+            "schema_variant_category": "argument_rename",
+            "schema_variant_id": "write_file_schema_file_text",
+            "tool_order_index_base": 2,
+            "tool_order_index_exposed": 2,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {
+              "file": "path",
+              "text": "content"
+            }
+          },
+          "canonical_name": "create_file",
+          "description": "Create a new file in the workspace.",
+          "exposed_name": "create_file",
+          "input_schema": {
+            "properties": {
+              "file": {
+                "description": "New file path to create.",
+                "type": "string"
+              },
+              "text": {
+                "description": "Initial file content.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "file"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "create_file_description_base",
+            "name_mutated": false,
+            "name_variant_id": "create_file_name_base",
+            "schema_mutated": true,
+            "schema_variant_category": "argument_rename",
+            "schema_variant_id": "create_file_schema_file_text",
+            "tool_order_index_base": 3,
+            "tool_order_index_exposed": 3,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {
+              "filter": "glob_pattern",
+              "query": "query",
+              "scope": "path"
+            }
+          },
+          "canonical_name": "search_code",
+          "description": "Search for text in workspace files.",
+          "exposed_name": "search_code",
+          "input_schema": {
+            "properties": {
+              "filter": {
+                "description": "File glob pattern.",
+                "type": "string"
+              },
+              "query": {
+                "description": "Search pattern.",
+                "type": "string"
+              },
+              "scope": {
+                "description": "Directory to search within.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "search_code_description_base",
+            "name_mutated": false,
+            "name_variant_id": "search_code_name_base",
+            "schema_mutated": true,
+            "schema_variant_category": "argument_rename",
+            "schema_variant_id": "search_code_schema_query_scope_filter",
+            "tool_order_index_base": 4,
+            "tool_order_index_exposed": 4,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {
+              "patch": "diff"
+            }
+          },
+          "canonical_name": "apply_patch",
+          "description": "Apply a unified diff patch to workspace files.",
+          "exposed_name": "apply_patch",
+          "input_schema": {
+            "properties": {
+              "patch": {
+                "description": "Unified diff text.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "patch"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "apply_patch_description_base",
+            "name_mutated": false,
+            "name_variant_id": "apply_patch_name_base",
+            "schema_mutated": true,
+            "schema_variant_category": "argument_rename",
+            "schema_variant_id": "apply_patch_schema_patch",
+            "tool_order_index_base": 5,
+            "tool_order_index_exposed": 5,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {
+              "cmd": "command",
+              "time_limit": "timeout",
+              "working_dir": "cwd"
+            }
+          },
+          "canonical_name": "run_command",
+          "description": "Execute a controlled command within the workspace.",
+          "exposed_name": "run_command",
+          "input_schema": {
+            "properties": {
+              "cmd": {
+                "description": "Command string to execute.",
+                "type": "string"
+              },
+              "time_limit": {
+                "description": "Max execution time in seconds.",
+                "type": "integer"
+              },
+              "working_dir": {
+                "description": "Workspace-relative working directory.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "cmd"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "run_command_description_base",
+            "name_mutated": false,
+            "name_variant_id": "run_command_name_base",
+            "schema_mutated": true,
+            "schema_variant_category": "argument_rename",
+            "schema_variant_id": "run_command_schema_cmd_time_limit",
+            "tool_order_index_base": 6,
+            "tool_order_index_exposed": 6,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {
+              "directory": "cwd",
+              "entry": "target",
+              "max_wait": "timeout",
+              "module_mode": "run_as_module",
+              "params": "args"
+            }
+          },
+          "canonical_name": "python_run",
+          "description": "Run a Python script or a narrow allowed Python test module inside the workspace.",
+          "exposed_name": "python_run",
+          "input_schema": {
+            "properties": {
+              "directory": {
+                "description": "Working directory for execution (must remain in workspace).",
+                "type": "string"
+              },
+              "entry": {
+                "description": "Workspace .py file, or an allowed module name.",
+                "type": "string"
+              },
+              "max_wait": {
+                "description": "Timeout in seconds (default 60).",
+                "type": "integer"
+              },
+              "module_mode": {
+                "description": "When true, run `python -m <entry>` for an allowed module.",
+                "type": "boolean"
+              },
+              "params": {
+                "description": "Command-line args passed to the script or module.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "entry"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "python_run_description_base",
+            "name_mutated": false,
+            "name_variant_id": "python_run_name_base",
+            "schema_mutated": true,
+            "schema_variant_category": "argument_rename",
+            "schema_variant_id": "python_run_schema_entry_params",
+            "tool_order_index_base": 7,
+            "tool_order_index_exposed": 7,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {
+              "summary": "answer"
+            }
+          },
+          "canonical_name": "finish",
+          "description": "Signal task completion with an optional answer.",
+          "exposed_name": "finish",
+          "input_schema": {
+            "properties": {
+              "summary": {
+                "description": "Final answer or description of changes.",
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "finish_description_base",
+            "name_mutated": false,
+            "name_variant_id": "finish_name_base",
+            "schema_mutated": true,
+            "schema_variant_category": "argument_rename",
+            "schema_variant_id": "finish_schema_summary",
+            "tool_order_index_base": 8,
+            "tool_order_index_exposed": 8,
+            "tool_reordered": false
+          }
+        }
+      ]
+    },
+    {
+      "compat_mode": null,
+      "mode": "base",
+      "mutation_axes": [],
+      "mutation_manifest_version": 1,
+      "profile_id": "base",
+      "reorder_anchor_policy": "finish_last",
+      "schema_variant_categories": {
+        "apply_patch": null,
+        "create_file": null,
+        "finish": null,
+        "list_files": null,
+        "python_run": null,
+        "read_file": null,
+        "run_command": null,
+        "search_code": null,
+        "write_file": null
+      },
+      "seed": 0,
+      "selected_variant_ids": {
+        "apply_patch": {
+          "description_variant_id": "apply_patch_description_base",
+          "name_variant_id": "apply_patch_name_base",
+          "schema_variant_id": "apply_patch_schema_base"
+        },
+        "create_file": {
+          "description_variant_id": "create_file_description_base",
+          "name_variant_id": "create_file_name_base",
+          "schema_variant_id": "create_file_schema_base"
+        },
+        "finish": {
+          "description_variant_id": "finish_description_base",
+          "name_variant_id": "finish_name_base",
+          "schema_variant_id": "finish_schema_base"
+        },
+        "list_files": {
+          "description_variant_id": "list_files_description_base",
+          "name_variant_id": "list_files_name_base",
+          "schema_variant_id": "list_files_schema_base"
+        },
+        "python_run": {
+          "description_variant_id": "python_run_description_base",
+          "name_variant_id": "python_run_name_base",
+          "schema_variant_id": "python_run_schema_base"
+        },
+        "read_file": {
+          "description_variant_id": "read_file_description_base",
+          "name_variant_id": "read_file_name_base",
+          "schema_variant_id": "read_file_schema_base"
+        },
+        "run_command": {
+          "description_variant_id": "run_command_description_base",
+          "name_variant_id": "run_command_name_base",
+          "schema_variant_id": "run_command_schema_base"
+        },
+        "search_code": {
+          "description_variant_id": "search_code_description_base",
+          "name_variant_id": "search_code_name_base",
+          "schema_variant_id": "search_code_schema_base"
+        },
+        "write_file": {
+          "description_variant_id": "write_file_description_base",
+          "name_variant_id": "write_file_name_base",
+          "schema_variant_id": "write_file_schema_base"
+        }
+      },
+      "tool_order_seed": null,
+      "tools": [
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {}
+          },
+          "canonical_name": "list_files",
+          "description": "List files in the workspace directory.",
+          "exposed_name": "list_files",
+          "input_schema": {
+            "properties": {
+              "path": {
+                "description": "Root directory to list (default '.').",
+                "type": "string"
+              },
+              "recursive": {
+                "description": "Recurse into subdirectories.",
+                "type": "boolean"
+              }
+            },
+            "required": [],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "list_files_description_base",
+            "name_mutated": false,
+            "name_variant_id": "list_files_name_base",
+            "schema_mutated": false,
+            "schema_variant_category": null,
+            "schema_variant_id": "list_files_schema_base",
+            "tool_order_index_base": 0,
+            "tool_order_index_exposed": 0,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {}
+          },
+          "canonical_name": "read_file",
+          "description": "Read a file from the workspace.",
+          "exposed_name": "read_file",
+          "input_schema": {
+            "properties": {
+              "end_line": {
+                "description": "Last line to include (1-based).",
+                "type": "integer"
+              },
+              "path": {
+                "description": "File path to read.",
+                "type": "string"
+              },
+              "start_line": {
+                "description": "First line to include (1-based).",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "read_file_description_base",
+            "name_mutated": false,
+            "name_variant_id": "read_file_name_base",
+            "schema_mutated": false,
+            "schema_variant_category": null,
+            "schema_variant_id": "read_file_schema_base",
+            "tool_order_index_base": 1,
+            "tool_order_index_exposed": 1,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {}
+          },
+          "canonical_name": "write_file",
+          "description": "Write text to an existing file in the workspace.",
+          "exposed_name": "write_file",
+          "input_schema": {
+            "properties": {
+              "content": {
+                "description": "Full replacement file content.",
+                "type": "string"
+              },
+              "path": {
+                "description": "Existing file path to overwrite.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "path",
+              "content"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "write_file_description_base",
+            "name_mutated": false,
+            "name_variant_id": "write_file_name_base",
+            "schema_mutated": false,
+            "schema_variant_category": null,
+            "schema_variant_id": "write_file_schema_base",
+            "tool_order_index_base": 2,
+            "tool_order_index_exposed": 2,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {}
+          },
+          "canonical_name": "create_file",
+          "description": "Create a new file in the workspace.",
+          "exposed_name": "create_file",
+          "input_schema": {
+            "properties": {
+              "content": {
+                "description": "Initial file content.",
+                "type": "string"
+              },
+              "path": {
+                "description": "New file path to create.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "create_file_description_base",
+            "name_mutated": false,
+            "name_variant_id": "create_file_name_base",
+            "schema_mutated": false,
+            "schema_variant_category": null,
+            "schema_variant_id": "create_file_schema_base",
+            "tool_order_index_base": 3,
+            "tool_order_index_exposed": 3,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {}
+          },
+          "canonical_name": "search_code",
+          "description": "Search for text in workspace files.",
+          "exposed_name": "search_code",
+          "input_schema": {
+            "properties": {
+              "glob_pattern": {
+                "description": "Optional glob to filter filenames (e.g. '*.py').",
+                "type": "string"
+              },
+              "path": {
+                "description": "Root directory to search (default '.').",
+                "type": "string"
+              },
+              "query": {
+                "description": "Text to search for.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "search_code_description_base",
+            "name_mutated": false,
+            "name_variant_id": "search_code_name_base",
+            "schema_mutated": false,
+            "schema_variant_category": null,
+            "schema_variant_id": "search_code_schema_base",
+            "tool_order_index_base": 4,
+            "tool_order_index_exposed": 4,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {}
+          },
+          "canonical_name": "apply_patch",
+          "description": "Apply a unified diff patch to workspace files.",
+          "exposed_name": "apply_patch",
+          "input_schema": {
+            "properties": {
+              "diff": {
+                "description": "Unified diff string to apply.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "diff"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "apply_patch_description_base",
+            "name_mutated": false,
+            "name_variant_id": "apply_patch_name_base",
+            "schema_mutated": false,
+            "schema_variant_category": null,
+            "schema_variant_id": "apply_patch_schema_base",
+            "tool_order_index_base": 5,
+            "tool_order_index_exposed": 5,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {}
+          },
+          "canonical_name": "run_command",
+          "description": "Execute a controlled command within the workspace.",
+          "exposed_name": "run_command",
+          "input_schema": {
+            "properties": {
+              "command": {
+                "description": "Command string parsed as argv; shell control syntax is not allowed.",
+                "type": "string"
+              },
+              "cwd": {
+                "description": "Working directory for the command (must be within workspace).",
+                "type": "string"
+              },
+              "timeout": {
+                "description": "Timeout in seconds (default 60).",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "command"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "run_command_description_base",
+            "name_mutated": false,
+            "name_variant_id": "run_command_name_base",
+            "schema_mutated": false,
+            "schema_variant_category": null,
+            "schema_variant_id": "run_command_schema_base",
+            "tool_order_index_base": 6,
+            "tool_order_index_exposed": 6,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {}
+          },
+          "canonical_name": "python_run",
+          "description": "Run a Python script or a narrow allowed Python test module inside the workspace.",
+          "exposed_name": "python_run",
+          "input_schema": {
+            "properties": {
+              "args": {
+                "description": "Command-line args passed to the script or module.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "cwd": {
+                "description": "Working directory for execution (must remain in workspace).",
+                "type": "string"
+              },
+              "run_as_module": {
+                "description": "When true, run `python -m <target>` for an allowed module.",
+                "type": "boolean"
+              },
+              "target": {
+                "description": "Workspace .py file, or an allowed module name.",
+                "type": "string"
+              },
+              "timeout": {
+                "description": "Timeout in seconds (default 60).",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "target"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "python_run_description_base",
+            "name_mutated": false,
+            "name_variant_id": "python_run_name_base",
+            "schema_mutated": false,
+            "schema_variant_category": null,
+            "schema_variant_id": "python_run_schema_base",
+            "tool_order_index_base": 7,
+            "tool_order_index_exposed": 7,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {}
+          },
+          "canonical_name": "finish",
+          "description": "Signal task completion with an optional answer.",
+          "exposed_name": "finish",
+          "input_schema": {
+            "properties": {
+              "answer": {
+                "description": "Final answer or description of what was done.",
+                "type": "string"
+              },
+              "summary": {
+                "description": "Optional summary of the solution.",
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "finish_description_base",
+            "name_mutated": false,
+            "name_variant_id": "finish_name_base",
+            "schema_mutated": false,
+            "schema_variant_category": null,
+            "schema_variant_id": "finish_schema_base",
+            "tool_order_index_base": 8,
+            "tool_order_index_exposed": 8,
+            "tool_reordered": false
+          }
+        }
+      ]
+    },
+    {
+      "compat_mode": "name_description_schema",
+      "mode": "name_description_schema",
+      "mutation_axes": [
+        "name",
+        "description",
+        "schema"
+      ],
+      "mutation_manifest_version": 1,
+      "profile_id": "mutation_name_description_schema_43cc1852",
+      "reorder_anchor_policy": "finish_last",
+      "schema_variant_categories": {
+        "apply_patch": "argument_rename",
+        "create_file": "schema_flat_to_nested",
+        "finish": "argument_rename",
+        "list_files": "schema_flat_to_nested",
+        "python_run": "schema_flat_to_nested",
+        "read_file": "schema_flat_to_nested",
+        "run_command": "argument_rename",
+        "search_code": "argument_rename",
+        "write_file": "schema_flat_to_nested"
+      },
+      "seed": 0,
+      "selected_variant_ids": {
+        "apply_patch": {
+          "description_variant_id": "apply_patch_desc_unified_diff",
+          "name_variant_id": "apply_patch_name_edit_diff",
+          "schema_variant_id": "apply_patch_schema_patch"
+        },
+        "create_file": {
+          "description_variant_id": "create_file_desc_new_file",
+          "name_variant_id": "create_file_name_make_file",
+          "schema_variant_id": "create_file_schema_target_body"
+        },
+        "finish": {
+          "description_variant_id": "finish_desc_submit_result",
+          "name_variant_id": "finish_name_submit_result",
+          "schema_variant_id": "finish_schema_result"
+        },
+        "list_files": {
+          "description_variant_id": "list_files_desc_browse_tree",
+          "name_variant_id": "list_files_name_show_files",
+          "schema_variant_id": "list_files_schema_scope_options"
+        },
+        "python_run": {
+          "description_variant_id": "python_run_desc_execute_python",
+          "name_variant_id": "python_run_name_run_python",
+          "schema_variant_id": "python_run_schema_execution_options"
+        },
+        "read_file": {
+          "description_variant_id": "read_file_desc_view_source",
+          "name_variant_id": "read_file_name_open_source",
+          "schema_variant_id": "read_file_schema_file_lines"
+        },
+        "run_command": {
+          "description_variant_id": "run_command_desc_workspace",
+          "name_variant_id": "run_command_name_shell_exec",
+          "schema_variant_id": "run_command_schema_instruction_max_wait"
+        },
+        "search_code": {
+          "description_variant_id": "search_code_desc_locate_patterns",
+          "name_variant_id": "search_code_name_find_text",
+          "schema_variant_id": "search_code_schema_term_location_glob"
+        },
+        "write_file": {
+          "description_variant_id": "write_file_desc_overwrite_workspace",
+          "name_variant_id": "write_file_name_save_file",
+          "schema_variant_id": "write_file_schema_target_body"
+        }
+      },
+      "tool_order_seed": null,
+      "tools": [
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {
+              "options.recursive": "recursive",
+              "scope.path": "path"
+            }
+          },
+          "canonical_name": "list_files",
+          "description": "Browse the directory tree of the project workspace.",
+          "exposed_name": "show_files",
+          "input_schema": {
+            "properties": {
+              "options": {
+                "properties": {
+                  "recursive": {
+                    "description": "Whether to recurse into subdirectories.",
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              },
+              "scope": {
+                "properties": {
+                  "path": {
+                    "description": "Starting directory path.",
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "required": [],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": true,
+            "description_variant_id": "list_files_desc_browse_tree",
+            "name_mutated": true,
+            "name_variant_id": "list_files_name_show_files",
+            "schema_mutated": true,
+            "schema_variant_category": "schema_flat_to_nested",
+            "schema_variant_id": "list_files_schema_scope_options",
+            "tool_order_index_base": 0,
+            "tool_order_index_exposed": 0,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {
+              "file": "path",
+              "lines.from": "start_line",
+              "lines.to": "end_line"
+            }
+          },
+          "canonical_name": "read_file",
+          "description": "View the contents of a source file.",
+          "exposed_name": "open_source",
+          "input_schema": {
+            "properties": {
+              "file": {
+                "description": "Path of the file to view.",
+                "type": "string"
+              },
+              "lines": {
+                "properties": {
+                  "from": {
+                    "description": "Starting line number.",
+                    "type": "integer"
+                  },
+                  "to": {
+                    "description": "Ending line number.",
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "required": [
+              "file"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": true,
+            "description_variant_id": "read_file_desc_view_source",
+            "name_mutated": true,
+            "name_variant_id": "read_file_name_open_source",
+            "schema_mutated": true,
+            "schema_variant_category": "schema_flat_to_nested",
+            "schema_variant_id": "read_file_schema_file_lines",
+            "tool_order_index_base": 1,
+            "tool_order_index_exposed": 1,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {
+              "body.text": "content",
+              "target.path": "path"
+            }
+          },
+          "canonical_name": "write_file",
+          "description": "Overwrite an existing file with new contents.",
+          "exposed_name": "save_file",
+          "input_schema": {
+            "properties": {
+              "body": {
+                "properties": {
+                  "text": {
+                    "description": "Full replacement file content.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "text"
+                ],
+                "type": "object"
+              },
+              "target": {
+                "properties": {
+                  "path": {
+                    "description": "Existing file path to overwrite.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "path"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "target",
+              "body"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": true,
+            "description_variant_id": "write_file_desc_overwrite_workspace",
+            "name_mutated": true,
+            "name_variant_id": "write_file_name_save_file",
+            "schema_mutated": true,
+            "schema_variant_category": "schema_flat_to_nested",
+            "schema_variant_id": "write_file_schema_target_body",
+            "tool_order_index_base": 2,
+            "tool_order_index_exposed": 2,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {
+              "body.text": "content",
+              "target.path": "path"
+            }
+          },
+          "canonical_name": "create_file",
+          "description": "Create a new workspace file with optional initial text.",
+          "exposed_name": "make_file",
+          "input_schema": {
+            "properties": {
+              "body": {
+                "properties": {
+                  "text": {
+                    "description": "Initial file content.",
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "target": {
+                "properties": {
+                  "path": {
+                    "description": "New file path to create.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "path"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "target"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": true,
+            "description_variant_id": "create_file_desc_new_file",
+            "name_mutated": true,
+            "name_variant_id": "create_file_name_make_file",
+            "schema_mutated": true,
+            "schema_variant_category": "schema_flat_to_nested",
+            "schema_variant_id": "create_file_schema_target_body",
+            "tool_order_index_base": 3,
+            "tool_order_index_exposed": 3,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {
+              "glob": "glob_pattern",
+              "location": "path",
+              "term": "query"
+            }
+          },
+          "canonical_name": "search_code",
+          "description": "Locate text patterns within the codebase.",
+          "exposed_name": "find_text",
+          "input_schema": {
+            "properties": {
+              "glob": {
+                "description": "File name filter.",
+                "type": "string"
+              },
+              "location": {
+                "description": "Folder to look in.",
+                "type": "string"
+              },
+              "term": {
+                "description": "Text to search for.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "term"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": true,
+            "description_variant_id": "search_code_desc_locate_patterns",
+            "name_mutated": true,
+            "name_variant_id": "search_code_name_find_text",
+            "schema_mutated": true,
+            "schema_variant_category": "argument_rename",
+            "schema_variant_id": "search_code_schema_term_location_glob",
+            "tool_order_index_base": 4,
+            "tool_order_index_exposed": 4,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {
+              "patch": "diff"
+            }
+          },
+          "canonical_name": "apply_patch",
+          "description": "Apply a code change via unified diff format.",
+          "exposed_name": "edit_diff",
+          "input_schema": {
+            "properties": {
+              "patch": {
+                "description": "Unified diff text.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "patch"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": true,
+            "description_variant_id": "apply_patch_desc_unified_diff",
+            "name_mutated": true,
+            "name_variant_id": "apply_patch_name_edit_diff",
+            "schema_mutated": true,
+            "schema_variant_category": "argument_rename",
+            "schema_variant_id": "apply_patch_schema_patch",
+            "tool_order_index_base": 5,
+            "tool_order_index_exposed": 5,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {
+              "directory": "cwd",
+              "instruction": "command",
+              "max_wait": "timeout"
+            }
+          },
+          "canonical_name": "run_command",
+          "description": "Run a shell command in the project workspace.",
+          "exposed_name": "shell_exec",
+          "input_schema": {
+            "properties": {
+              "directory": {
+                "description": "Working directory inside the workspace.",
+                "type": "string"
+              },
+              "instruction": {
+                "description": "Shell instruction to execute.",
+                "type": "string"
+              },
+              "max_wait": {
+                "description": "Maximum wait time in seconds.",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "instruction"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": true,
+            "description_variant_id": "run_command_desc_workspace",
+            "name_mutated": true,
+            "name_variant_id": "run_command_name_shell_exec",
+            "schema_mutated": true,
+            "schema_variant_category": "argument_rename",
+            "schema_variant_id": "run_command_schema_instruction_max_wait",
+            "tool_order_index_base": 6,
+            "tool_order_index_exposed": 6,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {
+              "execution.run_as_module": "run_as_module",
+              "execution.target": "target",
+              "options.args": "args",
+              "options.cwd": "cwd",
+              "options.timeout": "timeout"
+            }
+          },
+          "canonical_name": "python_run",
+          "description": "Execute a Python file or limited test module with structured options.",
+          "exposed_name": "run_python",
+          "input_schema": {
+            "properties": {
+              "execution": {
+                "properties": {
+                  "run_as_module": {
+                    "description": "When true, run `python -m <target>` for an allowed module.",
+                    "type": "boolean"
+                  },
+                  "target": {
+                    "description": "Workspace .py file, or an allowed module name.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "target"
+                ],
+                "type": "object"
+              },
+              "options": {
+                "properties": {
+                  "args": {
+                    "description": "Command-line args passed to the script or module.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "cwd": {
+                    "description": "Working directory for execution (must remain in workspace).",
+                    "type": "string"
+                  },
+                  "timeout": {
+                    "description": "Timeout in seconds (default 60).",
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "required": [
+              "execution"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": true,
+            "description_variant_id": "python_run_desc_execute_python",
+            "name_mutated": true,
+            "name_variant_id": "python_run_name_run_python",
+            "schema_mutated": true,
+            "schema_variant_category": "schema_flat_to_nested",
+            "schema_variant_id": "python_run_schema_execution_options",
+            "tool_order_index_base": 7,
+            "tool_order_index_exposed": 7,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {
+              "result": "answer"
+            }
+          },
+          "canonical_name": "finish",
+          "description": "Submit the final result and complete the task.",
+          "exposed_name": "submit_result",
+          "input_schema": {
+            "properties": {
+              "result": {
+                "description": "Outcome or conclusion of the task.",
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": true,
+            "description_variant_id": "finish_desc_submit_result",
+            "name_mutated": true,
+            "name_variant_id": "finish_name_submit_result",
+            "schema_mutated": true,
+            "schema_variant_category": "argument_rename",
+            "schema_variant_id": "finish_schema_result",
+            "tool_order_index_base": 8,
+            "tool_order_index_exposed": 8,
+            "tool_reordered": false
+          }
+        }
+      ]
+    },
+    {
+      "compat_mode": null,
+      "mode": "tool_reorder",
+      "mutation_axes": [
+        "tool_reorder"
+      ],
+      "mutation_manifest_version": 1,
+      "profile_id": "mutation_tool_reorder_7a9cb44f",
+      "reorder_anchor_policy": "finish_last",
+      "schema_variant_categories": {
+        "apply_patch": null,
+        "create_file": null,
+        "finish": null,
+        "list_files": null,
+        "python_run": null,
+        "read_file": null,
+        "run_command": null,
+        "search_code": null,
+        "write_file": null
+      },
+      "seed": 1,
+      "selected_variant_ids": {
+        "apply_patch": {
+          "description_variant_id": "apply_patch_description_base",
+          "name_variant_id": "apply_patch_name_base",
+          "schema_variant_id": "apply_patch_schema_base"
+        },
+        "create_file": {
+          "description_variant_id": "create_file_description_base",
+          "name_variant_id": "create_file_name_base",
+          "schema_variant_id": "create_file_schema_base"
+        },
+        "finish": {
+          "description_variant_id": "finish_description_base",
+          "name_variant_id": "finish_name_base",
+          "schema_variant_id": "finish_schema_base"
+        },
+        "list_files": {
+          "description_variant_id": "list_files_description_base",
+          "name_variant_id": "list_files_name_base",
+          "schema_variant_id": "list_files_schema_base"
+        },
+        "python_run": {
+          "description_variant_id": "python_run_description_base",
+          "name_variant_id": "python_run_name_base",
+          "schema_variant_id": "python_run_schema_base"
+        },
+        "read_file": {
+          "description_variant_id": "read_file_description_base",
+          "name_variant_id": "read_file_name_base",
+          "schema_variant_id": "read_file_schema_base"
+        },
+        "run_command": {
+          "description_variant_id": "run_command_description_base",
+          "name_variant_id": "run_command_name_base",
+          "schema_variant_id": "run_command_schema_base"
+        },
+        "search_code": {
+          "description_variant_id": "search_code_description_base",
+          "name_variant_id": "search_code_name_base",
+          "schema_variant_id": "search_code_schema_base"
+        },
+        "write_file": {
+          "description_variant_id": "write_file_description_base",
+          "name_variant_id": "write_file_name_base",
+          "schema_variant_id": "write_file_schema_base"
+        }
+      },
+      "tool_order_seed": null,
+      "tools": [
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {}
+          },
+          "canonical_name": "write_file",
+          "description": "Write text to an existing file in the workspace.",
+          "exposed_name": "write_file",
+          "input_schema": {
+            "properties": {
+              "content": {
+                "description": "Full replacement file content.",
+                "type": "string"
+              },
+              "path": {
+                "description": "Existing file path to overwrite.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "path",
+              "content"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "write_file_description_base",
+            "name_mutated": false,
+            "name_variant_id": "write_file_name_base",
+            "schema_mutated": false,
+            "schema_variant_category": null,
+            "schema_variant_id": "write_file_schema_base",
+            "tool_order_index_base": 2,
+            "tool_order_index_exposed": 0,
+            "tool_reordered": true
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {}
+          },
+          "canonical_name": "read_file",
+          "description": "Read a file from the workspace.",
+          "exposed_name": "read_file",
+          "input_schema": {
+            "properties": {
+              "end_line": {
+                "description": "Last line to include (1-based).",
+                "type": "integer"
+              },
+              "path": {
+                "description": "File path to read.",
+                "type": "string"
+              },
+              "start_line": {
+                "description": "First line to include (1-based).",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "read_file_description_base",
+            "name_mutated": false,
+            "name_variant_id": "read_file_name_base",
+            "schema_mutated": false,
+            "schema_variant_category": null,
+            "schema_variant_id": "read_file_schema_base",
+            "tool_order_index_base": 1,
+            "tool_order_index_exposed": 1,
+            "tool_reordered": false
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {}
+          },
+          "canonical_name": "list_files",
+          "description": "List files in the workspace directory.",
+          "exposed_name": "list_files",
+          "input_schema": {
+            "properties": {
+              "path": {
+                "description": "Root directory to list (default '.').",
+                "type": "string"
+              },
+              "recursive": {
+                "description": "Recurse into subdirectories.",
+                "type": "boolean"
+              }
+            },
+            "required": [],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "list_files_description_base",
+            "name_mutated": false,
+            "name_variant_id": "list_files_name_base",
+            "schema_mutated": false,
+            "schema_variant_category": null,
+            "schema_variant_id": "list_files_schema_base",
+            "tool_order_index_base": 0,
+            "tool_order_index_exposed": 2,
+            "tool_reordered": true
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {}
+          },
+          "canonical_name": "search_code",
+          "description": "Search for text in workspace files.",
+          "exposed_name": "search_code",
+          "input_schema": {
+            "properties": {
+              "glob_pattern": {
+                "description": "Optional glob to filter filenames (e.g. '*.py').",
+                "type": "string"
+              },
+              "path": {
+                "description": "Root directory to search (default '.').",
+                "type": "string"
+              },
+              "query": {
+                "description": "Text to search for.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "search_code_description_base",
+            "name_mutated": false,
+            "name_variant_id": "search_code_name_base",
+            "schema_mutated": false,
+            "schema_variant_category": null,
+            "schema_variant_id": "search_code_schema_base",
+            "tool_order_index_base": 4,
+            "tool_order_index_exposed": 3,
+            "tool_reordered": true
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {}
+          },
+          "canonical_name": "run_command",
+          "description": "Execute a controlled command within the workspace.",
+          "exposed_name": "run_command",
+          "input_schema": {
+            "properties": {
+              "command": {
+                "description": "Command string parsed as argv; shell control syntax is not allowed.",
+                "type": "string"
+              },
+              "cwd": {
+                "description": "Working directory for the command (must be within workspace).",
+                "type": "string"
+              },
+              "timeout": {
+                "description": "Timeout in seconds (default 60).",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "command"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "run_command_description_base",
+            "name_mutated": false,
+            "name_variant_id": "run_command_name_base",
+            "schema_mutated": false,
+            "schema_variant_category": null,
+            "schema_variant_id": "run_command_schema_base",
+            "tool_order_index_base": 6,
+            "tool_order_index_exposed": 4,
+            "tool_reordered": true
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {}
+          },
+          "canonical_name": "python_run",
+          "description": "Run a Python script or a narrow allowed Python test module inside the workspace.",
+          "exposed_name": "python_run",
+          "input_schema": {
+            "properties": {
+              "args": {
+                "description": "Command-line args passed to the script or module.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "cwd": {
+                "description": "Working directory for execution (must remain in workspace).",
+                "type": "string"
+              },
+              "run_as_module": {
+                "description": "When true, run `python -m <target>` for an allowed module.",
+                "type": "boolean"
+              },
+              "target": {
+                "description": "Workspace .py file, or an allowed module name.",
+                "type": "string"
+              },
+              "timeout": {
+                "description": "Timeout in seconds (default 60).",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "target"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "python_run_description_base",
+            "name_mutated": false,
+            "name_variant_id": "python_run_name_base",
+            "schema_mutated": false,
+            "schema_variant_category": null,
+            "schema_variant_id": "python_run_schema_base",
+            "tool_order_index_base": 7,
+            "tool_order_index_exposed": 5,
+            "tool_reordered": true
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {}
+          },
+          "canonical_name": "apply_patch",
+          "description": "Apply a unified diff patch to workspace files.",
+          "exposed_name": "apply_patch",
+          "input_schema": {
+            "properties": {
+              "diff": {
+                "description": "Unified diff string to apply.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "diff"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "apply_patch_description_base",
+            "name_mutated": false,
+            "name_variant_id": "apply_patch_name_base",
+            "schema_mutated": false,
+            "schema_variant_category": null,
+            "schema_variant_id": "apply_patch_schema_base",
+            "tool_order_index_base": 5,
+            "tool_order_index_exposed": 6,
+            "tool_reordered": true
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {}
+          },
+          "canonical_name": "create_file",
+          "description": "Create a new file in the workspace.",
+          "exposed_name": "create_file",
+          "input_schema": {
+            "properties": {
+              "content": {
+                "description": "Initial file content.",
+                "type": "string"
+              },
+              "path": {
+                "description": "New file path to create.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "create_file_description_base",
+            "name_mutated": false,
+            "name_variant_id": "create_file_name_base",
+            "schema_mutated": false,
+            "schema_variant_category": null,
+            "schema_variant_id": "create_file_schema_base",
+            "tool_order_index_base": 3,
+            "tool_order_index_exposed": 7,
+            "tool_reordered": true
+          }
+        },
+        {
+          "adapter": {
+            "defaults": {},
+            "exposed_to_canonical": {}
+          },
+          "canonical_name": "finish",
+          "description": "Signal task completion with an optional answer.",
+          "exposed_name": "finish",
+          "input_schema": {
+            "properties": {
+              "answer": {
+                "description": "Final answer or description of what was done.",
+                "type": "string"
+              },
+              "summary": {
+                "description": "Optional summary of the solution.",
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
+          },
+          "metadata": {
+            "description_mutated": false,
+            "description_variant_id": "finish_description_base",
+            "name_mutated": false,
+            "name_variant_id": "finish_name_base",
+            "schema_mutated": false,
+            "schema_variant_category": null,
+            "schema_variant_id": "finish_schema_base",
+            "tool_order_index_base": 8,
+            "tool_order_index_exposed": 8,
+            "tool_reordered": false
+          }
+        }
+      ]
+    }
+  ],
+  "version": 1
+}

@@ -1,0 +1,12 @@
+{
+  "ended_at_unix_ms": 1700000000042,
+  "event_log_path": "runtime_trace.jsonl",
+  "payload_dir": "payloads",
+  "run_id": "output",
+  "schema_version": 1,
+  "started_at_unix_ms": 1700000000000,
+  "task_id": "trace_task",
+  "tool_profile_id": "base",
+  "trace_id": "output__runtime_trace",
+  "workspace_root": "C:\\Users\\86177\\AppData\\Local\\Temp\\pycodeagent-test-artifacts\\runtime_trace_golden\\runtime_trace_golden_2ae0ab97\\output\\w\\abc123def456"
+}

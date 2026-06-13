@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "catalog_id": "codex_cli_public_catalog_v1",
+  "agent_name": "codex_cli",
+  "agent_version": "public_catalog_v1",
+  "capture_mode": "static",
+  "source_kind": "checked_in_manifest",
+  "captured_at": null,
+  "tools": [
+    {
+      "raw_tool_name": "local_shell",
+      "description": "Run a local shell command in the workspace.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "Command to execute."
+          },
+          "cwd": {
+            "type": "string",
+            "description": "Optional working directory."
+          },
+          "timeout": {
+            "type": "integer",
+            "description": "Optional timeout in seconds."
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "output_format_hint": "shell text",
+      "availability_conditions": {
+        "requires_local_execution": true
+      },
+      "tool_family": "execution",
+      "canonical_name": "run_command",
+      "version": "public_catalog_v1",
+      "metadata": {
+        "mapping_status": "mapped",
+        "evidence": "public_docs_curated"
+      }
+    },
+    {
+      "raw_tool_name": "web_search",
+      "description": "Search the web for external information.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search query."
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "output_format_hint": "search results",
+      "availability_conditions": {
+        "requires_network": true
+      },
+      "tool_family": "external_search",
+      "canonical_name": null,
+      "version": "public_catalog_v1",
+      "metadata": {
+        "mapping_status": "unmapped",
+        "evidence": "public_docs_curated"
+      }
+    },
+    {
+      "raw_tool_name": "mcp",
+      "description": "Invoke a configured MCP server tool.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "server": {
+            "type": "string",
+            "description": "MCP server name."
+          },
+          "tool": {
+            "type": "string",
+            "description": "Tool name exposed by the MCP server."
+          },
+          "arguments": {
+            "type": "object",
+            "description": "Tool arguments."
+          }
+        },
+        "required": [
+          "server",
+          "tool"
+        ]
+      },
+      "output_format_hint": "server-defined",
+      "availability_conditions": {
+        "requires_configured_server": true
+      },
+      "tool_family": "mcp_bridge",
+      "canonical_name": null,
+      "version": "public_catalog_v1",
+      "metadata": {
+        "mapping_status": "unmapped",
+        "evidence": "public_docs_curated"
+      }
+    }
+  ],
+  "metadata": {
+    "surface_status": "curated_static_manifest",
+    "coverage": "partial",
+    "notes": [
+      "This manifest is a checked-in public-surface approximation for catalog-only integration.",
+      "It is not a runtime-observed raw trace or full internal Codex tool inventory."
+    ]
+  }
+}

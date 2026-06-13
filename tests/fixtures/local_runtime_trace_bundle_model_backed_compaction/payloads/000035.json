@@ -1,0 +1,34 @@
+{
+  "carried_forward_state": {
+    "carried_notes": [
+      "Model-backed compaction preserved the earlier inspections."
+    ],
+    "completion_evidence_status": "not_required",
+    "last_mutation_turn": null,
+    "last_successful_validation_turn": null,
+    "last_validation_attempt_turn": null,
+    "last_validation_failure_turn": null,
+    "pending_issue_detail": "",
+    "pending_issue_kind": null,
+    "recent_compacted_tool_outcomes": [],
+    "validation_phase": "idle"
+  },
+  "compacted_span": {
+    "pinned_message_indices": [
+      0,
+      1
+    ],
+    "replacement_summary_kind": "model_backed_compaction",
+    "source_message_indices": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "source_turn_indices": [
+      1,
+      2
+    ]
+  },
+  "summary_text": "[model compacted context]\ncovered_turns=1-2\nnext_focus=latest inspection context"
+}

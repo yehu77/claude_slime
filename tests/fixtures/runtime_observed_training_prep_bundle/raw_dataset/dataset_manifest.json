@@ -1,0 +1,20 @@
+{
+  "dataset_type": "schema_following_runtime_observed",
+  "loss_mask_policy": "assistant_tool_call_only",
+  "present_splits": [
+    "train"
+  ],
+  "profile_ids": [
+    "mutation_name_description_schema_43cc1852"
+  ],
+  "profile_manifest_path": "profile_manifest.json",
+  "sample_count": 2,
+  "skipped_observed_call_count": 0,
+  "skipped_observed_call_counts_by_reason": {},
+  "source_dir": "<batch_root>",
+  "source_manifest_path": "source_manifest.json",
+  "source_type": "batch",
+  "split_metrics_path": "split_metrics.json",
+  "split_seed": 42,
+  "version": 1
+}

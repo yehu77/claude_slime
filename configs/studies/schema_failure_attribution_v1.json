@@ -1,0 +1,36 @@
+{
+  "study_id": "schema_failure_attribution_v1",
+  "tasks_path": "datasets/tasks/toy_tasks.jsonl",
+  "profile_modes": [
+    "base",
+    "description_only",
+    "schema_only",
+    "name_description_schema"
+  ],
+  "baseline_mode": "base",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "output_root": "runs/studies",
+  "max_tasks": null,
+  "task_ids": null,
+  "notes": "Schema attribution study. Measures whether schema-only degradation is driven by parse failures, schema/argument errors, or later verifier failures on the shared 12-task toy dataset.",
+  "metadata": {
+    "purpose": "Attribute schema sensitivity failures across parse, execution, and verifier stages",
+    "dataset": "toy_tasks.jsonl (12 Python tasks across bugfix, lint_format, type_fix, and small_feature)",
+    "modes_tested": "base vs description_only vs schema_only vs name_description_schema",
+    "seed_count": 5,
+    "primary_metrics": [
+      "pass_at_1",
+      "entered_execution_rate",
+      "clean_run_pass_at_1",
+      "tool_call_parse_error_rate",
+      "invalid_schema_call_rate",
+      "verifier_failed_rate"
+    ]
+  }
+}

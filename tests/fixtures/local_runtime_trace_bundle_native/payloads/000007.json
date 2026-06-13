@@ -1,0 +1,32 @@
+{
+  "accepted_tool_call_count": 1,
+  "assistant_content": "I will inspect the file.",
+  "fallback_allowed": false,
+  "fallback_parser_used": false,
+  "fallback_reason": null,
+  "fatal_errors": [],
+  "finish_reason": "tool_calls",
+  "format_family": "native_tool_calling",
+  "normalization_actions": [],
+  "normalized_text": "I will inspect the file.",
+  "parse_status": "ok",
+  "protocol_decision": "accept_native",
+  "protocol_error_kind": null,
+  "protocol_errors": [],
+  "provider_response_id": "resp_native_1",
+  "recovery_warnings": [],
+  "rejected_tool_call_candidate_count": 0,
+  "text_fallback_used": false,
+  "tool_call_candidate_count": 1,
+  "tool_calls": [
+    {
+      "arguments": {
+        "path": "main.py"
+      },
+      "canonical_name": null,
+      "id": "c1",
+      "name": "read_file"
+    }
+  ],
+  "transport_mode": "native_tool_calling"
+}

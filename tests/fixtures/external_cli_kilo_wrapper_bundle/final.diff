@@ -1,0 +1,8 @@
+--- a/counter.py
++++ b/counter.py
+@@ -4,3 +4,5 @@
+ 
+ def inclusive_count(n: int) -> list[int]:
+     return list(range(n))
++
++# Kilo wrapper touched this file.

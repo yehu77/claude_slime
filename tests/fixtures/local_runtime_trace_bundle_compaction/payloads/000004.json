@@ -1,0 +1,30 @@
+{
+  "carried_forward_state_entry_id": null,
+  "context_selection_retained_entry_id": "retained_entry_000003",
+  "omitted_retained_entry_ids": [],
+  "replacement_history_active": false,
+  "replacement_history_record_id": null,
+  "request_history_item_count_after_snapshot": 2,
+  "request_history_item_count_before_snapshot": 2,
+  "request_history_item_ids": [
+    "history_item_000000",
+    "history_item_000001"
+  ],
+  "request_history_item_kinds": [
+    "source",
+    "source"
+  ],
+  "request_history_source_indices": [
+    0,
+    1
+  ],
+  "retained_entry_count_after_snapshot": 3,
+  "retained_entry_count_before_snapshot": 2,
+  "retained_history_last_entry_id": "retained_entry_000003",
+  "selected_retained_entry_ids": [
+    "retained_entry_000001",
+    "retained_entry_000002"
+  ],
+  "summary_retained_entry_id": null,
+  "turn_index": 1
+}

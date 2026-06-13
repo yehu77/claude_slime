@@ -1,0 +1,50 @@
+{
+  "sample_id": "sf__task_001__action_1__base",
+  "sample_type": "schema_following",
+  "source_type": "synthetic",
+  "split": "train",
+  "task_id": "task_001",
+  "tool_profile_id": "base",
+  "mutation_category": "base",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a coding agent.",
+      "metadata": {}
+    },
+    {
+      "role": "user",
+      "content": "Inspect the repo and run tests.",
+      "metadata": {}
+    },
+    {
+      "role": "assistant",
+      "content": "I will inspect the repository README first.",
+      "metadata": {}
+    }
+  ],
+  "canonical_intent": {
+    "tool": "read_file",
+    "arguments": {
+      "path": "README.md"
+    }
+  },
+  "target_tool_call": {
+    "call_id": "call_1",
+    "name": "read_file",
+    "arguments": {
+      "path": "README.md"
+    }
+  },
+  "target_text": "<|tool|>\n{\"arguments\": {\"path\": \"README.md\"}, \"id\": \"call_1\", \"name\": \"read_file\"}\n<|end|>\n",
+  "loss_mask_policy": "assistant_tool_call_only",
+  "metadata": {
+    "trace_id": "task_001__trace",
+    "action_id": "action_1",
+    "raw_event_refs": [
+      "event_004"
+    ],
+    "agent_name": "mock_agent",
+    "profile_mode": "base"
+  }
+}

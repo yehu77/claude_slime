@@ -1,0 +1,185 @@
+{
+  "messages": [
+    {
+      "content": "You are compacting runtime conversation history for a follow-up coding-agent turn.\n\nReturn only JSON matching the requested schema.\nDo not call tools.\nDo not explain the schema.\nWrite a compact but faithful summary of the compacted history span.\nPreserve unresolved issues, validation state, and important tool outcomes needed for follow-up turns.\nPut all span metadata inside `compacted_span`, not at the top level.\nSet `compacted_span.replacement_summary_kind` to exactly `model_backed_compaction`.\nCopy the provided pinned message indices exactly into `compacted_span.pinned_message_indices`.\n",
+      "role": "system"
+    },
+    {
+      "content": "Compact the following runtime history span into a compact summary and structured carried-forward state.\n{\n  \"candidate_turn_ranges\": [\n    {\n      \"end_index\": 3,\n      \"message_indices\": [\n        2,\n        3\n      ],\n      \"start_index\": 2,\n      \"tool_call_ids\": [\n        \"c1\"\n      ],\n      \"tool_names\": [\n        \"read_file\"\n      ],\n      \"turn_index\": 1\n    },\n    {\n      \"end_index\": 5,\n      \"message_indices\": [\n        4,\n        5\n      ],\n      \"start_index\": 4,\n      \"tool_call_ids\": [\n        \"c2\"\n      ],\n      \"tool_names\": [\n        \"list_files\"\n      ],\n      \"turn_index\": 2\n    }\n  ],\n  \"compacted_message_indices\": [\n    2,\n    3,\n    4,\n    5\n  ],\n  \"compaction_reason\": \"message_limit_exceeded\",\n  \"existing_carried_forward_state\": {\n    \"carried_notes\": [\n      \"Compacted turns 1-2\"\n    ],\n    \"completion_evidence_status\": \"not_required\",\n    \"last_mutation_turn\": null,\n    \"last_successful_validation_turn\": null,\n    \"last_validation_attempt_turn\": null,\n    \"last_validation_failure_turn\": null,\n    \"pending_issue_detail\": \"\",\n    \"pending_issue_kind\": null,\n    \"recent_compacted_tool_outcomes\": [\n      {\n        \"stop_decision_code\": \"continue_with_tool_calls\",\n        \"tool_call_ids\": [\n          \"c1\"\n        ],\n        \"tool_names\": [\n          \"read_file\"\n        ],\n        \"turn_index\": 1\n      },\n      {\n        \"stop_decision_code\": \"continue_with_tool_calls\",\n        \"tool_call_ids\": [\n          \"c2\"\n        ],\n        \"tool_names\": [\n          \"list_files\"\n        ],\n        \"turn_index\": 2\n      }\n    ],\n    \"validation_phase\": \"idle\"\n  },\n  \"important_output_rules\": [\n    \"Do not put pinned_message_indices at the top level.\",\n    \"All span metadata must be nested inside compacted_span.\",\n    \"compacted_span.replacement_summary_kind must be model_backed_compaction.\"\n  ],\n  \"messages_to_compact\": [\n    {\n      \"canonical_name\": null,\n      \"content\": \"Inspecting once.\",\n      \"metadata\": {},\n      \"role\": \"assistant\",\n      \"tool_call_id\": null,\n      \"tool_calls\": [\n        {\n          \"arguments\": {\n            \"path\": \"main.py\"\n          },\n          \"canonical_name\": \"read_file\",\n          \"id\": \"c1\",\n          \"name\": \"read_file\"\n        }\n      ],\n      \"tool_name\": null\n    },\n    {\n      \"canonical_name\": \"read_file\",\n      \"content\": \"   1 | print('hello')\",\n      \"metadata\": {},\n      \"role\": \"tool\",\n      \"tool_call_id\": \"c1\",\n      \"tool_calls\": [],\n      \"tool_name\": \"read_file\"\n    },\n    {\n      \"canonical_name\": null,\n      \"content\": \"Inspecting again.\",\n      \"metadata\": {},\n      \"role\": \"assistant\",\n      \"tool_call_id\": null,\n      \"tool_calls\": [\n        {\n          \"arguments\": {\n            \"path\": \".\"\n          },\n          \"canonical_name\": \"list_files\",\n          \"id\": \"c2\",\n          \"name\": \"list_files\"\n        }\n      ],\n      \"tool_name\": null\n    },\n    {\n      \"canonical_name\": \"list_files\",\n      \"content\": \"main.py\",\n      \"metadata\": {},\n      \"role\": \"tool\",\n      \"tool_call_id\": \"c2\",\n      \"tool_calls\": [],\n      \"tool_name\": \"list_files\"\n    }\n  ],\n  \"pinned_context_messages\": [\n    {\n      \"canonical_name\": null,\n      \"content\": \"You are a coding agent working inside a repository workspace.\\n\\nThe available tools are provided through the runtime's native tool-calling interface.\\nUse only the exact tool names and argument shapes from those provided tools.\\n\\nOperating rules:\\n1. When you need to inspect files, edit the workspace, run validation, or finish the task, call the appropriate native tool directly.\\n2. Do not emit literal <|tool|>, <|end|>, <tool_call>, or <tool_result> tags in assistant text.\\n3. If a tool call is rejected or malformed, issue a corrected native tool call instead of stopping.\\n4. If a validation or test-running action fails, inspect the returned output, revise the workspace, and rerun validation before signaling completion.\\n5. Do not claim success or completion unless the relevant tool result has already been returned by the environment.\\n6. If a task requires validation evidence, do not call finish until a successful validation result has already been returned.\\n7. If you include normal assistant text, use it only to explain the next concrete action.\\n\",\n      \"metadata\": {},\n      \"role\": \"system\",\n      \"tool_call_id\": null,\n      \"tool_calls\": [],\n      \"tool_name\": null\n    },\n    {\n      \"canonical_name\": null,\n      \"content\": \"Inspect, inspect again, inspect once more, and finish.\",\n      \"metadata\": {},\n      \"role\": \"user\",\n      \"tool_call_id\": null,\n      \"tool_calls\": [],\n      \"tool_name\": null\n    }\n  ],\n  \"pinned_message_indices\": [\n    0,\n    1\n  ],\n  \"required_output_contract\": {\n    \"carried_forward_state\": \"object\",\n    \"compacted_span\": {\n      \"pinned_message_indices\": \"array[int]\",\n      \"replacement_summary_kind\": \"string\",\n      \"source_message_indices\": \"array[int]\",\n      \"source_turn_indices\": \"array[int]\"\n    },\n    \"summary_text\": \"string\"\n  },\n  \"retained_message_indices\": [\n    0,\n    1,\n    6,\n    7\n  ],\n  \"task\": \"compact_runtime_history\",\n  \"turn_index\": 4\n}",
+      "role": "user"
+    }
+  ],
+  "request_kind": "context_compaction",
+  "structured_output_schema": {
+    "name": "runtime_compaction_output",
+    "schema": {
+      "$defs": {
+        "CarriedForwardState": {
+          "description": "Structured facts carried across a compacted request boundary.",
+          "properties": {
+            "carried_notes": {
+              "items": {
+                "type": "string"
+              },
+              "title": "Carried Notes",
+              "type": "array"
+            },
+            "completion_evidence_status": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Completion Evidence Status"
+            },
+            "last_mutation_turn": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Last Mutation Turn"
+            },
+            "last_successful_validation_turn": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Last Successful Validation Turn"
+            },
+            "last_validation_attempt_turn": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Last Validation Attempt Turn"
+            },
+            "last_validation_failure_turn": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Last Validation Failure Turn"
+            },
+            "pending_issue_detail": {
+              "default": "",
+              "title": "Pending Issue Detail",
+              "type": "string"
+            },
+            "pending_issue_kind": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Pending Issue Kind"
+            },
+            "recent_compacted_tool_outcomes": {
+              "items": {
+                "type": "object"
+              },
+              "title": "Recent Compacted Tool Outcomes",
+              "type": "array"
+            },
+            "validation_phase": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Validation Phase"
+            }
+          },
+          "title": "CarriedForwardState",
+          "type": "object"
+        },
+        "ModelCompactedSpan": {
+          "description": "Structured compacted-span metadata returned by the backend.",
+          "properties": {
+            "pinned_message_indices": {
+              "items": {
+                "type": "integer"
+              },
+              "title": "Pinned Message Indices",
+              "type": "array"
+            },
+            "replacement_summary_kind": {
+              "default": "model_backed_compaction",
+              "title": "Replacement Summary Kind",
+              "type": "string"
+            },
+            "source_message_indices": {
+              "items": {
+                "type": "integer"
+              },
+              "title": "Source Message Indices",
+              "type": "array"
+            },
+            "source_turn_indices": {
+              "items": {
+                "type": "integer"
+              },
+              "title": "Source Turn Indices",
+              "type": "array"
+            }
+          },
+          "title": "ModelCompactedSpan",
+          "type": "object"
+        }
+      },
+      "description": "Structured output returned by the compaction backend.",
+      "properties": {
+        "carried_forward_state": {
+          "$ref": "#/$defs/CarriedForwardState"
+        },
+        "compacted_span": {
+          "$ref": "#/$defs/ModelCompactedSpan"
+        },
+        "summary_text": {
+          "title": "Summary Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "summary_text",
+        "carried_forward_state",
+        "compacted_span"
+      ],
+      "title": "ModelBackedCompactionOutput",
+      "type": "object"
+    },
+    "strict": true
+  },
+  "tools": []
+}

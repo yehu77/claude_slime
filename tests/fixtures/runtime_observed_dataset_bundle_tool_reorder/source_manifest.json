@@ -1,0 +1,60 @@
+{
+  "discovered_run_count": 1,
+  "exported_sample_count": 2,
+  "filter_config": {
+    "allowed_statuses": null,
+    "include_failed": false,
+    "min_reward": null,
+    "profile_ids": null,
+    "task_ids": null,
+    "verifier_passed": null
+  },
+  "included_run_count": 1,
+  "runs": [
+    {
+      "api_key_env": null,
+      "base_url": null,
+      "client_mode": null,
+      "compat_mode": null,
+      "exported_observed_tool_call_count": 2,
+      "max_output_tokens": null,
+      "max_retries": null,
+      "model": null,
+      "mutation_axes": [
+        "tool_reorder"
+      ],
+      "mutation_manifest_version": 1,
+      "observed_tool_call_count": 2,
+      "protocol_mode": "native_tool_calling",
+      "provider_family": "fake",
+      "provider_kind": null,
+      "provider_name": "fake_native",
+      "reorder_anchor_policy": "finish_last",
+      "reward": 1.0,
+      "run_dir": "<batch_run_dir>",
+      "runtime_trace_present": true,
+      "skipped_observed_tool_call_count": 0,
+      "skipped_observed_tool_call_counts_by_reason": {},
+      "skipped_observed_tool_calls": [],
+      "source_profile_mode": "tool_reorder",
+      "source_profile_seed": 0,
+      "source_tool_profile_id": "mutation_tool_reorder_e07d1765",
+      "status": "completed",
+      "structured_finish_mode": "finish_tool_call",
+      "supports_native_tools": true,
+      "task_id": "observed_reorder_task",
+      "temperature": null,
+      "text_fallback_allowed": false,
+      "timeout_seconds": null,
+      "tool_call_count": 2,
+      "tool_order_seed": null,
+      "verifier_passed": true
+    }
+  ],
+  "skipped_observed_call_count": 0,
+  "skipped_observed_call_counts_by_reason": {},
+  "skipped_run_count": 0,
+  "source_dir": "<batch_root>",
+  "source_type": "batch",
+  "version": 1
+}
