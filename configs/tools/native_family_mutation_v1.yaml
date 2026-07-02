@@ -1,0 +1,507 @@
+profile_id_prefix: native_mutation
+
+families:
+  claude:
+    profile_id_prefix: native_claude_mutation
+    tool_variants:
+      Bash:
+        name_candidates:
+          - id: claude_bash_name_run_shell
+            value: run_shell
+          - id: claude_bash_name_execute_bash
+            value: execute_bash
+        description_candidates:
+          - id: claude_bash_desc_run_command
+            value: "Run a Bash command in the current workspace."
+          - id: claude_bash_desc_execute_shell
+            value: "Execute shell text with Bash semantics."
+        schema_variants:
+          - variant_id: claude_bash_schema_command_timeout_bg
+            category: argument_rename
+            input_schema:
+              type: object
+              properties:
+                cmd:
+                  type: string
+                timeout_ms:
+                  type: number
+                background:
+                  type: boolean
+              required:
+                - cmd
+            adapter:
+              exposed_to_canonical:
+                cmd: command
+                timeout_ms: timeout
+                background: run_in_background
+          - variant_id: claude_bash_schema_request_options
+            category: schema_flat_to_nested
+            input_schema:
+              type: object
+              properties:
+                request:
+                  type: object
+                  properties:
+                    command:
+                      type: string
+                  required:
+                    - command
+                options:
+                  type: object
+                  properties:
+                    timeout_ms:
+                      type: number
+                    background:
+                      type: boolean
+              required:
+                - request
+            adapter:
+              exposed_to_canonical:
+                request.command: command
+                options.timeout_ms: timeout
+                options.background: run_in_background
+
+      Read:
+        name_candidates:
+          - id: claude_read_name_open_source
+            value: open_source
+          - id: claude_read_name_view_file
+            value: view_file
+        description_candidates:
+          - id: claude_read_desc_view_file
+            value: "Read a file with optional line window controls."
+          - id: claude_read_desc_open_file
+            value: "Open a workspace file and inspect its contents."
+        schema_variants:
+          - variant_id: claude_read_schema_path_start_count
+            category: argument_rename
+            input_schema:
+              type: object
+              properties:
+                path:
+                  type: string
+                start:
+                  type: integer
+                count:
+                  type: integer
+              required:
+                - path
+            adapter:
+              exposed_to_canonical:
+                path: file_path
+                start: offset
+                count: limit
+          - variant_id: claude_read_schema_target_window
+            category: schema_flat_to_nested
+            input_schema:
+              type: object
+              properties:
+                target:
+                  type: object
+                  properties:
+                    path:
+                      type: string
+                  required:
+                    - path
+                window:
+                  type: object
+                  properties:
+                    offset:
+                      type: integer
+                    limit:
+                      type: integer
+              required:
+                - target
+            adapter:
+              exposed_to_canonical:
+                target.path: file_path
+                window.offset: offset
+                window.limit: limit
+
+      Edit:
+        name_candidates:
+          - id: claude_edit_name_replace_text
+            value: replace_text
+          - id: claude_edit_name_patch_file
+            value: patch_file
+        description_candidates:
+          - id: claude_edit_desc_replace_exact
+            value: "Replace exact text inside a file."
+          - id: claude_edit_desc_patch_string
+            value: "Patch one file by replacing matched source text."
+        schema_variants:
+          - variant_id: claude_edit_schema_path_old_new_all
+            category: argument_rename
+            input_schema:
+              type: object
+              properties:
+                path:
+                  type: string
+                old_text:
+                  type: string
+                new_text:
+                  type: string
+                all_matches:
+                  type: boolean
+              required:
+                - path
+                - old_text
+                - new_text
+            adapter:
+              exposed_to_canonical:
+                path: file_path
+                old_text: old_string
+                new_text: new_string
+                all_matches: replace_all
+          - variant_id: claude_edit_schema_target_replace
+            category: schema_flat_to_nested
+            input_schema:
+              type: object
+              properties:
+                target:
+                  type: object
+                  properties:
+                    path:
+                      type: string
+                  required:
+                    - path
+                replace:
+                  type: object
+                  properties:
+                    old:
+                      type: string
+                    new:
+                      type: string
+                    all:
+                      type: boolean
+                  required:
+                    - old
+                    - new
+              required:
+                - target
+                - replace
+            adapter:
+              exposed_to_canonical:
+                target.path: file_path
+                replace.old: old_string
+                replace.new: new_string
+                replace.all: replace_all
+
+      Write:
+        name_candidates:
+          - id: claude_write_name_save_file
+            value: save_file
+          - id: claude_write_name_replace_file
+            value: replace_file
+        description_candidates:
+          - id: claude_write_desc_save_contents
+            value: "Write complete file contents."
+          - id: claude_write_desc_replace_contents
+            value: "Create or overwrite a workspace file."
+        schema_variants:
+          - variant_id: claude_write_schema_path_text
+            category: argument_rename
+            input_schema:
+              type: object
+              properties:
+                path:
+                  type: string
+                text:
+                  type: string
+              required:
+                - path
+                - text
+            adapter:
+              exposed_to_canonical:
+                path: file_path
+                text: content
+          - variant_id: claude_write_schema_target_body
+            category: schema_flat_to_nested
+            input_schema:
+              type: object
+              properties:
+                target:
+                  type: object
+                  properties:
+                    path:
+                      type: string
+                  required:
+                    - path
+                body:
+                  type: object
+                  properties:
+                    text:
+                      type: string
+                  required:
+                    - text
+              required:
+                - target
+                - body
+            adapter:
+              exposed_to_canonical:
+                target.path: file_path
+                body.text: content
+
+      Grep:
+        name_candidates:
+          - id: claude_grep_name_search_regex
+            value: search_regex
+          - id: claude_grep_name_find_matches
+            value: find_matches
+        description_candidates:
+          - id: claude_grep_desc_regex_search
+            value: "Search file contents with regular expressions."
+          - id: claude_grep_desc_find_pattern
+            value: "Find matching text in workspace files."
+        schema_variants:
+          - variant_id: claude_grep_schema_query_root_include
+            category: argument_rename
+            input_schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                root:
+                  type: string
+                include:
+                  type: string
+                mode:
+                  type: string
+                ignore_case:
+                  type: boolean
+                limit:
+                  type: integer
+              required:
+                - query
+            adapter:
+              exposed_to_canonical:
+                query: pattern
+                root: path
+                include: glob
+                mode: output_mode
+                ignore_case: -i
+                limit: head_limit
+          - variant_id: claude_grep_schema_request_options
+            category: schema_flat_to_nested
+            input_schema:
+              type: object
+              properties:
+                request:
+                  type: object
+                  properties:
+                    pattern:
+                      type: string
+                    path:
+                      type: string
+                    glob:
+                      type: string
+                  required:
+                    - pattern
+                options:
+                  type: object
+                  properties:
+                    output_mode:
+                      type: string
+                    ignore_case:
+                      type: boolean
+                    head_limit:
+                      type: integer
+              required:
+                - request
+            adapter:
+              exposed_to_canonical:
+                request.pattern: pattern
+                request.path: path
+                request.glob: glob
+                options.output_mode: output_mode
+                options.ignore_case: -i
+                options.head_limit: head_limit
+
+      Glob:
+        name_candidates:
+          - id: claude_glob_name_match_paths
+            value: match_paths
+          - id: claude_glob_name_find_glob
+            value: find_glob
+        description_candidates:
+          - id: claude_glob_desc_match_pattern
+            value: "Match workspace paths with a glob pattern."
+          - id: claude_glob_desc_find_paths
+            value: "Find files by glob expression."
+        schema_variants:
+          - variant_id: claude_glob_schema_glob_root
+            category: argument_rename
+            input_schema:
+              type: object
+              properties:
+                glob:
+                  type: string
+                root:
+                  type: string
+              required:
+                - glob
+            adapter:
+              exposed_to_canonical:
+                glob: pattern
+                root: path
+          - variant_id: claude_glob_schema_request_target
+            category: schema_flat_to_nested
+            input_schema:
+              type: object
+              properties:
+                request:
+                  type: object
+                  properties:
+                    pattern:
+                      type: string
+                    path:
+                      type: string
+                  required:
+                    - pattern
+              required:
+                - request
+            adapter:
+              exposed_to_canonical:
+                request.pattern: pattern
+                request.path: path
+
+  codex:
+    profile_id_prefix: native_codex_mutation
+    tool_variants:
+      exec_command:
+        name_candidates:
+          - id: codex_exec_name_run_command
+            value: run_command
+          - id: codex_exec_name_execute_shell
+            value: execute_shell
+        description_candidates:
+          - id: codex_exec_desc_run_shell
+            value: "Run a shell command and return its output."
+          - id: codex_exec_desc_execute_cmd
+            value: "Execute a command inside the current workspace."
+        schema_variants:
+          - variant_id: codex_exec_schema_command_cwd
+            category: argument_rename
+            input_schema:
+              type: object
+              properties:
+                command:
+                  type: string
+                cwd:
+                  type: string
+                shell_path:
+                  type: string
+                login_shell:
+                  type: boolean
+              required:
+                - command
+            adapter:
+              exposed_to_canonical:
+                command: cmd
+                cwd: workdir
+                shell_path: shell
+                login_shell: login
+          - variant_id: codex_exec_schema_execution_environment
+            category: schema_flat_to_nested
+            input_schema:
+              type: object
+              properties:
+                execution:
+                  type: object
+                  properties:
+                    command:
+                      type: string
+                  required:
+                    - command
+                environment:
+                  type: object
+                  properties:
+                    cwd:
+                      type: string
+                    shell:
+                      type: string
+                    login:
+                      type: boolean
+              required:
+                - execution
+            adapter:
+              exposed_to_canonical:
+                execution.command: cmd
+                environment.cwd: workdir
+                environment.shell: shell
+                environment.login: login
+
+      write_stdin:
+        name_candidates:
+          - id: codex_stdin_name_continue_session
+            value: continue_session
+          - id: codex_stdin_name_send_input
+            value: send_input
+        description_candidates:
+          - id: codex_stdin_desc_continue_exec
+            value: "Send text to an existing command session."
+          - id: codex_stdin_desc_write_session
+            value: "Continue a running exec session and collect output."
+        schema_variants:
+          - variant_id: codex_stdin_schema_session_input_wait
+            category: argument_rename
+            input_schema:
+              type: object
+              properties:
+                session:
+                  type: number
+                input:
+                  type: string
+                wait_ms:
+                  type: number
+                output_limit:
+                  type: number
+              required:
+                - session
+            adapter:
+              exposed_to_canonical:
+                session: session_id
+                input: chars
+                wait_ms: yield_time_ms
+                output_limit: max_output_tokens
+          - variant_id: codex_stdin_schema_target_options
+            category: schema_flat_to_nested
+            input_schema:
+              type: object
+              properties:
+                target:
+                  type: object
+                  properties:
+                    session_id:
+                      type: number
+                  required:
+                    - session_id
+                options:
+                  type: object
+                  properties:
+                    chars:
+                      type: string
+                    yield_time_ms:
+                      type: number
+                    max_output_tokens:
+                      type: number
+              required:
+                - target
+            adapter:
+              exposed_to_canonical:
+                target.session_id: session_id
+                options.chars: chars
+                options.yield_time_ms: yield_time_ms
+                options.max_output_tokens: max_output_tokens
+
+      apply_patch:
+        name_candidates:
+          - id: codex_patch_name_patch_files
+            value: patch_files
+          - id: codex_patch_name_edit_patch
+            value: edit_patch
+        description_candidates:
+          - id: codex_patch_desc_apply_diff
+            value: "Apply a freeform patch to workspace files."
+          - id: codex_patch_desc_edit_via_patch
+            value: "Edit files by sending a raw patch payload."

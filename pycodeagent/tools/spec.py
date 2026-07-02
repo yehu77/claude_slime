@@ -10,6 +10,8 @@ from typing import Any, Callable
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from pycodeagent.tools.contracts import ToolContractKind
+
 
 class ToolArgumentError(ValueError):
     """Raised when exposed or canonical tool arguments fail validation."""
@@ -23,9 +25,12 @@ class CanonicalTool(BaseModel):
 
     canonical_name: str
     description: str = ""
-    canonical_schema: dict[str, Any]
+    canonical_schema: dict[str, Any] = Field(default_factory=dict)
+    contract_kind: ToolContractKind = ToolContractKind.FUNCTION
+    input_format: dict[str, Any] | None = None
     handler: Callable[..., Any]
     version: str = "default"
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -43,7 +48,9 @@ class ToolView(BaseModel):
     canonical_name: str
     exposed_name: str
     description: str
-    input_schema: dict[str, Any]
+    input_schema: dict[str, Any] = Field(default_factory=dict)
+    contract_kind: ToolContractKind = ToolContractKind.FUNCTION
+    input_format: dict[str, Any] | None = None
     version: str = "default"
     metadata: dict[str, Any] = Field(default_factory=dict)
 
@@ -173,14 +180,7 @@ class ToolProfile(BaseModel):
 
     def get_exposed_specs(self) -> list[dict[str, Any]]:
         """Return tool specs in the format expected by LLM tool-use APIs."""
-        return [
-            {
-                "name": tv.exposed_name,
-                "description": tv.description,
-                "input_schema": tv.input_schema,
-            }
-            for tv in self.tools
-        ]
+        return [self._view_to_exposed_spec(tv) for tv in self.tools]
 
     def get_tool(self, exposed_name: str) -> tuple[ToolView, ToolAdapter] | None:
         """Look up a tool view and its adapter by exposed name."""
@@ -207,13 +207,69 @@ class ToolProfile(BaseModel):
         canonical_tool: CanonicalTool | None = None,
     ) -> tuple[ToolView, dict[str, Any]]:
         """Resolve an exposed tool call into canonical arguments."""
+        view, mapped = self.map_call_payload(
+            exposed_name,
+            exposed_args=exposed_args,
+            canonical_tool=canonical_tool,
+        )
+        if not isinstance(mapped, dict):
+            raise ToolArgumentError(
+                f"Tool {view.exposed_name!r} resolved to freeform input_text, not object arguments"
+            )
+        return view, mapped
+
+    def map_call_payload(
+        self,
+        exposed_name: str,
+        *,
+        exposed_args: dict[str, Any] | None = None,
+        input_text: str | None = None,
+        canonical_tool: CanonicalTool | None = None,
+    ) -> tuple[ToolView, dict[str, Any] | str]:
+        """Resolve an exposed tool call into canonical payload."""
         resolved = self.get_tool(exposed_name)
         if resolved is None:
             raise ToolArgumentError(f"Unknown tool: {exposed_name}")
 
         view, adapter = resolved
+        if input_text is not None and exposed_args:
+            raise ToolArgumentError(
+                "Tool payload cannot contain both input_text and object arguments"
+            )
+
+        if view.contract_kind == ToolContractKind.FREEFORM:
+            if (
+                canonical_tool is not None
+                and canonical_tool.contract_kind != ToolContractKind.FREEFORM
+            ):
+                raise ToolArgumentError(
+                    f"Canonical tool {canonical_tool.canonical_name!r} uses function "
+                    "arguments and cannot be mapped from freeform input_text"
+                )
+            if input_text is None:
+                raise ToolArgumentError(
+                    f"Tool {view.exposed_name!r} requires freeform input_text"
+                )
+            if exposed_args:
+                raise ToolArgumentError(
+                    f"Tool {view.exposed_name!r} must not receive object arguments"
+                )
+            return view, input_text
+
+        if input_text is not None:
+            raise ToolArgumentError(
+                f"Tool {view.exposed_name!r} uses object arguments and must not receive input_text"
+            )
+        if (
+            canonical_tool is not None
+            and canonical_tool.contract_kind != ToolContractKind.FUNCTION
+        ):
+            raise ToolArgumentError(
+                f"Canonical tool {canonical_tool.canonical_name!r} uses freeform "
+                "payloads and cannot be mapped through ToolAdapter.map_arguments()"
+            )
         canonical_args = adapter.map_arguments(
-            exposed_args,
+            exposed_args or {},
             exposed_schema=view.input_schema,
             canonical_schema=(
                 canonical_tool.canonical_schema if canonical_tool is not None else None
@@ -230,6 +286,23 @@ class ToolProfile(BaseModel):
         canonical_tool: CanonicalTool | None = None,
     ):
         """Project a canonical intent into the exposed ToolView for this profile."""
+        return self.project_canonical_payload(
+            canonical_name,
+            canonical_args=canonical_args,
+            call_id=call_id,
+            canonical_tool=canonical_tool,
+        )
+
+    def project_canonical_payload(
+        self,
+        canonical_name: str,
+        *,
+        canonical_args: dict[str, Any] | None = None,
+        canonical_input_text: str | None = None,
+        call_id: str = "call_1",
+        canonical_tool: CanonicalTool | None = None,
+    ):
+        """Project a canonical intent into the exposed ToolView for this profile."""
         matches = [tool for tool in self.tools if tool.canonical_name == canonical_name]
         if not matches:
             raise ToolArgumentError(f"Unknown canonical tool: {canonical_name}")
@@ -240,22 +313,72 @@ class ToolProfile(BaseModel):
             )
 
         view = matches[0]
+        from pycodeagent.rl.schema_following import ExposedToolCallTarget
+
+        if canonical_input_text is not None and canonical_args:
+            raise ToolArgumentError(
+                "Canonical payload cannot contain both input_text and object arguments"
+            )
+
+        if view.contract_kind == ToolContractKind.FREEFORM:
+            if (
+                canonical_tool is not None
+                and canonical_tool.contract_kind != ToolContractKind.FREEFORM
+            ):
+                raise ToolArgumentError(
+                    f"Canonical tool {canonical_tool.canonical_name!r} uses function "
+                    "arguments and cannot be projected through freeform input_text"
+                )
+            if canonical_input_text is None:
+                raise ToolArgumentError(
+                    f"Tool {view.exposed_name!r} requires canonical input_text"
+                )
+            return ExposedToolCallTarget(
+                call_id=call_id,
+                name=view.exposed_name,
+                input_text=canonical_input_text,
+            )
+
+        if canonical_input_text is not None:
+            raise ToolArgumentError(
+                f"Tool {view.exposed_name!r} uses object arguments and cannot be projected from input_text"
+            )
         adapter = self.adapters.get(view.exposed_name, ToolAdapter())
+        if (
+            canonical_tool is not None
+            and canonical_tool.contract_kind != ToolContractKind.FUNCTION
+        ):
+            raise ToolArgumentError(
+                f"Canonical tool {canonical_tool.canonical_name!r} uses freeform "
+                "payloads and cannot be projected through object arguments"
+            )
         exposed_args = adapter.to_exposed_args(
-            canonical_args,
+            canonical_args or {},
             exposed_schema=view.input_schema,
             canonical_schema=(
                 canonical_tool.canonical_schema if canonical_tool is not None else None
             ),
         )
-
-        from pycodeagent.rl.schema_following import ExposedToolCallTarget
-
         return ExposedToolCallTarget(
             call_id=call_id,
             name=view.exposed_name,
             arguments=exposed_args,
         )
+
+    def _view_to_exposed_spec(self, view: ToolView) -> dict[str, Any]:
+        """Render one ToolView into the model-visible spec dict."""
+        data: dict[str, Any] = {
+            "name": view.exposed_name,
+            "description": view.description,
+        }
+        if view.contract_kind == ToolContractKind.FREEFORM:
+            data["kind"] = view.contract_kind.value
+            if view.input_format is not None:
+                data["input_format"] = dict(view.input_format)
+            return data
+
+        data["input_schema"] = dict(view.input_schema)
+        return data
 
 
 # --- Helpers ---

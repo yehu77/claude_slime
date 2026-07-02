@@ -33,7 +33,11 @@ from pycodeagent.eval.runtime_observed_postrun import (
 )
 from pycodeagent.mutations.profile_sampler import ToolProfileSampler
 from pycodeagent.rl.dataset_manifest import FilterConfig
-from pycodeagent.tools.bootstrap import build_base_tool_runtime
+from pycodeagent.tools.bootstrap import (
+    ToolStackKind,
+    build_native_claude_runtime,
+    build_native_codex_runtime,
+)
 
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -97,6 +101,7 @@ def run_real_provider_credibility_bundle(
     profile_modes: list[str] | tuple[str, ...] = DEFAULT_CREDIBILITY_PROFILE_MODES,
     profile_seed_by_mode: dict[str, int] | None = None,
     repeat_count: int = DEFAULT_CREDIBILITY_REPEAT_COUNT,
+    tool_stack_kind: ToolStackKind,
     observed_filter_config: FilterConfig | None = None,
     split: str = "train",
     max_length: int = 2048,
@@ -125,6 +130,7 @@ def run_real_provider_credibility_bundle(
         profile_modes=profile_modes,
         profile_seed_by_mode=profile_seed_by_mode,
         repeat_count=repeat_count,
+        tool_stack_kind=tool_stack_kind,
         observed_filter_config=observed_filter_config,
         split=split,
         max_length=max_length,
@@ -149,6 +155,7 @@ def run_provider_credibility_bundle(
     profile_modes: list[str] | tuple[str, ...] = DEFAULT_CREDIBILITY_PROFILE_MODES,
     profile_seed_by_mode: dict[str, int] | None = None,
     repeat_count: int = DEFAULT_CREDIBILITY_REPEAT_COUNT,
+    tool_stack_kind: ToolStackKind,
     observed_filter_config: FilterConfig | None = None,
     split: str = "train",
     max_length: int = 2048,
@@ -173,6 +180,7 @@ def run_provider_credibility_bundle(
         profile_modes=profile_modes,
         profile_seed_by_mode=profile_seed_by_mode,
         repeat_count=repeat_count,
+        tool_stack_kind=tool_stack_kind,
     )
     return build_real_provider_credibility_bundle_from_runs(
         source_runs_root,
@@ -182,6 +190,7 @@ def run_provider_credibility_bundle(
         profile_modes=profile_modes,
         profile_seed_by_mode=profile_seed_by_mode,
         repeat_count=repeat_count,
+        tool_stack_kind=tool_stack_kind,
         observed_filter_config=observed_filter_config,
         split=split,
         max_length=max_length,
@@ -205,6 +214,7 @@ def build_real_provider_credibility_bundle_from_runs(
     profile_modes: list[str] | tuple[str, ...] = DEFAULT_CREDIBILITY_PROFILE_MODES,
     profile_seed_by_mode: dict[str, int] | None = None,
     repeat_count: int = DEFAULT_CREDIBILITY_REPEAT_COUNT,
+    tool_stack_kind: ToolStackKind,
     observed_filter_config: FilterConfig | None = None,
     split: str = "train",
     max_length: int = 2048,
@@ -294,6 +304,7 @@ def build_real_provider_credibility_bundle_from_runs(
         "profile_modes": normalized_modes,
         "profile_seed_by_mode": normalized_profile_seeds,
         "repeat_count": repeat_count,
+        "tool_stack_kind": tool_stack_kind,
         "total_source_run_count": behavior_audit.run_count,
         "completed_source_run_count": behavior_audit.completed_run_count,
         "included_observed_run_count": runtime_observed_bundle.included_run_count,
@@ -347,6 +358,7 @@ def build_real_provider_credibility_bundle_from_runs(
         "profile_modes": normalized_modes,
         "profile_seed_by_mode": normalized_profile_seeds,
         "repeat_count": repeat_count,
+        "tool_stack_kind": tool_stack_kind,
         "contract_ok": contract_ok,
         "paths": {
             "runtime_behavior_audit_path": str(audit_path),
@@ -421,8 +433,13 @@ def _materialize_credibility_source_runs(
     profile_modes: list[str] | tuple[str, ...],
     profile_seed_by_mode: dict[str, int] | None,
     repeat_count: int,
+    tool_stack_kind: ToolStackKind,
 ) -> None:
-    _, _, runtime = build_base_tool_runtime()
+    family = "claude" if tool_stack_kind == "native_claude" else "codex"
+    if tool_stack_kind == "native_claude":
+        _, _, runtime = build_native_claude_runtime()
+    else:
+        _, _, runtime = build_native_codex_runtime()
     normalized_modes = [str(mode) for mode in profile_modes]
     normalized_profile_seeds = _normalized_profile_seed_by_mode(
         normalized_modes,
@@ -431,7 +448,10 @@ def _materialize_credibility_source_runs(
 
     for mode in normalized_modes:
         profile_seed = normalized_profile_seeds[mode]
-        expected_profile = ToolProfileSampler(seed=profile_seed).sample(mode)
+        expected_profile = ToolProfileSampler(
+            seed=profile_seed,
+            family=family,
+        ).sample(mode)
         profile_id = expected_profile.profile_id
         for task in tasks:
             for repeat_index in range(repeat_count):
@@ -451,6 +471,7 @@ def _materialize_credibility_source_runs(
                     runtime=runtime,
                     profile_mode=mode,
                     profile_seed=profile_seed,
+                    tool_stack_kind=tool_stack_kind,
                 )
                 if trajectory.tool_profile_id != profile_id:
                     raise ValueError(

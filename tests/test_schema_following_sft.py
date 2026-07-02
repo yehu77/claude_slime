@@ -5,6 +5,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
+pytest.importorskip("tokenizers")
+
 from tokenizers import Tokenizer, decoders, models, pre_tokenizers, trainers
 from transformers import GPT2Config, GPT2LMHeadModel, PreTrainedTokenizerFast
 
@@ -80,6 +84,7 @@ class TestSchemaFollowingSFTExperiment:
 
             result = generate_synthetic_schema_following_data(
                 dataset_dir,
+                family="claude",
                 num_intents=18,
                 seed=11,
             )

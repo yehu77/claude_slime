@@ -20,7 +20,7 @@
     "runtime_execution_reconciliation.json reconciles observed sample execution/policy provenance back to trajectory observations and runtime trace events."
   ],
   "observed_sample_count": 8,
-  "prepared_contract_report_path": "<prepared_dir>\\contract_report.json",
+  "prepared_contract_report_path": "<prepared_dir>/contract_report.json",
   "prepared_dataset_dir": "<prepared_dir>",
   "profile_modes": [
     "argument_rename",
@@ -29,8 +29,8 @@
     "tool_reorder"
   ],
   "raw_dataset_dir": "<raw_dataset_dir>",
-  "raw_dataset_manifest_path": "<raw_dataset_dir>\\dataset_manifest.json",
-  "raw_source_manifest_path": "<raw_dataset_dir>\\source_manifest.json",
+  "raw_dataset_manifest_path": "<raw_dataset_dir>/dataset_manifest.json",
+  "raw_source_manifest_path": "<raw_dataset_dir>/source_manifest.json",
   "reconciliation_error_count": 0,
   "reconciliation_ok_count": 8,
   "revalidation_turn_count": 0,
@@ -50,8 +50,8 @@
   "runs_with_token_overflow": 0,
   "runs_with_validation_budget_exhausted": 0,
   "runs_with_validation_failure": 0,
-  "runtime_behavior_audit_path": "<bundle_root>\\runtime_behavior_audit.json",
-  "runtime_execution_reconciliation_path": "<bundle_root>\\runtime_execution_reconciliation.json",
+  "runtime_behavior_audit_path": "<bundle_root>/runtime_behavior_audit.json",
+  "runtime_execution_reconciliation_path": "<bundle_root>/runtime_execution_reconciliation.json",
   "runtime_trace_coverage_rate": 1.0,
   "runtime_trace_present_count": 4,
   "sample_count_by_canonical_tool": {
@@ -59,9 +59,21 @@
     "read_file": 4
   },
   "sample_count_by_content_delta_kind": {},
+  "sample_count_by_contract_kind": {
+    "function": 8
+  },
   "sample_count_by_execution_kind": {
     "file_read": 4,
     "finish_signal": 4
+  },
+  "sample_count_by_exposed_tool": {
+    "finish": 3,
+    "open_source": 1,
+    "read_file": 3,
+    "submit_result": 1
+  },
+  "sample_count_by_family": {
+    "legacy": 8
   },
   "sample_count_by_mode": {
     "argument_rename": 2,
@@ -96,6 +108,9 @@
       "schema_flat_to_nested": 1
     }
   },
+  "sample_count_by_native_profile_kind": {
+    "legacy": 8
+  },
   "sample_count_by_policy_decision": {
     "allow": 8
   },
@@ -118,16 +133,16 @@
   "source_path": "<study_root>",
   "source_type": "study",
   "split": "train",
-  "study_observed_manifest_path": "<bundle_root>\\study_observed_manifest.json",
-  "study_observed_summary_path": "<bundle_root>\\study_observed_summary.json",
+  "study_observed_manifest_path": "<bundle_root>/study_observed_manifest.json",
+  "study_observed_summary_path": "<bundle_root>/study_observed_summary.json",
   "task_count": 4,
   "token_budget_compaction_turn_count": 0,
   "tokenized_example_count": 8,
-  "tokenizer_config_path": "<prepared_dir>\\tokenizer_config.yaml",
+  "tokenizer_config_path": "<prepared_dir>/tokenizer_config.yaml",
   "tool_reorder_changed_count": 0,
   "trace_backed_sample_count": 8,
   "trace_backed_sample_rate": 1.0,
-  "train_config_path": "<prepared_dir>\\train_config.json",
+  "train_config_path": "<prepared_dir>/train_config.json",
   "trainable_sample_count_by_mode": {
     "argument_rename": 2,
     "base": 2,

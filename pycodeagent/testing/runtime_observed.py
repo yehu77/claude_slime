@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from unittest.mock import patch
@@ -13,12 +14,20 @@ from pycodeagent.env.coding_env import run_coding_task
 from pycodeagent.env.task import CodingTask
 from pycodeagent.eval.layout import experiment_dir_name, mode_dir_name
 from pycodeagent.mutations.profile_sampler import ToolProfileSampler
-from pycodeagent.tools.bootstrap import build_base_tool_profile, build_builtin_registry
+from pycodeagent.tools.bootstrap import (
+    ToolStackKind,
+    build_native_claude_runtime,
+    build_native_codex_runtime,
+)
 from pycodeagent.tools.spec import ToolProfile
 from pycodeagent.trajectory.schema import Trajectory
 
 
 FIXED_WORKSPACE_ID = "abc123def456"
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_DEFAULT_NATIVE_FAMILY_MUTATION_CONFIG = (
+    _PROJECT_ROOT / "configs" / "tools" / "native_family_mutation_v1.yaml"
+)
 
 
 class _FixedUuid:
@@ -35,8 +44,8 @@ class RuntimeObservedBatchSource:
     workspace_dir: Path
     profile: ToolProfile
     trajectory: Trajectory
-    read_call: object
-    finish_call: object
+    read_call: object | None
+    finish_call: object | None
 
 
 @dataclass(frozen=True)
@@ -52,10 +61,12 @@ def make_runtime_observed_batch_source(
     tmp: Path,
     *,
     task_id: str = "observed_task",
-    task_prompt: str = "Inspect main.py and finish.",
+    task_prompt: str = "Inspect main.py and then stop when done.",
     finish_answer: str = "Done",
     profile_mode: str | None = None,
     profile_seed: int = 0,
+    tool_stack_kind: ToolStackKind,
+    mutation_config_path: str | Path | None = None,
 ) -> RuntimeObservedBatchSource:
     """Create a deterministic local runtime run copied into batch layout."""
     repo = tmp / "repo"
@@ -66,62 +77,94 @@ def make_runtime_observed_batch_source(
         encoding="utf-8",
     )
 
-    registry = build_builtin_registry()
-    profile = (
-        ToolProfileSampler(seed=profile_seed).sample(profile_mode)
+    registry, base_profile, runtime = _build_source_stack(tool_stack_kind)
+    resolved_profile = (
+        ToolProfileSampler(
+            seed=profile_seed,
+            base_profile=base_profile,
+            mutation_config_path=_resolve_mutation_config_path(
+                tool_stack_kind,
+                mutation_config_path,
+            ),
+        ).sample(profile_mode)
         if profile_mode is not None
-        else build_base_tool_profile()
+        else base_profile
     )
-    read_call = profile.project_canonical_call(
-        "read_file",
-        {"path": "main.py"},
-        call_id="c1",
-        canonical_tool=registry.get("read_file"),
-    )
-    finish_call = profile.project_canonical_call(
-        "finish",
-        {"answer": finish_answer},
-        call_id="c2",
-        canonical_tool=registry.get("finish"),
-    )
+    profile = resolved_profile
 
-    responses = [
-        GenerateResponse.from_native_tool_calling(
-            assistant_text="I will inspect main.py first.",
-            tool_calls=[
-                ToolCallCandidate(
-                    call_id=str(read_call.call_id),
-                    name=str(read_call.name),
-                    arguments_raw=json.dumps(read_call.arguments, ensure_ascii=False),
-                    arguments_obj=dict(read_call.arguments),
-                    source="native",
-                )
-            ],
-            finish_reason="tool_calls",
-            response_id="resp_native_1",
-        ),
-        GenerateResponse.from_native_tool_calling(
-            assistant_text="Done.",
-            tool_calls=[
-                ToolCallCandidate(
-                    call_id=str(finish_call.call_id),
-                    name=str(finish_call.name),
-                    arguments_raw=json.dumps(finish_call.arguments, ensure_ascii=False),
-                    arguments_obj=dict(finish_call.arguments),
-                    source="native",
-                )
-            ],
-            finish_reason="tool_calls",
-            response_id="resp_native_2",
-        ),
-    ]
+    if tool_stack_kind == "native_claude":
+        read_call = profile.project_canonical_payload(
+            "Read",
+            canonical_args={"file_path": "main.py"},
+            call_id="c1",
+            canonical_tool=registry.get("Read"),
+        )
+        finish_call = None
+        responses = [
+            GenerateResponse.from_native_tool_calling(
+                assistant_text="I will inspect main.py first.",
+                tool_calls=[
+                    ToolCallCandidate(
+                        call_id=str(read_call.call_id),
+                        name=str(read_call.name),
+                        arguments_raw=json.dumps(read_call.arguments, ensure_ascii=False),
+                        arguments_obj=dict(read_call.arguments),
+                        source="native",
+                    )
+                ],
+                finish_reason="tool_calls",
+                response_id="resp_native_1",
+            ),
+            GenerateResponse.from_native_tool_calling(
+                assistant_text="Done.",
+                finish_reason="stop",
+                response_id="resp_native_2",
+            ),
+        ]
+    elif tool_stack_kind == "native_codex":
+        read_call = profile.project_canonical_payload(
+            "apply_patch",
+            canonical_input_text=(
+                "*** Begin Patch\n"
+                "*** Update File: main.py\n"
+                "@@\n"
+                "-print('hello')\n"
+                "+print('hola')\n"
+                "*** End Patch\n"
+            ),
+            call_id="c1",
+            canonical_tool=registry.get("apply_patch"),
+        )
+        finish_call = None
+        responses = [
+            GenerateResponse.from_native_tool_calling(
+                assistant_text="Applying the patch.",
+                tool_calls=[
+                    ToolCallCandidate(
+                        call_id=str(read_call.call_id),
+                        name=str(read_call.name),
+                        input_text=read_call.input_text,
+                        source="native",
+                    )
+                ],
+                finish_reason="tool_calls",
+                response_id="resp_native_1",
+            ),
+            GenerateResponse.from_native_tool_calling(
+                assistant_text="Done.",
+                finish_reason="stop",
+                response_id="resp_native_2",
+            ),
+        ]
+    else:
+        raise ValueError(f"Unknown tool_stack_kind: {tool_stack_kind!r}")
 
     output_dir = tmp / "output"
     task = CodingTask(
         task_id=task_id,
         repo_path=repo,
         prompt=task_prompt,
-        test_command="pytest -q -p no:cacheprovider",
+        test_command=[sys.executable, "-c", "print('ok')"],
         max_turns=5,
     )
     client = FakeLLMClient(responses=responses)
@@ -138,8 +181,9 @@ def make_runtime_observed_batch_source(
             task,
             client,
             output_dir,
-            profile_mode=profile_mode,
-            profile_seed=profile_seed,
+            profile=profile,
+            runtime=runtime,
+            tool_stack_kind=tool_stack_kind,
         )
 
     workspace_dir = output_dir / "w" / FIXED_WORKSPACE_ID
@@ -199,7 +243,12 @@ def make_runtime_observed_study_source(
         profile_mode = str(entry["profile_mode"])
         profile_seed = int(entry.get("profile_seed", 0))
         finish_answer = str(entry.get("finish_answer", "Done"))
-        task_prompt = str(entry.get("task_prompt", "Inspect main.py and finish."))
+        task_prompt = str(
+            entry.get("task_prompt", "Inspect main.py and then stop when done.")
+        )
+        tool_stack_kind = entry.get("tool_stack_kind", "native_claude")
+        if tool_stack_kind not in {"native_claude", "native_codex"}:
+            raise ValueError(f"Unknown tool_stack_kind: {tool_stack_kind!r}")
         batch_source = make_runtime_observed_batch_source(
             tmp / "study_batch_sources" / f"{index:02d}_{task_id}",
             task_id=task_id,
@@ -207,6 +256,7 @@ def make_runtime_observed_study_source(
             finish_answer=finish_answer,
             profile_mode=(None if profile_mode == "base" else profile_mode),
             profile_seed=profile_seed,
+            tool_stack_kind=tool_stack_kind,
         )
         batch_sources.append(batch_source)
         profile = batch_source.profile
@@ -240,3 +290,20 @@ def make_runtime_observed_study_source(
         run_dirs=run_dirs,
         batch_sources=batch_sources,
     )
+
+
+def _build_source_stack(tool_stack_kind: ToolStackKind):
+    if tool_stack_kind == "native_claude":
+        return build_native_claude_runtime()
+    if tool_stack_kind == "native_codex":
+        return build_native_codex_runtime()
+    raise ValueError(f"Unknown tool_stack_kind: {tool_stack_kind!r}")
+
+
+def _resolve_mutation_config_path(
+    tool_stack_kind: ToolStackKind,
+    mutation_config_path: str | Path | None,
+) -> Path | None:
+    if mutation_config_path is not None:
+        return Path(mutation_config_path)
+    return _DEFAULT_NATIVE_FAMILY_MUTATION_CONFIG

@@ -1,7 +1,7 @@
 {
   "run_id": "runtime_observed_golden_train",
-  "dataset_path": "<prepared_dir>\\tokenized.jsonl",
-  "output_dir": "<prepared_dir>\\training_outputs",
+  "dataset_path": "<prepared_dir>/tokenized.jsonl",
+  "output_dir": "<prepared_dir>/training_outputs",
   "max_steps": 1000,
   "batch_size": 8,
   "learning_rate": 0.0001,

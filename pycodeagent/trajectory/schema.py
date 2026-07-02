@@ -11,7 +11,9 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+
+from pycodeagent.tools.contracts import ToolPayloadKind
 
 
 # --- Internal tool call format ---
@@ -23,8 +25,32 @@ class ToolCall(BaseModel):
 
     id: str
     name: str
-    arguments: dict[str, Any]
+    arguments: dict[str, Any] = Field(default_factory=dict)
+    input_text: str | None = None
     canonical_name: str | None = None
+
+    @property
+    def payload_kind(self) -> ToolPayloadKind:
+        if self.input_text is not None:
+            return ToolPayloadKind.INPUT_TEXT
+        return ToolPayloadKind.ARGUMENTS_OBJECT
+
+    @model_validator(mode="after")
+    def _validate_payload_shape(self) -> "ToolCall":
+        if self.input_text is not None and self.arguments:
+            raise ValueError(
+                "ToolCall cannot contain both input_text and object arguments"
+            )
+        return self
+
+    def model_dump(self, *args, **kwargs) -> dict[str, Any]:  # type: ignore[override]
+        data = super().model_dump(*args, **kwargs)
+        if data.get("input_text") is None:
+            data.pop("input_text", None)
+        if self.input_text is not None and data.get("arguments") == {}:
+            data.pop("arguments", None)
+            data["payload_kind"] = self.payload_kind.value
+        return data
 
 
 class ToolResult(BaseModel):

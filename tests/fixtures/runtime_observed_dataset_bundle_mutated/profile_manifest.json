@@ -2,6 +2,7 @@
   "profiles": [
     {
       "compat_mode": "name_description_schema",
+      "family": "legacy",
       "mode": "name_description_schema",
       "mutation_axes": [
         "name",
@@ -9,6 +10,8 @@
         "schema"
       ],
       "mutation_manifest_version": 1,
+      "mutation_source_family": "legacy",
+      "native_profile_kind": "legacy",
       "profile_id": "mutation_name_description_schema_43cc1852",
       "reorder_anchor_policy": "finish_last",
       "schema_variant_categories": {
@@ -81,8 +84,10 @@
             }
           },
           "canonical_name": "list_files",
+          "contract_kind": "function",
           "description": "Browse the directory tree of the project workspace.",
           "exposed_name": "show_files",
+          "input_format": null,
           "input_schema": {
             "properties": {
               "options": {
@@ -112,13 +117,18 @@
             "description_variant_id": "list_files_desc_browse_tree",
             "name_mutated": true,
             "name_variant_id": "list_files_name_show_files",
+            "native_name": "list_files",
             "schema_mutated": true,
             "schema_variant_category": "schema_flat_to_nested",
             "schema_variant_id": "list_files_schema_scope_options",
+            "source_profile_id": "base",
             "tool_order_index_base": 0,
             "tool_order_index_exposed": 0,
-            "tool_reordered": false
-          }
+            "tool_reordered": false,
+            "transformation_mode": "name_description_schema",
+            "transformation_seed": 0
+          },
+          "version": "default"
         },
         {
           "adapter": {
@@ -130,8 +140,10 @@
             }
           },
           "canonical_name": "read_file",
+          "contract_kind": "function",
           "description": "View the contents of a source file.",
           "exposed_name": "open_source",
+          "input_format": null,
           "input_schema": {
             "properties": {
               "file": {
@@ -162,13 +174,18 @@
             "description_variant_id": "read_file_desc_view_source",
             "name_mutated": true,
             "name_variant_id": "read_file_name_open_source",
+            "native_name": "read_file",
             "schema_mutated": true,
             "schema_variant_category": "schema_flat_to_nested",
             "schema_variant_id": "read_file_schema_file_lines",
+            "source_profile_id": "base",
             "tool_order_index_base": 1,
             "tool_order_index_exposed": 1,
-            "tool_reordered": false
-          }
+            "tool_reordered": false,
+            "transformation_mode": "name_description_schema",
+            "transformation_seed": 0
+          },
+          "version": "default"
         },
         {
           "adapter": {
@@ -179,8 +196,10 @@
             }
           },
           "canonical_name": "write_file",
+          "contract_kind": "function",
           "description": "Overwrite an existing file with new contents.",
           "exposed_name": "save_file",
+          "input_format": null,
           "input_schema": {
             "properties": {
               "body": {
@@ -219,13 +238,18 @@
             "description_variant_id": "write_file_desc_overwrite_workspace",
             "name_mutated": true,
             "name_variant_id": "write_file_name_save_file",
+            "native_name": "write_file",
             "schema_mutated": true,
             "schema_variant_category": "schema_flat_to_nested",
             "schema_variant_id": "write_file_schema_target_body",
+            "source_profile_id": "base",
             "tool_order_index_base": 2,
             "tool_order_index_exposed": 2,
-            "tool_reordered": false
-          }
+            "tool_reordered": false,
+            "transformation_mode": "name_description_schema",
+            "transformation_seed": 0
+          },
+          "version": "default"
         },
         {
           "adapter": {
@@ -236,8 +260,10 @@
             }
           },
           "canonical_name": "create_file",
+          "contract_kind": "function",
           "description": "Create a new workspace file with optional initial text.",
           "exposed_name": "make_file",
+          "input_format": null,
           "input_schema": {
             "properties": {
               "body": {
@@ -272,13 +298,18 @@
             "description_variant_id": "create_file_desc_new_file",
             "name_mutated": true,
             "name_variant_id": "create_file_name_make_file",
+            "native_name": "create_file",
             "schema_mutated": true,
             "schema_variant_category": "schema_flat_to_nested",
             "schema_variant_id": "create_file_schema_target_body",
+            "source_profile_id": "base",
             "tool_order_index_base": 3,
             "tool_order_index_exposed": 3,
-            "tool_reordered": false
-          }
+            "tool_reordered": false,
+            "transformation_mode": "name_description_schema",
+            "transformation_seed": 0
+          },
+          "version": "default"
         },
         {
           "adapter": {
@@ -290,8 +321,10 @@
             }
           },
           "canonical_name": "search_code",
+          "contract_kind": "function",
           "description": "Locate text patterns within the codebase.",
           "exposed_name": "find_text",
+          "input_format": null,
           "input_schema": {
             "properties": {
               "glob": {
@@ -317,13 +350,18 @@
             "description_variant_id": "search_code_desc_locate_patterns",
             "name_mutated": true,
             "name_variant_id": "search_code_name_find_text",
+            "native_name": "search_code",
             "schema_mutated": true,
             "schema_variant_category": "argument_rename",
             "schema_variant_id": "search_code_schema_term_location_glob",
+            "source_profile_id": "base",
             "tool_order_index_base": 4,
             "tool_order_index_exposed": 4,
-            "tool_reordered": false
-          }
+            "tool_reordered": false,
+            "transformation_mode": "name_description_schema",
+            "transformation_seed": 0
+          },
+          "version": "default"
         },
         {
           "adapter": {
@@ -333,8 +371,10 @@
             }
           },
           "canonical_name": "apply_patch",
+          "contract_kind": "function",
           "description": "Apply a code change via unified diff format.",
           "exposed_name": "edit_diff",
+          "input_format": null,
           "input_schema": {
             "properties": {
               "patch": {
@@ -352,13 +392,18 @@
             "description_variant_id": "apply_patch_desc_unified_diff",
             "name_mutated": true,
             "name_variant_id": "apply_patch_name_edit_diff",
+            "native_name": "apply_patch",
             "schema_mutated": true,
             "schema_variant_category": "argument_rename",
             "schema_variant_id": "apply_patch_schema_patch",
+            "source_profile_id": "base",
             "tool_order_index_base": 5,
             "tool_order_index_exposed": 5,
-            "tool_reordered": false
-          }
+            "tool_reordered": false,
+            "transformation_mode": "name_description_schema",
+            "transformation_seed": 0
+          },
+          "version": "default"
         },
         {
           "adapter": {
@@ -370,8 +415,10 @@
             }
           },
           "canonical_name": "run_command",
+          "contract_kind": "function",
           "description": "Run a shell command in the project workspace.",
           "exposed_name": "shell_exec",
+          "input_format": null,
           "input_schema": {
             "properties": {
               "directory": {
@@ -397,13 +444,18 @@
             "description_variant_id": "run_command_desc_workspace",
             "name_mutated": true,
             "name_variant_id": "run_command_name_shell_exec",
+            "native_name": "run_command",
             "schema_mutated": true,
             "schema_variant_category": "argument_rename",
             "schema_variant_id": "run_command_schema_instruction_max_wait",
+            "source_profile_id": "base",
             "tool_order_index_base": 6,
             "tool_order_index_exposed": 6,
-            "tool_reordered": false
-          }
+            "tool_reordered": false,
+            "transformation_mode": "name_description_schema",
+            "transformation_seed": 0
+          },
+          "version": "default"
         },
         {
           "adapter": {
@@ -417,8 +469,10 @@
             }
           },
           "canonical_name": "python_run",
+          "contract_kind": "function",
           "description": "Execute a Python file or limited test module with structured options.",
           "exposed_name": "run_python",
+          "input_format": null,
           "input_schema": {
             "properties": {
               "execution": {
@@ -468,13 +522,18 @@
             "description_variant_id": "python_run_desc_execute_python",
             "name_mutated": true,
             "name_variant_id": "python_run_name_run_python",
+            "native_name": "python_run",
             "schema_mutated": true,
             "schema_variant_category": "schema_flat_to_nested",
             "schema_variant_id": "python_run_schema_execution_options",
+            "source_profile_id": "base",
             "tool_order_index_base": 7,
             "tool_order_index_exposed": 7,
-            "tool_reordered": false
-          }
+            "tool_reordered": false,
+            "transformation_mode": "name_description_schema",
+            "transformation_seed": 0
+          },
+          "version": "default"
         },
         {
           "adapter": {
@@ -484,8 +543,10 @@
             }
           },
           "canonical_name": "finish",
+          "contract_kind": "function",
           "description": "Submit the final result and complete the task.",
           "exposed_name": "submit_result",
+          "input_format": null,
           "input_schema": {
             "properties": {
               "result": {
@@ -501,13 +562,18 @@
             "description_variant_id": "finish_desc_submit_result",
             "name_mutated": true,
             "name_variant_id": "finish_name_submit_result",
+            "native_name": "finish",
             "schema_mutated": true,
             "schema_variant_category": "argument_rename",
             "schema_variant_id": "finish_schema_result",
+            "source_profile_id": "base",
             "tool_order_index_base": 8,
             "tool_order_index_exposed": 8,
-            "tool_reordered": false
-          }
+            "tool_reordered": false,
+            "transformation_mode": "name_description_schema",
+            "transformation_seed": 0
+          },
+          "version": "default"
         }
       ]
     }

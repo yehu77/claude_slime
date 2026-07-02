@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from pycodeagent.agent import MimoTextClient, ModelConfig
+from pycodeagent.agent import MimoNativeToolClient, ModelConfig
 from pycodeagent.dev import (
     build_openai_compatible_model_config,
     load_mimo_local_config,
@@ -55,7 +55,7 @@ def main() -> None:
 
     result = run_study_from_config(
         study_config_path,
-        client_factory=lambda: MimoTextClient(model_config),
+        client_factory=lambda: MimoNativeToolClient(model_config),
         output_dir=output_dir,
     )
 

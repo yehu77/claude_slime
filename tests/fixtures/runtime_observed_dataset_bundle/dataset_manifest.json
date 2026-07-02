@@ -9,6 +9,18 @@
   ],
   "profile_manifest_path": "profile_manifest.json",
   "sample_count": 2,
+  "sample_count_by_contract_kind": {
+    "function": 2
+  },
+  "sample_count_by_family": {
+    "legacy": 2
+  },
+  "sample_count_by_mode": {
+    "base": 2
+  },
+  "sample_count_by_native_profile_kind": {
+    "legacy": 2
+  },
   "skipped_observed_call_count": 0,
   "skipped_observed_call_counts_by_reason": {},
   "source_dir": "<batch_root>",

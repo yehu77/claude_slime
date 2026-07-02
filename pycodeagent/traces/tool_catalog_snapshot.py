@@ -5,6 +5,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from pycodeagent.tools.contracts import (
+    ToolContractKind,
+    tool_spec_input_format,
+    tool_spec_input_schema,
+    tool_spec_kind,
+)
 from pycodeagent.tools.spec import ToolAdapter, ToolProfile, ToolView
 from pycodeagent.traces.claude_api_trace import ClaudeApiRequest
 from pycodeagent.traces.tool_catalog import AgentToolCatalog, CatalogToolEntry
@@ -44,10 +50,20 @@ def build_catalog_from_claude_request_tools(
                 f"Claude tool entry {raw_tool_name!r} has non-string description"
             )
 
-        input_schema = entry.get("input_schema", {})
-        if not isinstance(input_schema, dict):
+        contract_kind = tool_spec_kind(entry)
+        input_schema = tool_spec_input_schema(entry) or {}
+        input_format = tool_spec_input_format(entry)
+        if contract_kind == ToolContractKind.FUNCTION and not isinstance(
+            input_schema, dict
+        ):
             raise ValueError(
                 f"Claude tool entry {raw_tool_name!r} has non-mapping input_schema"
+            )
+        if contract_kind == ToolContractKind.FREEFORM and input_format is not None and not isinstance(
+            input_format, dict
+        ):
+            raise ValueError(
+                f"Claude tool entry {raw_tool_name!r} has non-mapping input_format"
             )
 
         tools.append(
@@ -55,6 +71,8 @@ def build_catalog_from_claude_request_tools(
                 raw_tool_name=raw_tool_name,
                 description=description,
                 input_schema=input_schema,
+                contract_kind=contract_kind,
+                input_format=input_format,
                 metadata={
                     "native_name": raw_tool_name,
                     "original_index": index,
@@ -106,6 +124,8 @@ def catalog_to_base_tool_profile(catalog: AgentToolCatalog) -> ToolProfile:
                 exposed_name=entry.raw_tool_name,
                 description=entry.description,
                 input_schema=entry.input_schema,
+                contract_kind=entry.contract_kind,
+                input_format=entry.input_format,
                 version=entry.version or "native_snapshot",
                 metadata=tool_metadata,
             )

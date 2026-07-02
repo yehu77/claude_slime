@@ -9,7 +9,10 @@ from pycodeagent.rl.schema_following import (
     SchemaFollowingMessage,
     SchemaFollowingSample,
 )
-from pycodeagent.tools.bootstrap import build_builtin_registry
+from pycodeagent.tools.families import (
+    build_claude_canonical_registry,
+    build_codex_canonical_registry,
+)
 from pycodeagent.tools.spec import ToolProfile
 from pycodeagent.traces.canonical_trace import CanonicalAction, CanonicalTrace
 from pycodeagent.traces.raw_trace import RawAgentTrace, RawEvent
@@ -38,7 +41,7 @@ class SchemaFollowingTraceRenderer:
         raw_trace: RawAgentTrace,
         target_profiles: list[ToolProfile],
     ) -> list[SchemaFollowingSample]:
-        registry = build_builtin_registry()
+        registry = _canonical_registry_for_profiles(target_profiles)
         events_by_id = {event.event_id: event for event in raw_trace.events}
         samples: list[SchemaFollowingSample] = []
 
@@ -91,6 +94,22 @@ class SchemaFollowingTraceRenderer:
                     )
                 )
         return samples
+
+
+def _canonical_registry_for_profiles(target_profiles: list[ToolProfile]):
+    families = {
+        str(profile.metadata.get("family"))
+        for profile in target_profiles
+        if profile.metadata.get("family") is not None
+    }
+    if families == {"claude"}:
+        return build_claude_canonical_registry()
+    if families == {"codex"}:
+        return build_codex_canonical_registry()
+    raise ValueError(
+        "SchemaFollowingTraceRenderer requires native-family target profiles "
+        f"from exactly one family, got {sorted(families)!r}"
+    )
 
 
 def _context_before_action(

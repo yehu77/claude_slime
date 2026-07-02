@@ -6,6 +6,12 @@ import json
 from typing import Any
 
 from pycodeagent.agent.turn_state import CarriedForwardState, CompactionArtifact
+from pycodeagent.tools.contracts import (
+    ToolContractKind,
+    tool_spec_input_format,
+    tool_spec_input_schema,
+    tool_spec_kind,
+)
 from pycodeagent.trajectory.schema import Message
 
 
@@ -76,8 +82,16 @@ def build_tool_specs_section(tool_specs: list[dict[str, Any]]) -> str:
     for spec in tool_specs:
         name = spec.get("name", "unknown")
         desc = spec.get("description", "")
-        schema = spec.get("input_schema", {})
         lines.append(f"  {name}: {desc}")
+        if tool_spec_kind(spec) == ToolContractKind.FREEFORM:
+            input_format = tool_spec_input_format(spec) or {}
+            format_type = input_format.get("type", "freeform")
+            syntax = input_format.get("syntax")
+            syntax_suffix = f", syntax={syntax}" if syntax else ""
+            lines.append(f"    - input: {format_type}{syntax_suffix}")
+            continue
+
+        schema = tool_spec_input_schema(spec) or {}
         if schema.get("properties"):
             props = schema["properties"]
             required = set(schema.get("required", []))

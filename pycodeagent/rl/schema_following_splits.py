@@ -74,6 +74,7 @@ def _collect_unique_mode_seeds(
     mode: str,
     start_seed: int,
     count: int,
+    family: str,
 ) -> list[int]:
     """Collect deterministic seeds that yield distinct sampled profiles."""
     seen: set[str] = set()
@@ -81,7 +82,7 @@ def _collect_unique_mode_seeds(
     seed = start_seed
 
     while len(seeds) < count:
-        profile = ToolProfileSampler(seed=seed).sample(mode)
+        profile = ToolProfileSampler(seed=seed, family=family).sample(mode)
         signature = _profile_signature(profile)
         if signature not in seen:
             seen.add(signature)
@@ -98,6 +99,7 @@ def _collect_unique_mode_seeds(
 def build_default_synthetic_profile_specs(
     *,
     seed: int = 42,
+    family: str,
 ) -> list[SyntheticProfileSpec]:
     """Build the default synthetic profile plan for Phase 3.
 
@@ -108,21 +110,25 @@ def build_default_synthetic_profile_specs(
         mode="name_only",
         start_seed=seed + 10,
         count=2,
+        family=family,
     )
     desc_train_seed, desc_unseen_seed = _collect_unique_mode_seeds(
         mode="description_only",
         start_seed=seed + 20,
         count=2,
+        family=family,
     )
     schema_train_seed, schema_unseen_seed = _collect_unique_mode_seeds(
         mode="schema_only",
         start_seed=seed + 30,
         count=2,
+        family=family,
     )
     mixed_train_seed = _collect_unique_mode_seeds(
         mode="name_description_schema",
         start_seed=seed + 40,
         count=1,
+        family=family,
     )[0]
 
     return [

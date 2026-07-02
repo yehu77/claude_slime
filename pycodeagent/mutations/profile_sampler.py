@@ -4,7 +4,7 @@ Produces deterministic profile variants for mutation experiments.
 Config-backed: reads variant candidates from mutation config YAML.
 
 Supported modes:
-- base: identity mapping (exposed_name == canonical_name), derived from builtin canonical tools
+- base: identity mapping (exposed_name == canonical_name), derived from one explicit native family base
 - name_only: only tool names are mutated
 - description_only: only descriptions are mutated
 - argument_rename: only flat argument-name mutations are applied
@@ -32,13 +32,20 @@ from pycodeagent.mutations.schema_mutator import (
     SchemaCandidate,
     SchemaMutator,
 )
-from pycodeagent.tools.profile_factory import build_base_tool_profile
+from pycodeagent.tools.contracts import ToolContractKind
+from pycodeagent.tools.profile_factory import (
+    build_native_claude_profile,
+    build_native_codex_profile,
+)
 from pycodeagent.tools.spec import ToolAdapter, ToolProfile, ToolView
 
-
-_DEFAULT_MUTATION_CONFIG = Path(__file__).parent.parent.parent / "configs" / "tools" / "mutation_v1.yaml"
+_DEFAULT_MUTATION_CONFIG = (
+    Path(__file__).parent.parent.parent
+    / "configs"
+    / "tools"
+    / "native_family_mutation_v1.yaml"
+)
 _MUTATION_MANIFEST_VERSION = 1
-_REORDER_ANCHOR_POLICY = "finish_last"
 _SUPPORTED_MODES = (
     "base",
     "name_only",
@@ -176,10 +183,14 @@ class ToolProfileSampler:
         *,
         mutation_config_path: str | Path | None = None,
         base_config_path: str | Path | None = None,
+        base_profile: ToolProfile | None = None,
+        family: str | None = None,
     ) -> None:
         self.seed = seed
         self.mutation_config_path = Path(mutation_config_path) if mutation_config_path else _DEFAULT_MUTATION_CONFIG
         self.base_config_path = Path(base_config_path) if base_config_path else None
+        self.base_profile = base_profile
+        self.family = family
         self._mutation_config: dict[str, Any] | None = None
         self._base_profile: ToolProfile | None = None
         self._name_mutator = NameMutator()
@@ -193,8 +204,46 @@ class ToolProfileSampler:
 
     def _get_base_profile(self) -> ToolProfile:
         if self._base_profile is None:
-            self._base_profile = build_base_tool_profile()
+            if self.base_profile is not None:
+                self._base_profile = self.base_profile
+            elif self.base_config_path is not None:
+                self._base_profile = load_tool_profile(self.base_config_path)
+            elif self.family == "claude":
+                self._base_profile = build_native_claude_profile()
+            elif self.family == "codex":
+                self._base_profile = build_native_codex_profile()
+            else:
+                raise ValueError(
+                    "ToolProfileSampler requires either base_profile, "
+                    "base_config_path, or family='claude'/'codex'."
+                )
         return self._base_profile
+
+    def _resolved_config_for_base_profile(
+        self,
+        base_profile: ToolProfile,
+    ) -> dict[str, Any]:
+        config = dict(self._get_mutation_config())
+        families = config.get("families")
+        family = base_profile.metadata.get("family")
+        if not isinstance(families, dict) or not isinstance(family, str):
+            return config
+
+        raw_family_config = families.get(family)
+        if raw_family_config is None:
+            return config
+        if not isinstance(raw_family_config, dict):
+            raise ValueError(
+                f"Mutation config families.{family!r} must be a mapping"
+            )
+
+        resolved = {
+            key: value
+            for key, value in config.items()
+            if key != "families"
+        }
+        resolved.update(raw_family_config)
+        return resolved
 
     def _normalize_string_candidates(
         self,
@@ -398,7 +447,12 @@ class ToolProfileSampler:
     ) -> tuple[str, str, dict[str, Any], ToolAdapter, dict[str, Any]]:
         canonical_name = base_view.canonical_name
         tool_variants = config.get("tool_variants", {})
-        variants = tool_variants.get(canonical_name, {})
+        native_name = str(base_view.metadata.get("native_name", canonical_name))
+        variants = tool_variants.get(canonical_name)
+        if not isinstance(variants, dict):
+            variants = tool_variants.get(native_name, {})
+        if not isinstance(variants, dict):
+            variants = {}
         spec = _mode_spec(mode)
 
         name_candidates = self._normalize_string_candidates(
@@ -456,7 +510,11 @@ class ToolProfileSampler:
             desc_candidates[0],
         )
 
-        if spec["mutate_schema"]:
+        can_mutate_schema = (
+            spec["mutate_schema"]
+            and base_view.contract_kind == ToolContractKind.FUNCTION
+        )
+        if can_mutate_schema:
             input_schema, adapter = self._schema_mutator.mutate(
                 base_schema=base_view.input_schema,
                 candidates=schema_candidates,
@@ -489,13 +547,22 @@ class ToolProfileSampler:
         }
         return exposed_name, description, input_schema, adapter, state
 
-    def _reorder_tools(self, tools: list[ToolView]) -> list[ToolView]:
-        anchored_finish = [
-            tool for tool in tools if tool.canonical_name == "finish"
-        ]
-        reorderable = [
-            tool for tool in tools if tool.canonical_name != "finish"
-        ]
+    def _reorder_tools(
+        self,
+        tools: list[ToolView],
+        *,
+        anchor_policy: str | None,
+    ) -> list[ToolView]:
+        anchored: list[ToolView] = []
+        reorderable = list(tools)
+        if anchor_policy == "finish_last":
+            anchored = [
+                tool for tool in tools if tool.canonical_name == "finish"
+            ]
+            reorderable = [
+                tool for tool in tools if tool.canonical_name != "finish"
+            ]
+
         base_order = [tool.canonical_name for tool in reorderable]
         reordered = sorted(
             reorderable,
@@ -507,19 +574,24 @@ class ToolProfileSampler:
         if [tool.canonical_name for tool in reordered] == base_order and len(reordered) > 1:
             offset = 1 + (_stable_hash_int("tool_reorder_offset", self.seed) % (len(reordered) - 1))
             reordered = reordered[offset:] + reordered[:offset]
-        return reordered + anchored_finish
+        return reordered + anchored
 
     def sample(self, mode: str) -> ToolProfile:
         if mode not in _SUPPORTED_MODES:
             raise ValueError(f"Invalid mode '{mode}'. Must be one of: {sorted(_SUPPORTED_MODES)}")
 
-        config = self._get_mutation_config()
         base = self._get_base_profile()
+        config = self._resolved_config_for_base_profile(base)
         spec = _mode_spec(mode)
 
         h = hashlib.sha256(f"{mode}:{self.seed}".encode()).hexdigest()[:8]
         profile_id_prefix = config.get("profile_id_prefix", "mutation")
-        profile_id = f"{profile_id_prefix}_{mode}_{h}"
+        family = base.metadata.get("family")
+        native_profile_kind = base.metadata.get("native_profile_kind")
+        if isinstance(family, str) and family:
+            profile_id = f"{profile_id_prefix}_{family}_{mode}_{h}"
+        else:
+            profile_id = f"{profile_id_prefix}_{mode}_{h}"
 
         tools: list[ToolView] = []
         adapters: dict[str, ToolAdapter] = {}
@@ -537,14 +609,9 @@ class ToolProfileSampler:
                 or state["description_mutated"]
                 or state["schema_mutated"]
             )
-            version = "mutated" if is_mutated else "default"
-            view = ToolView(
-                canonical_name=base_view.canonical_name,
-                exposed_name=exposed_name,
-                description=description,
-                input_schema=input_schema,
-                version=version,
-                metadata={
+            tool_metadata = dict(base_view.metadata)
+            tool_metadata.update(
+                {
                     "name_variant_id": state["name_variant_id"],
                     "description_variant_id": state["description_variant_id"],
                     "schema_variant_id": state["schema_variant_id"],
@@ -555,7 +622,25 @@ class ToolProfileSampler:
                     "tool_order_index_base": base_index,
                     "tool_order_index_exposed": base_index,
                     "tool_reordered": False,
-                },
+                    "source_profile_id": base.profile_id,
+                    "transformation_mode": mode,
+                    "transformation_seed": self.seed,
+                    "native_name": tool_metadata.get("native_name", base_view.exposed_name),
+                }
+            )
+            view = ToolView(
+                canonical_name=base_view.canonical_name,
+                exposed_name=exposed_name,
+                description=description,
+                input_schema=input_schema,
+                contract_kind=base_view.contract_kind,
+                input_format=(
+                    dict(base_view.input_format)
+                    if base_view.input_format is not None
+                    else None
+                ),
+                version=base_view.version,
+                metadata=tool_metadata,
             )
             tools.append(view)
             adapters[exposed_name] = adapter
@@ -567,7 +652,12 @@ class ToolProfileSampler:
             }
 
         if spec["reorder_tools"]:
-            tools = self._reorder_tools(tools)
+            tools = self._reorder_tools(
+                tools,
+                anchor_policy=str(
+                    base.metadata.get("reorder_anchor_policy", "preserve_source_order")
+                ),
+            )
 
         for exposed_index, tool in enumerate(tools):
             tool.metadata["tool_order_index_exposed"] = exposed_index
@@ -575,21 +665,37 @@ class ToolProfileSampler:
                 exposed_index != tool.metadata["tool_order_index_base"]
             )
 
-        return ToolProfile(
-            profile_id=profile_id,
-            tools=tools,
-            adapters=adapters,
-            metadata={
+        profile_metadata = dict(base.metadata)
+        profile_metadata.update(
+            {
                 "mutation_manifest_version": _MUTATION_MANIFEST_VERSION,
                 "mode": mode,
                 "seed": self.seed,
                 "mutation_axes": list(spec["mutation_axes"]),
                 "compat_mode": spec["compat_mode"],
-                "reorder_anchor_policy": _REORDER_ANCHOR_POLICY,
+                "reorder_anchor_policy": base.metadata.get(
+                    "reorder_anchor_policy",
+                    "preserve_source_order",
+                ),
                 "tool_order_seed": self.seed if spec["reorder_tools"] else None,
                 "schema_variant_categories": schema_variant_categories,
                 "selected_variant_ids": selected_variant_ids,
-            },
+                "source_profile_id": base.profile_id,
+            }
+        )
+        if isinstance(family, str):
+            profile_metadata["family"] = family
+            profile_metadata["mutation_source_family"] = profile_metadata.get(
+                "mutation_source_family", family
+            )
+        if isinstance(native_profile_kind, str):
+            profile_metadata["native_profile_kind"] = native_profile_kind
+
+        return ToolProfile(
+            profile_id=profile_id,
+            tools=tools,
+            adapters=adapters,
+            metadata=profile_metadata,
         )
 
     def sample_all_modes(self) -> dict[str, ToolProfile]:
@@ -603,16 +709,27 @@ def build_sampled_tool_profile(
     mode: str,
     seed: int = 0,
     config_path: str | Path | None = None,
+    base_profile: ToolProfile | None = None,
+    family: str | None = None,
 ) -> ToolProfile:
     """Convenience function to build a sampled profile."""
     if config_path is not None:
         config_path = Path(config_path)
         with open(config_path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
-        if isinstance(data, dict) and "tool_variants" in data:
-            sampler = ToolProfileSampler(seed=seed, mutation_config_path=config_path)
+        if isinstance(data, dict) and ("tool_variants" in data or "families" in data):
+            sampler = ToolProfileSampler(
+                seed=seed,
+                mutation_config_path=config_path,
+                base_profile=base_profile,
+                family=family,
+            )
             return sampler.sample(mode)
         return load_tool_profile(config_path)
 
-    sampler = ToolProfileSampler(seed=seed)
+    sampler = ToolProfileSampler(
+        seed=seed,
+        base_profile=base_profile,
+        family=family,
+    )
     return sampler.sample(mode)

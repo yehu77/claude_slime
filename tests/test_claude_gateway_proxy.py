@@ -6,6 +6,10 @@ import json
 from pathlib import Path
 
 import httpx
+import pytest
+
+pytest.importorskip("starlette")
+
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response, StreamingResponse

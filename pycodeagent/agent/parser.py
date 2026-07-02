@@ -7,6 +7,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from pycodeagent.agent.llm_client import GenerateResponse, RuntimeClientCapabilities
+from pycodeagent.tools.contracts import ToolPayloadKind
 from pycodeagent.trajectory.schema import ToolCall
 
 
@@ -130,27 +131,42 @@ def _interpret_native_tool_calling_response(response: GenerateResponse) -> Parse
             )
             rejected_tool_call_candidate_count += 1
             continue
-        if candidate.arguments_obj is None:
-            protocol_errors.append(
-                f"Native tool call {call_id} missing parsed arguments object"
+        payload_kind = candidate.payload_kind
+        if payload_kind == ToolPayloadKind.INPUT_TEXT:
+            if not isinstance(candidate.input_text, str):
+                protocol_errors.append(
+                    f"Native tool call {call_id} missing freeform input text"
+                )
+                rejected_tool_call_candidate_count += 1
+                continue
+            tool_calls.append(
+                ToolCall(
+                    id=call_id,
+                    name=name,
+                    input_text=candidate.input_text,
+                )
             )
-            rejected_tool_call_candidate_count += 1
-            continue
-        if not isinstance(candidate.arguments_obj, dict):
-            protocol_errors.append(
-                f"Native tool call {call_id} arguments must be an object, got "
-                f"{type(candidate.arguments_obj).__name__}"
+        else:
+            if candidate.arguments_obj is None:
+                protocol_errors.append(
+                    f"Native tool call {call_id} missing parsed arguments object"
+                )
+                rejected_tool_call_candidate_count += 1
+                continue
+            if not isinstance(candidate.arguments_obj, dict):
+                protocol_errors.append(
+                    f"Native tool call {call_id} arguments must be an object, got "
+                    f"{type(candidate.arguments_obj).__name__}"
+                )
+                rejected_tool_call_candidate_count += 1
+                continue
+            tool_calls.append(
+                ToolCall(
+                    id=call_id,
+                    name=name,
+                    arguments=candidate.arguments_obj,
+                )
             )
-            rejected_tool_call_candidate_count += 1
-            continue
-
-        tool_calls.append(
-            ToolCall(
-                id=call_id,
-                name=name,
-                arguments=candidate.arguments_obj,
-            )
-        )
         accepted_tool_call_count += 1
 
     protocol_error_kind: str | None = None

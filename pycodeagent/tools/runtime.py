@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from pycodeagent.tools.context import ToolContext
+from pycodeagent.tools.contracts import ToolContractKind
 from pycodeagent.tools.registry import ToolRegistry, ToolRegistryError
 from pycodeagent.tools.spec import (
     CanonicalTool,
@@ -65,6 +66,7 @@ class ToolExecutionInspection:
     adapter: ToolAdapter | None
     canonical_tool: CanonicalTool | None
     canonical_args: dict[str, Any] | None
+    canonical_input_text: str | None
     schema_valid: bool
     mapping_valid: bool
     error_type: str | None
@@ -84,6 +86,7 @@ class ToolExecutionInspection:
             adapter=None,
             canonical_tool=None,
             canonical_args=None,
+            canonical_input_text=None,
             schema_valid=False,
             mapping_valid=False,
             error_type=str(error_result.metadata.get("error_type") or ""),
@@ -113,7 +116,7 @@ class ToolRuntime:
         view, adapter = resolved
         call.canonical_name = view.canonical_name
 
-        schema_error = self._validate_exposed_arguments(call, view)
+        schema_error = self._validate_exposed_payload(call, view)
         if schema_error is not None:
             return ToolExecutionInspection(
                 call=call,
@@ -121,6 +124,7 @@ class ToolRuntime:
                 adapter=adapter,
                 canonical_tool=None,
                 canonical_args=None,
+                canonical_input_text=None,
                 schema_valid=False,
                 mapping_valid=False,
                 error_type=str(schema_error.metadata.get("error_type") or ""),
@@ -136,6 +140,7 @@ class ToolRuntime:
                 adapter=adapter,
                 canonical_tool=None,
                 canonical_args=None,
+                canonical_input_text=None,
                 schema_valid=True,
                 mapping_valid=False,
                 error_type=str(canonical.metadata.get("error_type") or ""),
@@ -144,7 +149,7 @@ class ToolRuntime:
             )
         canonical_tool = canonical
 
-        mapped = self._map_arguments(call, view, adapter, canonical_tool)
+        mapped = self._map_payload(call, view, adapter, canonical_tool)
         if isinstance(mapped, ToolResult):
             return ToolExecutionInspection(
                 call=call,
@@ -152,6 +157,7 @@ class ToolRuntime:
                 adapter=adapter,
                 canonical_tool=canonical_tool,
                 canonical_args=None,
+                canonical_input_text=None,
                 schema_valid=True,
                 mapping_valid=False,
                 error_type=str(mapped.metadata.get("error_type") or ""),
@@ -164,7 +170,12 @@ class ToolRuntime:
             view=view,
             adapter=adapter,
             canonical_tool=canonical_tool,
-            canonical_args=mapped,
+            canonical_args=(
+                mapped if isinstance(mapped, dict) else None
+            ),
+            canonical_input_text=(
+                mapped if isinstance(mapped, str) else None
+            ),
             schema_valid=True,
             mapping_valid=True,
             error_type=None,
@@ -194,6 +205,7 @@ class ToolRuntime:
         return self._invoke_handler(
             inspection.canonical_tool,
             inspection.canonical_args or {},
+            inspection.canonical_input_text,
             ctx,
         )
 
@@ -211,11 +223,37 @@ class ToolRuntime:
             )
         return resolved
 
-    def _validate_exposed_arguments(
+    def _validate_exposed_payload(
         self,
         call: ToolCall,
         view: ToolView,
     ) -> ToolResult | None:
+        if view.contract_kind == ToolContractKind.FREEFORM:
+            if call.input_text is None:
+                return _runtime_error_result(
+                    error_type="schema_validation",
+                    stage="validate_exposed_payload",
+                    content=(
+                        "Exposed freeform tool payload is missing input_text"
+                    ),
+                )
+            if call.arguments:
+                return _runtime_error_result(
+                    error_type="schema_validation",
+                    stage="validate_exposed_payload",
+                    content=(
+                        "Exposed freeform tool payload must not contain object arguments"
+                    ),
+                )
+            return None
+
+        if call.input_text is not None:
+            return _runtime_error_result(
+                error_type="schema_validation",
+                stage="validate_exposed_payload",
+                content="Function tool payload must not include input_text",
+            )
+
         try:
             validate_json_schema(
                 call.arguments,
@@ -225,7 +263,7 @@ class ToolRuntime:
         except ToolArgumentError as exc:
             return _runtime_error_result(
                 error_type="schema_validation",
-                stage="validate_exposed_arguments",
+                stage="validate_exposed_payload",
                 content=f"Exposed schema validation failed: {exc}",
             )
         return None
@@ -243,13 +281,32 @@ class ToolRuntime:
                 content=str(exc),
             )
 
-    def _map_arguments(
+    def _map_payload(
         self,
         call: ToolCall,
         view: ToolView,
         adapter: ToolAdapter,
         canonical_tool: CanonicalTool,
-    ) -> dict[str, Any] | ToolResult:
+    ) -> dict[str, Any] | str | ToolResult:
+        if view.contract_kind != canonical_tool.contract_kind:
+            return _runtime_error_result(
+                error_type="contract_kind_mismatch",
+                stage="map_arguments",
+                content=(
+                    "Exposed and canonical tool contract kinds do not match: "
+                    f"{view.contract_kind.value} vs {canonical_tool.contract_kind.value}"
+                ),
+            )
+
+        if view.contract_kind == ToolContractKind.FREEFORM:
+            if call.input_text is None:
+                return _runtime_error_result(
+                    error_type="argument_mapping",
+                    stage="map_arguments",
+                    content="Freeform tool call is missing input_text",
+                )
+            return call.input_text
+
         try:
             return adapter.map_arguments(
                 call.arguments,
@@ -273,6 +330,7 @@ class ToolRuntime:
         self,
         canonical_tool: CanonicalTool | None,
         canonical_args: dict[str, Any],
+        canonical_input_text: str | None = None,
         ctx: ToolContext | None = None,
     ) -> ToolResult:
         if canonical_tool is None:
@@ -283,6 +341,14 @@ class ToolRuntime:
             )
         try:
             handler_kwargs = dict(canonical_args)
+            if canonical_tool.contract_kind == ToolContractKind.FREEFORM:
+                if canonical_input_text is None:
+                    return _runtime_error_result(
+                        error_type="missing_freeform_input",
+                        stage="invoke_handler",
+                        content="Freeform tool handler invocation requires input_text",
+                    )
+                handler_kwargs = {"input_text": canonical_input_text}
             if ctx is not None and _handler_accepts_ctx(canonical_tool.handler):
                 handler_kwargs["ctx"] = ctx
             result = canonical_tool.handler(**handler_kwargs)

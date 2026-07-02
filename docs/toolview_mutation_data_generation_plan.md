@@ -1,5 +1,10 @@
 # ToolView Mutation Data-Generation Plan
 
+> Historical status note: references below to legacy compatibility modes or
+> legacy-first defaults are archival context from before the native-only
+> cleanup. The current mainline mutation/data-generation path is native-family
+> based.
+
 ## Summary
 
 This document defines the narrow implementation path for the repository's

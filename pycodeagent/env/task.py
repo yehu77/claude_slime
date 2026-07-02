@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from pathlib import PurePosixPath
+from pathlib import PureWindowsPath
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -35,11 +36,13 @@ class CodingTask(BaseModel):
         The runtime should only operate on workspace-relative paths. This
         rejects absolute paths and directory traversal before pattern matching.
         """
-        raw_path = Path(file_path)
-        if raw_path.is_absolute():
-            raise ValueError(f"Absolute paths are not allowed: {file_path}")
+        raw_text = str(file_path or "")
+        normalized_text = raw_text.replace("\\", "/")
+        posix_path = PurePosixPath(normalized_text)
+        windows_path = PureWindowsPath(raw_text)
 
-        posix_path = PurePosixPath(*raw_path.parts)
+        if posix_path.is_absolute() or windows_path.is_absolute():
+            raise ValueError(f"Absolute paths are not allowed: {file_path}")
         if any(part == ".." for part in posix_path.parts):
             raise ValueError(f"Path escapes workspace: {file_path}")
 

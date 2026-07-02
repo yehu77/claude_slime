@@ -11,6 +11,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from pycodeagent.tools.contracts import ToolPayloadKind
+
 
 SchemaFollowingSourceType = Literal[
     "synthetic",
@@ -41,14 +43,19 @@ def _require_non_empty_text(value: str, field_name: str) -> str:
 def render_exposed_tool_call_text(
     call_id: str,
     name: str,
-    arguments: dict[str, Any],
+    arguments: dict[str, Any] | None = None,
+    input_text: str | None = None,
 ) -> str:
     """Render a schema-following target tool call using the canonical contract."""
-    payload = {
-        "arguments": arguments,
+    payload: dict[str, Any] = {
         "id": call_id,
         "name": name,
     }
+    if input_text is not None:
+        payload["payload_kind"] = ToolPayloadKind.INPUT_TEXT.value
+        payload["input_text"] = input_text
+    else:
+        payload["arguments"] = arguments or {}
     return f"<|tool|>\n{json.dumps(payload, sort_keys=True, ensure_ascii=False)}\n<|end|>\n"
 
 
@@ -56,12 +63,38 @@ class CanonicalToolIntent(BaseModel):
     """Canonical backend tool intent."""
 
     tool: str
-    arguments: dict[str, Any]
+    arguments: dict[str, Any] = Field(default_factory=dict)
+    input_text: str | None = None
 
     @field_validator("tool")
     @classmethod
     def _validate_tool(cls, value: str) -> str:
         return _require_non_empty_text(value, "tool")
+
+    @property
+    def payload_kind(self) -> ToolPayloadKind:
+        if self.input_text is not None:
+            return ToolPayloadKind.INPUT_TEXT
+        return ToolPayloadKind.ARGUMENTS_OBJECT
+
+    @model_validator(mode="after")
+    def _validate_payload_shape(self) -> "CanonicalToolIntent":
+        if self.input_text is not None and self.arguments:
+            raise ValueError(
+                "CanonicalToolIntent cannot contain both input_text and object arguments"
+            )
+        if self.input_text is None and not isinstance(self.arguments, dict):
+            raise ValueError("CanonicalToolIntent arguments must be an object")
+        return self
+
+    def model_dump(self, *args, **kwargs) -> dict[str, Any]:  # type: ignore[override]
+        data = super().model_dump(*args, **kwargs)
+        if data.get("input_text") is None:
+            data.pop("input_text", None)
+        if self.input_text is not None and data.get("arguments") == {}:
+            data.pop("arguments", None)
+            data["payload_kind"] = self.payload_kind.value
+        return data
 
 
 class ExposedToolCallTarget(BaseModel):
@@ -69,20 +102,51 @@ class ExposedToolCallTarget(BaseModel):
 
     call_id: str
     name: str
-    arguments: dict[str, Any]
+    arguments: dict[str, Any] = Field(default_factory=dict)
+    input_text: str | None = None
 
     @field_validator("call_id", "name")
     @classmethod
     def _validate_non_empty_fields(cls, value: str, info: Any) -> str:
         return _require_non_empty_text(value, str(info.field_name))
 
+    @property
+    def payload_kind(self) -> ToolPayloadKind:
+        if self.input_text is not None:
+            return ToolPayloadKind.INPUT_TEXT
+        return ToolPayloadKind.ARGUMENTS_OBJECT
+
+    @model_validator(mode="after")
+    def _validate_payload_shape(self) -> "ExposedToolCallTarget":
+        if self.input_text is not None and self.arguments:
+            raise ValueError(
+                "ExposedToolCallTarget cannot contain both input_text and object arguments"
+            )
+        if self.input_text is None and not isinstance(self.arguments, dict):
+            raise ValueError("ExposedToolCallTarget arguments must be an object")
+        return self
+
     def to_payload(self) -> dict[str, Any]:
         """Return the deterministic JSON payload for this call."""
-        return {
+        payload: dict[str, Any] = {
             "id": self.call_id,
             "name": self.name,
-            "arguments": self.arguments,
         }
+        if self.input_text is not None:
+            payload["payload_kind"] = self.payload_kind.value
+            payload["input_text"] = self.input_text
+        else:
+            payload["arguments"] = self.arguments
+        return payload
+
+    def model_dump(self, *args, **kwargs) -> dict[str, Any]:  # type: ignore[override]
+        data = super().model_dump(*args, **kwargs)
+        if data.get("input_text") is None:
+            data.pop("input_text", None)
+        if self.input_text is not None and data.get("arguments") == {}:
+            data.pop("arguments", None)
+            data["payload_kind"] = self.payload_kind.value
+        return data
 
     def render_text(self) -> str:
         """Render the call using the canonical <|tool|> contract."""
@@ -90,6 +154,7 @@ class ExposedToolCallTarget(BaseModel):
             call_id=self.call_id,
             name=self.name,
             arguments=self.arguments,
+            input_text=self.input_text,
         )
 
 

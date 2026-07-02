@@ -119,6 +119,24 @@ class TestRenderExposedToolCallText:
             ensure_ascii=False,
         )
 
+    def test_renders_freeform_input_text_payload(self):
+        text = render_exposed_tool_call_text(
+            call_id="call_1",
+            name="apply_patch",
+            input_text="*** Begin Patch\n*** End Patch\n",
+        )
+        payload = text[len("<|tool|>\n") : -len("\n<|end|>\n")]
+        assert payload == json.dumps(
+            {
+                "id": "call_1",
+                "name": "apply_patch",
+                "payload_kind": "input_text",
+                "input_text": "*** Begin Patch\n*** End Patch\n",
+            },
+            sort_keys=True,
+            ensure_ascii=False,
+        )
+
 
 class TestSchemaFollowingSample:
     def test_model_roundtrip(self):
@@ -200,6 +218,38 @@ class TestSchemaFollowingSample:
         validated = SchemaFollowingSample.model_validate(sample.model_dump(mode="json"))
         assert validated.source_type == "runtime_observed"
         assert validated.metadata["source_exposed_tool_name"] == "open_source"
+
+    def test_freeform_runtime_observed_style_sample_is_valid(self):
+        target = ExposedToolCallTarget(
+            call_id="call_patch",
+            name="apply_patch",
+            input_text="*** Begin Patch\n*** End Patch\n",
+        )
+        sample = SchemaFollowingSample(
+            sample_id="sf__runtime_observed__run001__profile_codex__step0001",
+            sample_type="schema_following",
+            source_type="runtime_observed",
+            split="train",
+            task_id="task_patch",
+            tool_profile_id="native_codex_mutation_base_x",
+            mutation_category="base",
+            messages=make_messages(),
+            canonical_intent=CanonicalToolIntent(
+                tool="apply_patch",
+                input_text="*** Begin Patch\n*** End Patch\n",
+            ),
+            target_tool_call=target,
+            target_text=target.render_text(),
+            loss_mask_policy="assistant_tool_call_only",
+            metadata={
+                "source_family": "codex",
+                "source_contract_kind": "freeform",
+            },
+        )
+        validated = SchemaFollowingSample.model_validate(sample.model_dump(mode="json"))
+        assert validated.target_tool_call.input_text is not None
+        assert validated.canonical_intent.input_text is not None
+        assert '"payload_kind": "input_text"' in validated.target_text
 
 
 class TestSchemaFollowingJsonl:

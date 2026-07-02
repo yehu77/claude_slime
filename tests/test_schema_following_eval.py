@@ -38,7 +38,12 @@ class TestSchemaFollowingEval:
         tmp = _get_test_dir()
         try:
             dataset_dir = tmp / "dataset"
-            result = generate_synthetic_schema_following_data(dataset_dir, num_intents=24, seed=7)
+            result = generate_synthetic_schema_following_data(
+                dataset_dir,
+                family="claude",
+                num_intents=24,
+                seed=7,
+            )
             split = result.present_splits[0]
 
             report = evaluate_schema_following_predictor(
@@ -63,7 +68,12 @@ class TestSchemaFollowingEval:
         tmp = _get_test_dir()
         try:
             dataset_dir = tmp / "dataset"
-            generate_synthetic_schema_following_data(dataset_dir, num_intents=24, seed=9)
+            generate_synthetic_schema_following_data(
+                dataset_dir,
+                family="claude",
+                num_intents=24,
+                seed=9,
+            )
 
             target_split = None
             for split_name in ("eval_unseen_name", "eval_unseen_schema", "eval_nested"):

@@ -53,6 +53,8 @@ def _import_vendor_module(monkeypatch: pytest.MonkeyPatch, *, stub_torch: bool =
         sys.modules.pop(module_name, None)
     if stub_torch:
         _install_torch_stub(monkeypatch)
+    else:
+        pytest.importorskip("torch")
     monkeypatch.syspath_prepend(str(_SLIME_MAIN))
     baseline = list(sys.path)
     module = importlib.import_module("slime.rollout.pycodeagent_native_rl")

@@ -16,6 +16,7 @@ from pycodeagent.rl.schema_following import (
 )
 from pycodeagent.rl.schema_following_dataset import write_schema_following_jsonl
 from pycodeagent.rl.schema_following_generate import (
+    NativeSchemaFamily,
     SyntheticProfileManifestEntry,
     _group_profile_ids_by_split_role,
     _tool_manifest_entry,
@@ -27,8 +28,14 @@ from pycodeagent.rl.schema_following_splits import (
     assign_synthetic_split,
     build_default_synthetic_profile_specs,
 )
-from pycodeagent.tools.bootstrap import build_builtin_registry
-from pycodeagent.tools.profile_factory import build_base_tool_profile
+from pycodeagent.tools.families import (
+    build_claude_canonical_registry,
+    build_codex_canonical_registry,
+)
+from pycodeagent.tools.profile_factory import (
+    build_native_claude_profile,
+    build_native_codex_profile,
+)
 from pycodeagent.tools.spec import ToolArgumentError, ToolProfile
 from pycodeagent.trajectory.schema import Message, Role, RunStatus, Trajectory
 
@@ -153,18 +160,35 @@ def _has_nested_values(value: Any) -> bool:
 def _target_profiles(
     *,
     seed: int,
+    family: NativeSchemaFamily,
     profile_specs: list[SyntheticProfileSpec] | None = None,
 ) -> tuple[list[SyntheticProfileSpec], list[ToolProfile]]:
     """Build target profiles used for re-projection."""
-    specs = profile_specs or build_default_synthetic_profile_specs(seed=seed)
+    specs = profile_specs or build_default_synthetic_profile_specs(
+        seed=seed,
+        family=family,
+    )
     profiles: list[ToolProfile] = []
     for spec in specs:
         if spec.mode == "base":
-            profiles.append(build_base_tool_profile(profile_id=f"schema_following_base_{spec.seed}"))
+            if family == "claude":
+                profiles.append(
+                    build_native_claude_profile(
+                        profile_id=f"schema_following_claude_base_{spec.seed}"
+                    )
+                )
+            else:
+                profiles.append(
+                    build_native_codex_profile(
+                        profile_id=f"schema_following_codex_base_{spec.seed}"
+                    )
+                )
         else:
             from pycodeagent.mutations.profile_sampler import ToolProfileSampler
 
-            profiles.append(ToolProfileSampler(seed=spec.seed).sample(spec.mode))
+            profiles.append(
+                ToolProfileSampler(seed=spec.seed, family=family).sample(spec.mode)
+            )
     return specs, profiles
 
 
@@ -172,6 +196,7 @@ def generate_schema_following_from_trajectories(
     source_dir: str | Path,
     output_dir: str | Path,
     *,
+    family: NativeSchemaFamily,
     source_type: str = "study",
     filter_config: FilterConfig | None = None,
     target_profile_specs: list[SyntheticProfileSpec] | None = None,
@@ -186,9 +211,14 @@ def generate_schema_following_from_trajectories(
     run_dirs = discover_run_dirs(source_dir, source_type=source_type)
     target_specs, target_profiles = _target_profiles(
         seed=seed,
+        family=family,
         profile_specs=target_profile_specs,
     )
-    registry = build_builtin_registry()
+    registry = (
+        build_claude_canonical_registry()
+        if family == "claude"
+        else build_codex_canonical_registry()
+    )
 
     split_samples: dict[str, list[SchemaFollowingSample]] = {
         split: [] for split in SCHEMA_FOLLOWING_SPLIT_ORDER
@@ -226,10 +256,16 @@ def generate_schema_following_from_trajectories(
             for call in message.tool_calls:
                 tool_call_step_index += 1
                 try:
-                    source_view, canonical_args = source_profile.map_call_arguments(
+                    canonical_name_hint = (
+                        call.canonical_name
+                        or source_profile.get_tool(call.name)[0].canonical_name  # type: ignore[index]
+                    )
+                    canonical_tool = registry.get(canonical_name_hint)
+                    source_view, canonical_payload = source_profile.map_call_payload(
                         call.name,
-                        call.arguments,
-                        canonical_tool=registry.get(call.canonical_name or source_profile.get_tool(call.name)[0].canonical_name),  # type: ignore[index]
+                        exposed_args=call.arguments,
+                        input_text=call.input_text,
+                        canonical_tool=canonical_tool,
                     )
                 except (ToolArgumentError, KeyError, TypeError) as exc:
                     raise ValueError(
@@ -241,22 +277,40 @@ def generate_schema_following_from_trajectories(
                 canonical_tool = registry.get(canonical_name)
 
                 for spec, target_profile in zip(target_specs, target_profiles, strict=True):
-                    target_call = target_profile.project_canonical_call(
-                        canonical_name,
-                        canonical_args,
-                        call_id="call_1",
-                        canonical_tool=canonical_tool,
-                    )
-                    _, roundtrip = target_profile.map_call_arguments(
-                        target_call.name,
-                        target_call.arguments,
-                        canonical_tool=canonical_tool,
-                    )
-                    if roundtrip != canonical_args:
-                        raise ValueError(
-                            "Trajectory-derived projection roundtrip mismatch for "
-                            f"{target_profile.profile_id}/{canonical_name}"
+                    if isinstance(canonical_payload, str):
+                        target_call = target_profile.project_canonical_payload(
+                            canonical_name,
+                            canonical_input_text=canonical_payload,
+                            call_id="call_1",
+                            canonical_tool=canonical_tool,
                         )
+                        _, roundtrip = target_profile.map_call_payload(
+                            target_call.name,
+                            input_text=target_call.input_text,
+                            canonical_tool=canonical_tool,
+                        )
+                        if roundtrip != canonical_payload:
+                            raise ValueError(
+                                "Trajectory-derived projection roundtrip mismatch for "
+                                f"{target_profile.profile_id}/{canonical_name}"
+                            )
+                    else:
+                        target_call = target_profile.project_canonical_call(
+                            canonical_name,
+                            canonical_payload,
+                            call_id="call_1",
+                            canonical_tool=canonical_tool,
+                        )
+                        _, roundtrip = target_profile.map_call_arguments(
+                            target_call.name,
+                            target_call.arguments,
+                            canonical_tool=canonical_tool,
+                        )
+                        if roundtrip != canonical_payload:
+                            raise ValueError(
+                                "Trajectory-derived projection roundtrip mismatch for "
+                                f"{target_profile.profile_id}/{canonical_name}"
+                            )
 
                     requires_nested_args = _has_nested_values(target_call.arguments)
                     split = assign_synthetic_split(
@@ -276,10 +330,11 @@ def generate_schema_following_from_trajectories(
                         tool_profile_id=target_profile.profile_id,
                         mutation_category=spec.category,
                         messages=context_messages,
-                        canonical_intent={
-                            "tool": canonical_name,
-                            "arguments": canonical_args,
-                        },
+                        canonical_intent=(
+                            {"tool": canonical_name, "input_text": canonical_payload}
+                            if isinstance(canonical_payload, str)
+                            else {"tool": canonical_name, "arguments": canonical_payload}
+                        ),
                         target_tool_call=target_call,
                         target_text=target_call.render_text(),
                         loss_mask_policy="assistant_tool_call_only",
@@ -315,6 +370,8 @@ def generate_schema_following_from_trajectories(
             mode=spec.mode,
             seed=spec.seed,
             split_role=spec.split_role,
+            family=family,
+            native_profile_kind=f"native_{family}",
             tools=_tool_manifest_entry(profile),
         )
         for spec, profile in zip(target_specs, target_profiles, strict=True)
@@ -331,6 +388,7 @@ def generate_schema_following_from_trajectories(
         {
             "version": 1,
             "seed": seed,
+            "family": family,
             "profiles": [entry.model_dump(mode="json") for entry in profile_manifest],
         },
     )
@@ -340,6 +398,7 @@ def generate_schema_following_from_trajectories(
             "dataset_type": "schema_following_trajectory_derived",
             "version": 1,
             "seed": seed,
+            "family": family,
             "source_dir": str(source_dir),
             "source_type": source_type,
             "sample_count": sum(split_counts.values()),

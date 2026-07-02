@@ -95,6 +95,10 @@ from pycodeagent.eval.runtime_observed_postrun import (
     RuntimeObservedStudyBundleResult,
     prepare_study_runtime_observed_bundle,
 )
+from pycodeagent.eval.native_family_acceptance import (
+    NativeFamilyAcceptanceReport,
+    run_native_family_acceptance,
+)
 from pycodeagent.eval.tables import (
     build_category_profile_table,
     build_error_breakdown_table,
@@ -170,6 +174,8 @@ __all__ = [
     "write_study_report",
     "RuntimeObservedStudyBundleResult",
     "prepare_study_runtime_observed_bundle",
+    "NativeFamilyAcceptanceReport",
+    "run_native_family_acceptance",
     # Run study
     "run_study_from_config",
     "run_study",

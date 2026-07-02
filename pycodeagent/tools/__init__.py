@@ -1,10 +1,13 @@
-"""Tool system: registry, runtime, specs, and built-in tools."""
+"""Tool system: registry, runtime, specs, and strict native family builders."""
 
 from pycodeagent.tools.bootstrap import (
-    build_base_tool_runtime,
-    build_builtin_registry,
+    build_native_claude_runtime,
+    build_native_codex_runtime,
 )
-from pycodeagent.tools.profile_factory import build_base_tool_profile
+from pycodeagent.tools.profile_factory import (
+    build_native_claude_profile,
+    build_native_codex_profile,
+)
 from pycodeagent.tools.registry import ToolRegistry
 from pycodeagent.tools.runtime import ToolRuntime
 from pycodeagent.tools.spec import (
@@ -26,7 +29,8 @@ __all__ = [
     "ToolRegistry",
     "ToolRuntime",
     # Bootstrap helpers
-    "build_builtin_registry",
-    "build_base_tool_profile",
-    "build_base_tool_runtime",
+    "build_native_claude_profile",
+    "build_native_codex_profile",
+    "build_native_claude_runtime",
+    "build_native_codex_runtime",
 ]

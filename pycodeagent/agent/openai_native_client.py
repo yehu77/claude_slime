@@ -8,6 +8,7 @@ from typing import Any
 import httpx
 
 from pycodeagent.agent.llm_client import (
+    ExposedToolSpec,
     GenerateRequest,
     GenerateResponse,
     RuntimeClientCapabilities,
@@ -17,15 +18,28 @@ from pycodeagent.agent.openai_client import (
     EmptyResponseError,
     OpenAICompatibleClientBase,
 )
+from pycodeagent.tools.contracts import (
+    ToolContractKind,
+    tool_spec_input_schema,
+    tool_spec_kind,
+)
 
 
-def _to_openai_tool_spec(spec: dict[str, Any]) -> dict[str, Any]:
+def _to_openai_tool_spec(spec: dict[str, Any] | ExposedToolSpec) -> dict[str, Any]:
+    if isinstance(spec, ExposedToolSpec):
+        spec = spec.to_wire_dict()
+    if tool_spec_kind(spec) != ToolContractKind.FUNCTION:
+        raise ValueError(
+            "OpenAINativeToolClient currently supports function tool specs only; "
+            "freeform provider transport is deferred"
+        )
     return {
         "type": "function",
         "function": {
             "name": spec["name"],
             "description": spec.get("description", ""),
-            "parameters": spec.get("input_schema", {"type": "object", "properties": {}}),
+            "parameters": tool_spec_input_schema(spec)
+            or {"type": "object", "properties": {}},
         },
     }
 

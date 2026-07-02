@@ -7,6 +7,11 @@ from pathlib import Path
 import pytest
 
 from pycodeagent.mutations import load_tool_profile_from_dict
+from pycodeagent.tools.contracts import ToolContractKind
+from pycodeagent.tools.profile_factory import (
+    build_native_claude_profile,
+    build_native_codex_profile,
+)
 from pycodeagent.tools.spec import ToolAdapter, ToolProfile, ToolView
 from pycodeagent.traces import (
     build_catalog_from_claude_request_tools,
@@ -92,6 +97,12 @@ def _profile_to_loader_dict(profile: ToolProfile) -> dict:
                 "exposed_name": tool.exposed_name,
                 "description": tool.description,
                 "input_schema": tool.input_schema,
+                "kind": (
+                    tool.contract_kind.value
+                    if tool.contract_kind != ToolContractKind.FUNCTION
+                    else None
+                ),
+                "input_format": tool.input_format,
                 "version": tool.version,
                 "adapter": {
                     "exposed_to_canonical": profile.adapters[tool.exposed_name].exposed_to_canonical,
@@ -267,3 +278,72 @@ class TestNativeProfileTransform:
         assert len(specs) == 2
         assert specs[0]["name"] == transformed.tools[0].exposed_name
         assert specs[0]["input_schema"] == transformed.tools[0].input_schema
+
+    def test_step_d_native_claude_profile_can_flow_through_transform_path(self) -> None:
+        base_profile = build_native_claude_profile()
+
+        transformed = build_native_transformed_profile(
+            base_profile,
+            mode="description_only",
+            seed=3,
+        )
+
+        assert transformed.metadata["family"] == "claude"
+        assert transformed.metadata["native_profile_kind"] == "native_claude"
+        assert transformed.metadata["mutation_source_family"] == "claude"
+        assert transformed.metadata["canonical_mapping_status"] == "native_identity_not_canonicalized"
+        assert [tool.canonical_name for tool in transformed.tools] == [
+            "Bash",
+            "Read",
+            "Edit",
+            "Write",
+            "Grep",
+            "Glob",
+        ]
+        assert all(tool.contract_kind == ToolContractKind.FUNCTION for tool in transformed.tools)
+
+    @pytest.mark.parametrize(
+        ("mode", "seed"),
+        [
+            ("base", 0),
+            ("name_only", 11),
+            ("description_only", 13),
+            ("name_description", 17),
+        ],
+    )
+    def test_step_d_native_codex_profile_preserves_freeform_apply_patch_through_transform(
+        self,
+        mode: str,
+        seed: int,
+    ) -> None:
+        base_profile = build_native_codex_profile()
+
+        transformed = build_native_transformed_profile(
+            base_profile,
+            mode=mode,
+            seed=seed,
+        )
+        apply_patch_tool = next(
+            tool for tool in transformed.tools if tool.canonical_name == "apply_patch"
+        )
+        specs = {spec["name"]: spec for spec in transformed.get_exposed_specs()}
+        apply_patch_spec = specs[apply_patch_tool.exposed_name]
+        loaded = load_tool_profile_from_dict(_profile_to_loader_dict(transformed))
+        loaded_apply_patch = next(
+            tool for tool in loaded.tools if tool.canonical_name == "apply_patch"
+        )
+
+        assert transformed.metadata["family"] == "codex"
+        assert transformed.metadata["native_profile_kind"] == "native_codex"
+        assert transformed.metadata["mutation_source_family"] == "codex"
+        assert apply_patch_tool.contract_kind == ToolContractKind.FREEFORM
+        assert apply_patch_tool.input_format == base_profile.tools[-1].input_format
+        assert apply_patch_tool.metadata["family"] == "codex"
+        assert apply_patch_tool.metadata["native_profile_kind"] == "native_codex"
+        assert apply_patch_tool.metadata["mutation_source_family"] == "codex"
+        assert apply_patch_tool.metadata["canonical_mapping_status"] == "native_identity_not_canonicalized"
+        assert apply_patch_spec["kind"] == "freeform"
+        assert apply_patch_spec["input_format"]["syntax"] == "lark"
+        assert "input_schema" not in apply_patch_spec
+        assert loaded_apply_patch.contract_kind == ToolContractKind.FREEFORM
+        assert loaded_apply_patch.input_format == apply_patch_tool.input_format

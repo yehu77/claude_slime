@@ -9,8 +9,8 @@ from typing import Any
 
 from pycodeagent.adapters.base import AgentRunContext, ToolCatalogProvider
 from pycodeagent.env.task import CodingTask
-from pycodeagent.tools.bootstrap import build_builtin_registry
-from pycodeagent.tools.profile_factory import build_base_tool_profile
+from pycodeagent.tools.families import build_claude_canonical_registry
+from pycodeagent.tools.profile_factory import build_native_claude_profile
 from pycodeagent.tools.spec import ToolProfile
 from pycodeagent.traces.canonical_trace import (
     CanonicalAction,
@@ -46,7 +46,7 @@ class MockAdapter:
         return self._AGENT_VERSION
 
     def run_task(self, task: CodingTask, context: AgentRunContext) -> RawAgentRunResult:
-        profile = build_base_tool_profile(profile_id="mock_base")
+        profile = build_native_claude_profile(profile_id="mock_base")
         tool_catalog_path: str | None = None
         catalog = build_mock_tool_catalog(
             task_id=task.task_id,
@@ -119,7 +119,7 @@ class MockToolCatalogProvider:
     """Fallback provider for the mock adapter."""
 
     def __init__(self) -> None:
-        self._profile = build_base_tool_profile(profile_id="mock_base")
+        self._profile = build_native_claude_profile(profile_id="mock_base")
 
     def agent_id(self) -> str:
         return "mock_agent"
@@ -144,8 +144,8 @@ class MockTraceNormalizer:
     """Deterministic mock normalizer for phase-one scaffold tests."""
 
     def __init__(self) -> None:
-        self._profile = build_base_tool_profile(profile_id="mock_base")
-        self._registry = build_builtin_registry()
+        self._profile = build_native_claude_profile(profile_id="mock_base")
+        self._registry = build_claude_canonical_registry()
 
     def agent_id(self) -> str:
         return "mock_agent"
@@ -166,8 +166,6 @@ class MockTraceNormalizer:
             if event.event_kind == "tool_call":
                 parsed = event.parsed_payload
                 canonical_name = parsed.get("canonical_name")
-                if canonical_name == "run_command":
-                    continue
                 try:
                     tool_name = str(parsed["tool_name"])
                     arguments = dict(parsed.get("arguments", {}))
@@ -212,7 +210,7 @@ class MockTraceNormalizer:
                 view, canonical_args = self._profile.map_call_arguments(
                     tool_name,
                     arguments,
-                    canonical_tool=self._registry.get("run_command"),
+                    canonical_tool=self._registry.get("Bash"),
                 )
                 actions.append(
                     CanonicalAction(
@@ -322,7 +320,7 @@ def generate_synthetic_raw_trace(
     )
     seq += 1
 
-    registry = build_builtin_registry()
+    registry = build_claude_canonical_registry()
     for step_index, step in enumerate(plan, start=1):
         tool_name = str(step["tool"])
         canonical_tool = registry.get(tool_name)
@@ -368,7 +366,7 @@ def generate_synthetic_raw_trace(
         )
         seq += 1
 
-        if tool_name == "run_command":
+        if tool_name == "Bash":
             command = str(step["arguments"]["command"])
             events.append(
                 RawEvent(
@@ -486,26 +484,20 @@ def _default_mock_plan(task: CodingTask) -> list[dict[str, Any]]:
     prompt_text = task.prompt.lower()
     return [
         {
-            "tool": "read_file",
-            "arguments": {"path": "README.md"},
+            "tool": "Read",
+            "arguments": {"file_path": "README.md"},
             "assistant_text": "I will inspect the repository README first.",
             "result": {"ok": True, "content": "README contents"},
         },
         {
-            "tool": "run_command",
-            "arguments": {"command": "pytest -q", "cwd": "."},
+            "tool": "Bash",
+            "arguments": {"command": "pytest -q"},
             "assistant_text": (
                 "I will run tests to validate the current state."
                 if "test" in prompt_text
                 else "I will run the project test suite."
             ),
             "result": {"ok": True, "content": "pytest passed"},
-        },
-        {
-            "tool": "finish",
-            "arguments": {"summary": "Completed the requested mock task."},
-            "assistant_text": "I am ready to finish the task.",
-            "result": {"ok": True, "content": "Task finished."},
         },
     ]
 

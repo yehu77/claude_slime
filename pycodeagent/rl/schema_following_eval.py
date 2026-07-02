@@ -14,7 +14,10 @@ from pycodeagent.rl.schema_following import (
 )
 from pycodeagent.rl.schema_following_dataset import read_schema_following_jsonl
 from pycodeagent.rl.serializer import serialize_schema_following_sample
-from pycodeagent.tools.bootstrap import build_builtin_registry
+from pycodeagent.tools.families import (
+    build_claude_canonical_registry,
+    build_codex_canonical_registry,
+)
 from pycodeagent.tools.spec import ToolAdapter, ToolArgumentError, ToolProfile, ToolView
 
 
@@ -151,7 +154,9 @@ def parse_tool_call_block(text: str) -> dict[str, Any]:
         raise ValueError("invalid_payload_type")
     if not isinstance(payload.get("name"), str) or not payload["name"].strip():
         raise ValueError("invalid_payload_name")
-    if not isinstance(payload.get("arguments"), dict):
+    has_arguments = isinstance(payload.get("arguments"), dict)
+    has_input_text = isinstance(payload.get("input_text"), str)
+    if not has_arguments and not has_input_text:
         raise ValueError("invalid_payload_arguments")
     return payload
 
@@ -172,6 +177,10 @@ def load_schema_following_profile_map(dataset_dir: str | Path) -> dict[str, Tool
                 exposed_name=tool["exposed_name"],
                 description=tool["description"],
                 input_schema=tool["input_schema"],
+                contract_kind=tool.get("contract_kind", "function"),
+                input_format=tool.get("input_format"),
+                version=tool.get("version", "default"),
+                metadata=dict(tool.get("metadata", {})),
             )
             for tool in entry["tools"]
         ]
@@ -188,6 +197,9 @@ def load_schema_following_profile_map(dataset_dir: str | Path) -> dict[str, Tool
                 "mode": entry.get("mode"),
                 "seed": entry.get("seed"),
                 "split_role": entry.get("split_role"),
+                "family": entry.get("family"),
+                "native_profile_kind": entry.get("native_profile_kind"),
+                "mutation_source_family": entry.get("mutation_source_family"),
             },
         )
     return profiles
@@ -205,7 +217,10 @@ def evaluate_schema_following_predictor(
     """Evaluate a predictor on one or more schema-following splits."""
     dataset_dir = Path(dataset_dir)
     profiles = load_schema_following_profile_map(dataset_dir)
-    registry = build_builtin_registry()
+    registries = {
+        profile_id: _canonical_registry_for_profile(profile)
+        for profile_id, profile in profiles.items()
+    }
 
     metrics_by_split: dict[str, SchemaFollowingSplitMetrics] = {}
     failed_cases: list[SchemaFollowingEvaluationCase] = []
@@ -222,7 +237,7 @@ def evaluate_schema_following_predictor(
                 prompt_text=prompt_text,
                 predicted_text=predicted_text,
                 profile=profiles[sample.tool_profile_id],
-                registry=registry,
+                registry=registries[sample.tool_profile_id],
             )
             split_cases.append(case)
             all_cases.append(case)
@@ -241,6 +256,19 @@ def evaluate_schema_following_predictor(
         overall=overall,
         failed_cases=failed_cases,
         metadata=metadata or {},
+    )
+
+
+def _canonical_registry_for_profile(profile: ToolProfile):
+    native_profile_kind = profile.metadata.get("native_profile_kind")
+    family = profile.metadata.get("family")
+    if native_profile_kind == "native_claude" or family == "claude":
+        return build_claude_canonical_registry()
+    if native_profile_kind == "native_codex" or family == "codex":
+        return build_codex_canonical_registry()
+    raise ValueError(
+        "Schema-following evaluation requires native-family profile metadata; "
+        f"got family={family!r}, native_profile_kind={native_profile_kind!r}"
     )
 
 
@@ -394,9 +422,38 @@ def _evaluate_sample(
     expected_name = sample.target_tool_call.name
     expected_canonical = sample.canonical_intent.model_dump(mode="json")
     expected_canonical_name = sample.canonical_intent.tool
+    expected_freeform = (
+        sample.target_tool_call.input_text is not None
+        or sample.canonical_intent.input_text is not None
+    )
     stale_canonical_name = False
     predicted_name: str | None = None
     predicted_canonical: dict[str, Any] | None = None
+
+    if expected_freeform:
+        return SchemaFollowingEvaluationCase(
+            sample_id=sample.sample_id,
+            split=sample.split,
+            task_id=sample.task_id,
+            tool_profile_id=sample.tool_profile_id,
+            mutation_category=sample.mutation_category,
+            prompt_text=prompt_text,
+            expected_text=sample.target_text,
+            predicted_text=predicted_text,
+            expected_exposed_tool=expected_name,
+            expected_canonical_intent=expected_canonical,
+            parse_ok=False,
+            tool_name_ok=False,
+            schema_valid=False,
+            canonical_intent_ok=False,
+            exact_match=False,
+            stale_canonical_name=False,
+            error_code="freeform_not_supported_in_schema_following_eval",
+            error_message=(
+                "Schema-following evaluation currently expects object arguments; "
+                "freeform tool-call payloads are not yet scored here."
+            ),
+        )
 
     try:
         payload = parse_tool_call_block(predicted_text)
@@ -453,10 +510,36 @@ def _evaluate_sample(
 
     view, _ = resolved
     canonical_tool = registry.get(view.canonical_name)
+    predicted_arguments = payload.get("arguments")
+    if not isinstance(predicted_arguments, dict):
+        return SchemaFollowingEvaluationCase(
+            sample_id=sample.sample_id,
+            split=sample.split,
+            task_id=sample.task_id,
+            tool_profile_id=sample.tool_profile_id,
+            mutation_category=sample.mutation_category,
+            prompt_text=prompt_text,
+            expected_text=sample.target_text,
+            predicted_text=predicted_text,
+            expected_exposed_tool=expected_name,
+            predicted_exposed_tool=predicted_name,
+            expected_canonical_intent=expected_canonical,
+            parse_ok=True,
+            tool_name_ok=(predicted_name == expected_name),
+            schema_valid=False,
+            canonical_intent_ok=False,
+            exact_match=False,
+            stale_canonical_name=stale_canonical_name,
+            error_code="freeform_not_supported_in_schema_following_eval",
+            error_message=(
+                "Schema-following evaluation currently expects object arguments; "
+                "freeform tool-call payloads are not yet scored here."
+            ),
+        )
     try:
         _, canonical_args = profile.map_call_arguments(
             predicted_name,
-            payload["arguments"],
+            predicted_arguments,
             canonical_tool=canonical_tool,
         )
     except ToolArgumentError as exc:

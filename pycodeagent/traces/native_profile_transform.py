@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+from copy import deepcopy
 from typing import Any, Literal
 
 from pycodeagent.mutations.description_mutator import DescriptionMutator
@@ -102,7 +103,9 @@ def build_native_transformed_profile(
             canonical_name=base_view.canonical_name,
             exposed_name=exposed_name,
             description=description,
-            input_schema=base_view.input_schema,
+            input_schema=deepcopy(base_view.input_schema),
+            contract_kind=base_view.contract_kind,
+            input_format=deepcopy(base_view.input_format),
             version="native_transformed" if mode != "base" else base_view.version,
             metadata=tool_metadata,
         )

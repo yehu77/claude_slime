@@ -8,6 +8,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from pycodeagent.tools.contracts import ToolContractKind
+
 SCHEMA_VERSION = 1
 
 
@@ -16,7 +18,9 @@ class CatalogToolEntry(BaseModel):
 
     raw_tool_name: str
     description: str
-    input_schema: dict[str, Any]
+    input_schema: dict[str, Any] = Field(default_factory=dict)
+    contract_kind: ToolContractKind = ToolContractKind.FUNCTION
+    input_format: dict[str, Any] | None = None
     output_format_hint: str | None = None
     availability_conditions: dict[str, Any] = Field(default_factory=dict)
     tool_family: str | None = None

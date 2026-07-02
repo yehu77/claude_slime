@@ -35,7 +35,7 @@ def _normalize_string(
     run_dir: Path,
     workspace_dir: Path,
 ) -> str:
-    normalized = value.replace("\r\n", "\n")
+    normalized = value.replace("\r\n", "\n").replace("\\", "/")
     replacements = [
         (str(workspace_dir.resolve()), "<workspace_dir>"),
         (str(run_dir.resolve()), "<run_dir>"),
@@ -49,6 +49,26 @@ def _normalize_string(
         "\n",
         normalized,
         flags=re.DOTALL,
+    )
+    normalized = re.sub(
+        r"=+ FAILURES =+",
+        "================================== FAILURES ===================================",
+        normalized,
+    )
+    normalized = re.sub(
+        r"=+ short test summary info =+",
+        "=========================== short test summary info ===========================",
+        normalized,
+    )
+    normalized = re.sub(
+        r"_+\s+(test_[^\n]+?)\s+_+",
+        r"__ \1 __",
+        normalized,
+    )
+    normalized = re.sub(
+        r"(?:<repo_root>/[^:\n]*/)?([^/\n:]+\.py:\d+)",
+        r"\1",
+        normalized,
     )
     normalized = re.sub(r", \d+ warnings", "", normalized)
     normalized = re.sub(r"in \d+\.\d+s", "in <duration>", normalized)
@@ -125,14 +145,24 @@ class TestExternalCliKiloWrapperGolden:
                 repo_root=repo_root,
                 run_dir=run_dir,
                 workspace_dir=workspace_dir,
-            ) == _load_json(_FIXTURE_DIR / "raw_trace_summary.json")
+            ) == _normalize_value(
+                _load_json(_FIXTURE_DIR / "raw_trace_summary.json"),
+                repo_root=repo_root,
+                run_dir=run_dir,
+                workspace_dir=workspace_dir,
+            )
 
             assert _normalize_value(
                 _load_jsonl(run_dir / "raw_trace.jsonl"),
                 repo_root=repo_root,
                 run_dir=run_dir,
                 workspace_dir=workspace_dir,
-            ) == _load_jsonl(_FIXTURE_DIR / "raw_trace.jsonl")
+            ) == _normalize_value(
+                _load_jsonl(_FIXTURE_DIR / "raw_trace.jsonl"),
+                repo_root=repo_root,
+                run_dir=run_dir,
+                workspace_dir=workspace_dir,
+            )
 
             assert _normalize_string(
                 (run_dir / "final.diff").read_text(encoding="utf-8"),
@@ -151,13 +181,23 @@ class TestExternalCliKiloWrapperGolden:
                 repo_root=repo_root,
                 run_dir=run_dir,
                 workspace_dir=workspace_dir,
-            ) == _load_json(_FIXTURE_DIR / "verifier.json")
+            ) == _normalize_value(
+                _load_json(_FIXTURE_DIR / "verifier.json"),
+                repo_root=repo_root,
+                run_dir=run_dir,
+                workspace_dir=workspace_dir,
+            )
 
             assert _normalize_value(
                 _load_json(run_dir / "adapter_metadata.json"),
                 repo_root=repo_root,
                 run_dir=run_dir,
                 workspace_dir=workspace_dir,
-            ) == _load_json(_FIXTURE_DIR / "adapter_metadata.json")
+            ) == _normalize_value(
+                _load_json(_FIXTURE_DIR / "adapter_metadata.json"),
+                repo_root=repo_root,
+                run_dir=run_dir,
+                workspace_dir=workspace_dir,
+            )
         finally:
             cleanup_test_path(tmp)

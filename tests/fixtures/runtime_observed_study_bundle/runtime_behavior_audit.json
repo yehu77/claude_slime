@@ -68,7 +68,7 @@
   "mean_revision_attempts_per_issue": 0.0,
   "per_run": [
     {
-      "run_dir": "<study_root>\\experiments\\e_arg_a54fa5\\runs\\seed_1\\arg\\task_arg_seed1__mutation_argument_rename_7867bfe2",
+      "run_dir": "<study_root>/experiments/e_arg_a54fa5/runs/seed_1/arg/task_arg_seed1__mutation_argument_rename_7867bfe2",
       "task_id": "task_arg_seed1",
       "profile_id": "mutation_argument_rename_7867bfe2",
       "status": "completed",
@@ -154,7 +154,7 @@
       ]
     },
     {
-      "run_dir": "<study_root>\\experiments\\e_base_78b7a3\\runs\\seed_0\\base\\task_base_seed0__base",
+      "run_dir": "<study_root>/experiments/e_base_78b7a3/runs/seed_0/base/task_base_seed0__base",
       "task_id": "task_base_seed0",
       "profile_id": "base",
       "status": "completed",
@@ -240,7 +240,7 @@
       ]
     },
     {
-      "run_dir": "<study_root>\\experiments\\e_nds_2455c8\\runs\\seed_0\\nds\\task_nds_seed0__mutation_name_description_schema_43cc1852",
+      "run_dir": "<study_root>/experiments/e_nds_2455c8/runs/seed_0/nds/task_nds_seed0__mutation_name_description_schema_43cc1852",
       "task_id": "task_nds_seed0",
       "profile_id": "mutation_name_description_schema_43cc1852",
       "status": "completed",
@@ -326,7 +326,7 @@
       ]
     },
     {
-      "run_dir": "<study_root>\\experiments\\e_order_3eb745\\runs\\seed_1\\order\\task_order_seed1__mutation_tool_reorder_7a9cb44f",
+      "run_dir": "<study_root>/experiments/e_order_3eb745/runs/seed_1/order/task_order_seed1__mutation_tool_reorder_7a9cb44f",
       "task_id": "task_order_seed1",
       "profile_id": "mutation_tool_reorder_7a9cb44f",
       "status": "completed",

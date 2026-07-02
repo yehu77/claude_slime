@@ -1,13 +1,80 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from pycodeagent.agent.compaction_acceptance import (
     verify_p3b_compaction_acceptance,
 )
-from pycodeagent.agent.llm_client import GenerateResponse, ToolCallCandidate
+from pycodeagent.agent.llm_client import (
+    FakeLLMClient,
+    GenerateResponse,
+    ToolCallCandidate,
+)
+from pycodeagent.env.coding_env import run_coding_task
+from pycodeagent.env.task import CodingTask
 from pycodeagent.testing import cleanup_test_path, make_unique_test_dir
-from tests.test_runtime_trace_golden import _run_trace_bundle
+
+
+def _native_response(
+    *,
+    assistant_text: str,
+    tool_call: tuple[str, str, dict] | None = None,
+    request_kind: str = "generate",
+    structured_output: dict | None = None,
+) -> GenerateResponse:
+    tool_calls: list[ToolCallCandidate] = []
+    if tool_call is not None:
+        call_id, name, arguments = tool_call
+        tool_calls.append(
+            ToolCallCandidate(
+                call_id=call_id,
+                name=name,
+                arguments_raw=json.dumps(arguments, ensure_ascii=False),
+                arguments_obj=arguments,
+                source="native",
+            )
+        )
+    return GenerateResponse.from_native_tool_calling(
+        assistant_text=assistant_text,
+        tool_calls=tool_calls,
+        finish_reason="tool_calls" if tool_calls else "stop",
+        request_kind=request_kind,
+        structured_output=structured_output,
+    )
+
+
+def _run_trace_bundle(
+    *,
+    tmp: Path,
+    task_id: str,
+    task_prompt: str,
+    responses: list[GenerateResponse],
+    max_turns: int,
+    context_policy_mode: str,
+    context_max_messages: int | None,
+) -> tuple[Path, object]:
+    repo = tmp / "repo"
+    repo.mkdir(parents=True, exist_ok=True)
+    (repo / "main.py").write_text("print('hello')\n", encoding="utf-8")
+
+    task = CodingTask(
+        task_id=task_id,
+        repo_path=repo,
+        prompt=task_prompt,
+        test_command='python -c "print(\'ok\')"',
+        max_turns=max_turns,
+    )
+    output_dir = tmp / "run"
+    trajectory = run_coding_task(
+        task,
+        FakeLLMClient(responses=responses),
+        output_dir,
+        tool_stack_kind="native_claude",
+        context_policy_mode=context_policy_mode,
+        context_max_messages=context_max_messages,
+    )
+    return output_dir, trajectory
 
 
 def test_verify_p3b_compaction_acceptance_passes_for_model_backed_bundle() -> None:
@@ -50,9 +117,9 @@ def test_verify_p3b_compaction_acceptance_passes_for_model_backed_bundle() -> No
                     tool_calls=[
                         ToolCallCandidate(
                             call_id="c1",
-                            name="read_file",
-                            arguments_raw='{"path":"main.py"}',
-                            arguments_obj={"path": "main.py"},
+                            name="Read",
+                            arguments_raw='{"file_path":"main.py"}',
+                            arguments_obj={"file_path": "main.py"},
                             source="native",
                         )
                     ],
@@ -64,9 +131,9 @@ def test_verify_p3b_compaction_acceptance_passes_for_model_backed_bundle() -> No
                     tool_calls=[
                         ToolCallCandidate(
                             call_id="c2",
-                            name="list_files",
-                            arguments_raw='{"path":"."}',
-                            arguments_obj={"path": "."},
+                            name="Glob",
+                            arguments_raw='{"pattern":"*","path":"."}',
+                            arguments_obj={"pattern": "*", "path": "."},
                             source="native",
                         )
                     ],
@@ -78,9 +145,9 @@ def test_verify_p3b_compaction_acceptance_passes_for_model_backed_bundle() -> No
                     tool_calls=[
                         ToolCallCandidate(
                             call_id="c3",
-                            name="read_file",
-                            arguments_raw='{"path":"main.py"}',
-                            arguments_obj={"path": "main.py"},
+                            name="Read",
+                            arguments_raw='{"file_path":"main.py"}',
+                            arguments_obj={"file_path": "main.py"},
                             source="native",
                         )
                     ],
@@ -97,16 +164,8 @@ def test_verify_p3b_compaction_acceptance_passes_for_model_backed_bundle() -> No
                 ),
                 GenerateResponse.from_native_tool_calling(
                     assistant_text="Done.",
-                    tool_calls=[
-                        ToolCallCandidate(
-                            call_id="c4",
-                            name="finish",
-                            arguments_raw='{"answer":"Done"}',
-                            arguments_obj={"answer": "Done"},
-                            source="native",
-                        )
-                    ],
-                    finish_reason="tool_calls",
+                    tool_calls=[],
+                    finish_reason="stop",
                     response_id="resp_4",
                 ),
             ],
@@ -143,9 +202,9 @@ def test_verify_p3b_compaction_acceptance_rejects_non_model_backed_bundle() -> N
                     tool_calls=[
                         ToolCallCandidate(
                             call_id="c1",
-                            name="read_file",
-                            arguments_raw='{"path":"main.py"}',
-                            arguments_obj={"path": "main.py"},
+                            name="Read",
+                            arguments_raw='{"file_path":"main.py"}',
+                            arguments_obj={"file_path": "main.py"},
                             source="native",
                         )
                     ],
@@ -157,9 +216,9 @@ def test_verify_p3b_compaction_acceptance_rejects_non_model_backed_bundle() -> N
                     tool_calls=[
                         ToolCallCandidate(
                             call_id="c2",
-                            name="list_files",
-                            arguments_raw='{"path":"."}',
-                            arguments_obj={"path": "."},
+                            name="Glob",
+                            arguments_raw='{"pattern":"*","path":"."}',
+                            arguments_obj={"pattern": "*", "path": "."},
                             source="native",
                         )
                     ],
@@ -171,9 +230,9 @@ def test_verify_p3b_compaction_acceptance_rejects_non_model_backed_bundle() -> N
                     tool_calls=[
                         ToolCallCandidate(
                             call_id="c3",
-                            name="read_file",
-                            arguments_raw='{"path":"main.py"}',
-                            arguments_obj={"path": "main.py"},
+                            name="Read",
+                            arguments_raw='{"file_path":"main.py"}',
+                            arguments_obj={"file_path": "main.py"},
                             source="native",
                         )
                     ],
@@ -182,16 +241,8 @@ def test_verify_p3b_compaction_acceptance_rejects_non_model_backed_bundle() -> N
                 ),
                 GenerateResponse.from_native_tool_calling(
                     assistant_text="Done.",
-                    tool_calls=[
-                        ToolCallCandidate(
-                            call_id="c4",
-                            name="finish",
-                            arguments_raw='{"answer":"Done"}',
-                            arguments_obj={"answer": "Done"},
-                            source="native",
-                        )
-                    ],
-                    finish_reason="tool_calls",
+                    tool_calls=[],
+                    finish_reason="stop",
                     response_id="resp_4",
                 ),
             ],

@@ -6,9 +6,10 @@ enforce workspace boundaries and task-level file constraints.
 
 from __future__ import annotations
 
+from typing import Any
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from pycodeagent.env.task import CodingTask
 
@@ -24,6 +25,8 @@ class ToolContext(BaseModel):
 
     workspace_root: Path
     task: CodingTask | None = None
+    artifact_root: Path | None = None
+    tool_state: dict[str, Any] = Field(default_factory=dict)
 
     def is_file_allowed(self, rel_path: str) -> bool:
         """Check if a repo-relative path is allowed by task constraints."""

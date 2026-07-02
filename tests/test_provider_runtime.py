@@ -24,6 +24,13 @@ def _write_provider_config(path: Path, payload: dict) -> Path:
     return path
 
 
+def _disable_repo_dotenv(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "pycodeagent.agent.provider_runtime._dotenv_candidates",
+        lambda env_path=None: [],
+    )
+
+
 def test_load_runtime_provider_config_rejects_inline_api_key():
     tmp = make_unique_test_dir("provider_runtime")
     try:
@@ -62,6 +69,8 @@ def test_build_llm_client_uses_mimo_native_tools_mode():
         supports_native_tools=True,
         text_fallback_allowed=False,
         structured_finish_mode="finish_tool_call",
+        supports_structured_output=True,
+        supports_model_backed_compaction=True,
         provider_family="openai_chat_completions",
         provider_name="mimo",
     )
@@ -85,6 +94,8 @@ def test_build_llm_client_uses_openai_native_tools_mode():
         supports_native_tools=True,
         text_fallback_allowed=False,
         structured_finish_mode="finish_tool_call",
+        supports_structured_output=True,
+        supports_model_backed_compaction=True,
         provider_family="openai_chat_completions",
         provider_name="openai_compatible",
     )
@@ -93,7 +104,9 @@ def test_build_llm_client_uses_openai_native_tools_mode():
 def test_build_llm_client_factory_from_path(monkeypatch: pytest.MonkeyPatch):
     tmp = make_unique_test_dir("provider_runtime")
     try:
+        _disable_repo_dotenv(monkeypatch)
         monkeypatch.setenv("PYCODEAGENT_API_KEY", "tp-test")
+        monkeypatch.delenv("PYCODEAGENT_CLIENT_MODE", raising=False)
         config_path = _write_provider_config(
             tmp / "provider.local.json",
             {
@@ -126,8 +139,11 @@ def test_build_llm_client_factory_from_path(monkeypatch: pytest.MonkeyPatch):
 
 
 def test_resolve_runtime_provider_config_from_env_only(monkeypatch: pytest.MonkeyPatch):
+    _disable_repo_dotenv(monkeypatch)
     monkeypatch.setenv("PYCODEAGENT_API_KEY", "tp-env")
     monkeypatch.setenv("PYCODEAGENT_MODEL", "mimo-v2.5-pro")
+    monkeypatch.delenv("PYCODEAGENT_CLIENT_MODE", raising=False)
+    monkeypatch.delenv("PYCODEAGENT_BASE_URL", raising=False)
 
     config = resolve_runtime_provider_config()
 
@@ -140,9 +156,11 @@ def test_resolve_runtime_provider_config_from_env_only(monkeypatch: pytest.Monke
 def test_resolve_runtime_provider_config_env_overrides_local_json(monkeypatch: pytest.MonkeyPatch):
     tmp = make_unique_test_dir("provider_runtime")
     try:
+        _disable_repo_dotenv(monkeypatch)
         monkeypatch.setenv("PYCODEAGENT_API_KEY", "tp-env")
         monkeypatch.setenv("PYCODEAGENT_MODEL", "env-model")
         monkeypatch.setenv("PYCODEAGENT_BASE_URL", "https://env.example.com/v1")
+        monkeypatch.delenv("PYCODEAGENT_CLIENT_MODE", raising=False)
         config_path = _write_provider_config(
             tmp / "provider.local.json",
             {
@@ -167,8 +185,10 @@ def test_resolve_runtime_provider_config_rejects_unknown_client_mode(
 ):
     tmp = make_unique_test_dir("provider_runtime")
     try:
+        _disable_repo_dotenv(monkeypatch)
         monkeypatch.setenv("PYCODEAGENT_API_KEY", "tp-env")
         monkeypatch.setenv("PYCODEAGENT_MODEL", "legacy-model")
+        monkeypatch.delenv("PYCODEAGENT_CLIENT_MODE", raising=False)
         config_path = _write_provider_config(
             tmp / "provider.local.json",
             {

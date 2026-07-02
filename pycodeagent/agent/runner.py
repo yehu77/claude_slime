@@ -447,10 +447,20 @@ def run_agent_task(
         mark_turn_phase(turn_state, TurnLifecyclePhase.TOOL_DISPATCH)
         for call in parsed.tool_calls:
             inspection = runtime.inspect_call(call, profile)
+            exposed_payload_kind = (
+                "exposed_input_text"
+                if call.input_text is not None
+                else "exposed_arguments"
+            )
+            exposed_payload_value = (
+                call.input_text
+                if call.input_text is not None
+                else call.arguments
+            )
             exposed_args_ref = _write_json_payload(
                 trace_writer,
-                "exposed_arguments",
-                call.arguments,
+                exposed_payload_kind,
+                exposed_payload_value,
             )
             _emit_tool_call_validation_completed(
                 trace_writer,
@@ -486,12 +496,14 @@ def run_agent_task(
                         result = runtime._invoke_handler(
                             inspection.canonical_tool,
                             inspection.canonical_args or {},
+                            inspection.canonical_input_text,
                             ctx,
                         )
                 else:
                     result = runtime._invoke_handler(
                         inspection.canonical_tool,
                         inspection.canonical_args or {},
+                        inspection.canonical_input_text,
                         ctx,
                     )
                 _emit_tool_execution_result(

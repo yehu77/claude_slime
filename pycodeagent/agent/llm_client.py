@@ -5,7 +5,12 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+from pycodeagent.tools.contracts import (
+    ExposedToolSpec,
+    ToolPayloadKind,
+)
 
 
 RequestKind = Literal["agent_turn", "context_compaction"]
@@ -23,9 +28,18 @@ class GenerateRequest(BaseModel):
     """Input to the LLM generate call."""
 
     messages: list[dict[str, Any]]
-    tools: list[dict[str, Any]]
+    tools: list[ExposedToolSpec]
     request_kind: RequestKind = "agent_turn"
     structured_output_schema: StructuredOutputSchema | None = None
+
+    @field_validator("tools", mode="before")
+    @classmethod
+    def _normalize_tools(cls, value: Any) -> list[ExposedToolSpec]:
+        if value is None:
+            return []
+        if not isinstance(value, list):
+            raise TypeError("GenerateRequest.tools must be a list")
+        return [ExposedToolSpec.model_validate(spec) for spec in value]
 
 
 RuntimeProtocolMode = Literal["native_tool_calling"]
@@ -56,8 +70,31 @@ class ToolCallCandidate(BaseModel):
     name: str = ""
     arguments_raw: str | None = None
     arguments_obj: dict[str, Any] | None = None
+    input_text: str | None = None
     arguments_parse_error: str | None = None
     source: str = "text_parsed"
+
+    @property
+    def payload_kind(self) -> ToolPayloadKind | None:
+        if self.input_text is not None:
+            return ToolPayloadKind.INPUT_TEXT
+        if self.arguments_obj is not None:
+            return ToolPayloadKind.ARGUMENTS_OBJECT
+        return None
+
+    @model_validator(mode="after")
+    def _validate_payload_shape(self) -> "ToolCallCandidate":
+        if self.input_text is not None and self.arguments_obj is not None:
+            raise ValueError(
+                "ToolCallCandidate cannot contain both input_text and arguments_obj"
+            )
+        return self
+
+    def model_dump(self, *args, **kwargs) -> dict[str, Any]:  # type: ignore[override]
+        data = super().model_dump(*args, **kwargs)
+        if data.get("input_text") is None:
+            data.pop("input_text", None)
+        return data
 
 
 class GenerateResponse(BaseModel):

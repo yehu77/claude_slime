@@ -1,50 +1,74 @@
-"""Bootstrap layer for the tool system.
-
-Provides convenience functions to assemble a ready-to-use tool runtime
-from builtin canonical tools and a base profile.
-"""
+"""Bootstrap layer for strict native family tool stacks."""
 
 from __future__ import annotations
 
-from pycodeagent.tools.builtin import ALL_BUILTIN_TOOLS
-from pycodeagent.tools.profile_factory import build_base_tool_profile
+from typing import Literal
+
+from pycodeagent.tools.families import (
+    build_claude_canonical_registry,
+    build_codex_canonical_registry,
+)
+from pycodeagent.tools.profile_factory import (
+    build_native_claude_profile,
+    build_native_codex_profile,
+)
 from pycodeagent.tools.registry import ToolRegistry
 from pycodeagent.tools.runtime import ToolRuntime
 from pycodeagent.tools.spec import ToolProfile
 
-
-def build_builtin_registry() -> ToolRegistry:
-    """Create a fresh ToolRegistry with all builtin canonical tools.
-
-    Each call returns a new independent instance — no shared mutable state.
-
-    Returns:
-        A ToolRegistry containing all Phase 1-2 builtin tools.
-    """
-    registry = ToolRegistry()
-    for tool in ALL_BUILTIN_TOOLS:
-        registry.register(tool)
-    return registry
+ToolStackKind = Literal["native_claude", "native_codex"]
 
 
-def build_base_tool_runtime(
+def build_native_claude_runtime(
     *,
-    profile_id: str = "base",
+    profile_id: str = "native_claude",
 ) -> tuple[ToolRegistry, ToolProfile, ToolRuntime]:
-    """Assemble a complete base tooling stack.
+    """Assemble the strict Claude-family runtime stack."""
+    return _build_tool_stack("native_claude", profile_id=profile_id)
 
-    Convenience entry point that builds:
-    - A ToolRegistry with all builtin tools
-    - A base ToolProfile (identity mapping)
-    - A ToolRuntime wired to the registry
 
-    Args:
-        profile_id: Identifier for the profile. Defaults to "base".
+def build_native_codex_runtime(
+    *,
+    profile_id: str = "native_codex",
+) -> tuple[ToolRegistry, ToolProfile, ToolRuntime]:
+    """Assemble the strict Codex-family runtime stack."""
+    return _build_tool_stack("native_codex", profile_id=profile_id)
 
-    Returns:
-        A (registry, profile, runtime) triple ready for use.
-    """
-    registry = build_builtin_registry()
-    profile = build_base_tool_profile(profile_id=profile_id)
+
+def _build_tool_stack(
+    kind: ToolStackKind,
+    *,
+    profile_id: str | None = None,
+) -> tuple[ToolRegistry, ToolProfile, ToolRuntime]:
+    """Assemble one complete tool stack for the requested family."""
+    if kind == "native_claude":
+        registry = build_claude_canonical_registry()
+        profile = build_native_claude_profile(
+            profile_id=profile_id or "native_claude"
+        )
+    elif kind == "native_codex":
+        registry = build_codex_canonical_registry()
+        profile = build_native_codex_profile(profile_id=profile_id or "native_codex")
+    else:
+        raise ValueError(f"Unknown tool stack kind: {kind!r}")
+
     runtime = ToolRuntime(registry)
     return registry, profile, runtime
+
+
+def _infer_tool_stack_kind_from_profile(
+    profile: ToolProfile,
+) -> ToolStackKind | None:
+    """Best-effort inference of the runtime family implied by one profile."""
+    native_profile_kind = profile.metadata.get("native_profile_kind")
+    if native_profile_kind == "native_claude":
+        return "native_claude"
+    if native_profile_kind == "native_codex":
+        return "native_codex"
+
+    family = profile.metadata.get("family")
+    if family == "claude":
+        return "native_claude"
+    if family == "codex":
+        return "native_codex"
+    return None

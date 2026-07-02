@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 from pycodeagent.agent.prompt import build_tool_specs_section
+from pycodeagent.tools.contracts import ToolPayloadKind
 
 if TYPE_CHECKING:
     from pycodeagent.rl.claude_api_sft import ClaudeApiSFTSample
@@ -116,8 +117,12 @@ def _serialize_tool_call(call: Any) -> str:
     data = {
         "id": call.id,
         "name": call.name,
-        "arguments": call.arguments,
     }
+    if getattr(call, "input_text", None) is not None:
+        data["payload_kind"] = ToolPayloadKind.INPUT_TEXT.value
+        data["input_text"] = call.input_text
+    else:
+        data["arguments"] = call.arguments
     return json.dumps(data, sort_keys=True, ensure_ascii=False)
 
 
@@ -143,13 +148,23 @@ def _render_tool_call_segment(call: Any) -> str:
     return f"<|tool|>\n{_serialize_tool_call(call)}\n<|end|>\n"
 
 
-def _render_tool_call_payload(*, call_id: str, name: str, arguments: dict[str, Any]) -> str:
+def _render_tool_call_payload(
+    *,
+    call_id: str,
+    name: str,
+    arguments: dict[str, Any] | None = None,
+    input_text: str | None = None,
+) -> str:
     """Render a native tool-call payload without requiring a trajectory ToolCall object."""
-    payload = {
+    payload: dict[str, Any] = {
         "id": call_id,
         "name": name,
-        "arguments": arguments,
     }
+    if input_text is not None:
+        payload["payload_kind"] = ToolPayloadKind.INPUT_TEXT.value
+        payload["input_text"] = input_text
+    else:
+        payload["arguments"] = arguments or {}
     return f"<|tool|>\n{json.dumps(payload, sort_keys=True, ensure_ascii=False)}\n<|end|>\n"
 
 

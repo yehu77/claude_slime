@@ -15,7 +15,11 @@ from typing import Any, Callable
 from pycodeagent.env.task import CodingTask
 from pycodeagent.eval.layout import run_dir_name
 from pycodeagent.mutations.profile_sampler import ToolProfileSampler
-from pycodeagent.tools.bootstrap import build_base_tool_runtime
+from pycodeagent.tools.bootstrap import (
+    ToolStackKind,
+    build_native_claude_runtime,
+    build_native_codex_runtime,
+)
 from pycodeagent.trajectory.schema import RunStatus, Trajectory
 
 
@@ -71,6 +75,7 @@ class BatchRunner:
         self,
         client_factory: Callable[[], Any],
         *,
+        tool_stack_kind: ToolStackKind,
         sampler: ToolProfileSampler | None = None,
     ) -> None:
         """Initialize the batch runner.
@@ -82,6 +87,7 @@ class BatchRunner:
                     If None, creates one with seed=0.
         """
         self.client_factory = client_factory
+        self._tool_stack_kind = tool_stack_kind
         self._sampler = sampler
 
     def run(
@@ -120,8 +126,12 @@ class BatchRunner:
             tasks = tasks[:max_tasks]
 
         # Create sampler for this batch
-        sampler = self._sampler or ToolProfileSampler(seed=seed)
-        _, _, runtime = build_base_tool_runtime()
+        family = "claude" if self._tool_stack_kind == "native_claude" else "codex"
+        sampler = self._sampler or ToolProfileSampler(seed=seed, family=family)
+        if self._tool_stack_kind == "native_claude":
+            _, _, runtime = build_native_claude_runtime()
+        else:
+            _, _, runtime = build_native_codex_runtime()
 
         # Run all combinations
         summaries: list[RunSummary] = []
@@ -145,6 +155,7 @@ class BatchRunner:
                     runtime=runtime,
                     profile_mode=mode,
                     profile_seed=seed,
+                    tool_stack_kind=self._tool_stack_kind,
                 )
                 if trajectory.tool_profile_id != profile_id:
                     raise ValueError(

@@ -12,6 +12,21 @@
   ],
   "profile_manifest_path": "profile_manifest.json",
   "sample_count": 8,
+  "sample_count_by_contract_kind": {
+    "function": 8
+  },
+  "sample_count_by_family": {
+    "legacy": 8
+  },
+  "sample_count_by_mode": {
+    "argument_rename": 2,
+    "base": 2,
+    "name_description_schema": 2,
+    "tool_reorder": 2
+  },
+  "sample_count_by_native_profile_kind": {
+    "legacy": 8
+  },
   "skipped_observed_call_count": 0,
   "skipped_observed_call_counts_by_reason": {},
   "source_dir": "<study_root>",

@@ -123,7 +123,7 @@ def test_run_first_study_loader_uses_resolved_local_config_path(monkeypatch):
     run_first_study_mimo._load_local_config()
 
     assert captured["filename"] == "mimo_v25pro.local.json"
-    assert captured["repo_fallback"] == "configs\\local\\mimo_v25pro.local.json"
-    assert captured["path"] == "C:\\local\\configs\\mimo_v25pro.local.json"
-    assert captured["example_path"] == "configs\\local\\mimo_v25pro.local.example.json"
+    assert Path(captured["repo_fallback"]) == Path("configs/local/mimo_v25pro.local.json")
+    assert Path(captured["path"]) == Path("C:/local/configs/mimo_v25pro.local.json")
+    assert Path(captured["example_path"]) == Path("configs/local/mimo_v25pro.local.example.json")
     assert captured["default_api_key_env"] == "MIMO_API_KEY"

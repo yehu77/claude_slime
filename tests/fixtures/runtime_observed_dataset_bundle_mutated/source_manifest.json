@@ -26,6 +26,7 @@
         "schema"
       ],
       "mutation_manifest_version": 1,
+      "mutation_source_family": "legacy",
       "observed_tool_call_count": 2,
       "protocol_mode": "native_tool_calling",
       "provider_family": "fake",
@@ -38,6 +39,8 @@
       "skipped_observed_tool_call_count": 0,
       "skipped_observed_tool_call_counts_by_reason": {},
       "skipped_observed_tool_calls": [],
+      "source_family": "legacy",
+      "source_native_profile_kind": "legacy",
       "source_profile_mode": "name_description_schema",
       "source_profile_seed": 0,
       "source_tool_profile_id": "mutation_name_description_schema_43cc1852",

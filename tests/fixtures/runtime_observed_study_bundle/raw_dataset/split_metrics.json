@@ -1,4 +1,19 @@
 {
+  "sample_count_by_contract_kind": {
+    "function": 8
+  },
+  "sample_count_by_family": {
+    "legacy": 8
+  },
+  "sample_count_by_mode": {
+    "argument_rename": 2,
+    "base": 2,
+    "name_description_schema": 2,
+    "tool_reorder": 2
+  },
+  "sample_count_by_native_profile_kind": {
+    "legacy": 8
+  },
   "split_counts": {
     "train": 8
   },

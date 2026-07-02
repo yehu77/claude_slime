@@ -31,7 +31,11 @@ from pycodeagent.eval.layout import run_dir_name
 from pycodeagent.eval.metrics import compute_metrics
 from pycodeagent.eval.report import write_batch_reports
 from pycodeagent.mutations.profile_sampler import ToolProfileSampler
-from pycodeagent.tools.bootstrap import build_base_tool_runtime
+from pycodeagent.tools.bootstrap import (
+    ToolStackKind,
+    build_native_claude_runtime,
+    build_native_codex_runtime,
+)
 from pycodeagent.trajectory.schema import RunStatus
 
 
@@ -131,6 +135,8 @@ class ExperimentRunner:
     def __init__(
         self,
         client_factory: Callable[[], Any],
+        *,
+        tool_stack_kind: ToolStackKind,
     ) -> None:
         """Initialize the experiment runner.
 
@@ -139,6 +145,7 @@ class ExperimentRunner:
                            for each run.
         """
         self.client_factory = client_factory
+        self._tool_stack_kind = tool_stack_kind
 
     def run(self, config: ExperimentConfig) -> ExperimentResult:
         """Run the experiment.
@@ -162,14 +169,18 @@ class ExperimentRunner:
         tasks = self._load_tasks(config)
 
         # Get default runtime
-        _, _, runtime = build_base_tool_runtime()
+        family = "claude" if self._tool_stack_kind == "native_claude" else "codex"
+        if self._tool_stack_kind == "native_claude":
+            _, _, runtime = build_native_claude_runtime()
+        else:
+            _, _, runtime = build_native_codex_runtime()
 
         # Run all combinations
         summaries: list[RunSummary] = []
 
         # Deterministic iteration order: seed -> mode -> task
         for seed in sorted(config.seeds):
-            sampler = ToolProfileSampler(seed=seed)
+            sampler = ToolProfileSampler(seed=seed, family=family)
 
             for mode in config.profile_modes:
                 expected_profile = sampler.sample(mode)
@@ -193,6 +204,7 @@ class ExperimentRunner:
                         runtime=runtime,
                         profile_mode=mode,
                         profile_seed=seed,
+                        tool_stack_kind=self._tool_stack_kind,
                     )
                     if trajectory.tool_profile_id != profile_id:
                         raise ValueError(

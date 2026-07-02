@@ -30,6 +30,7 @@ from typing import Any
 
 import yaml
 
+from pycodeagent.tools.contracts import ToolContractKind, coerce_tool_contract_kind
 from pycodeagent.tools.spec import ToolAdapter, ToolProfile, ToolView
 
 
@@ -63,7 +64,9 @@ def _validate_and_build_profile(data: dict[str, Any]) -> ToolProfile:
         canonical = entry.get("canonical")
         exposed = entry.get("exposed_name")
         description = entry.get("description", "")
+        contract_kind = coerce_tool_contract_kind(entry.get("kind"))
         input_schema = entry.get("input_schema", {})
+        input_format = entry.get("input_format")
         version = entry.get("version", "default")
         adapter_data = entry.get("adapter", {})
 
@@ -71,14 +74,26 @@ def _validate_and_build_profile(data: dict[str, Any]) -> ToolProfile:
             raise ValueError(f"tools[{i}] must have a string 'canonical' name")
         if not exposed or not isinstance(exposed, str):
             raise ValueError(f"tools[{i}] must have a string 'exposed_name'")
-        if not isinstance(input_schema, dict):
-            raise ValueError(f"tools[{i}].input_schema must be a mapping")
+        if contract_kind == ToolContractKind.FUNCTION:
+            if not isinstance(input_schema, dict):
+                raise ValueError(f"tools[{i}].input_schema must be a mapping")
+        else:
+            if input_format is not None and not isinstance(input_format, dict):
+                raise ValueError(f"tools[{i}].input_format must be a mapping")
+            if input_schema is None:
+                input_schema = {}
+            if not isinstance(input_schema, dict):
+                raise ValueError(
+                    f"tools[{i}].input_schema must be a mapping when present"
+                )
 
         view = ToolView(
             canonical_name=canonical,
             exposed_name=exposed,
             description=description,
             input_schema=input_schema,
+            contract_kind=contract_kind,
+            input_format=input_format if isinstance(input_format, dict) else None,
             version=version,
         )
         tools.append(view)

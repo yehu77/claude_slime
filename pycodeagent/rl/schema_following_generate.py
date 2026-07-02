@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -26,9 +26,17 @@ from pycodeagent.rl.schema_following_splits import (
     assign_synthetic_split,
     build_default_synthetic_profile_specs,
 )
-from pycodeagent.tools.bootstrap import build_builtin_registry
-from pycodeagent.tools.profile_factory import build_base_tool_profile
+from pycodeagent.tools.families import (
+    build_claude_canonical_registry,
+    build_codex_canonical_registry,
+)
+from pycodeagent.tools.profile_factory import (
+    build_native_claude_profile,
+    build_native_codex_profile,
+)
 from pycodeagent.tools.spec import ToolProfile
+
+NativeSchemaFamily = Literal["claude", "codex"]
 
 
 class SyntheticProfileManifestEntry(BaseModel):
@@ -39,6 +47,8 @@ class SyntheticProfileManifestEntry(BaseModel):
     mode: str
     seed: int
     split_role: str
+    family: str
+    native_profile_kind: str
     tools: list[dict[str, Any]]
 
 
@@ -58,92 +68,139 @@ class SyntheticSchemaFollowingGenerationResult(BaseModel):
     present_splits: list[str] = Field(default_factory=list)
 
 
-def _canonical_intent_variants() -> dict[str, list[tuple[dict[str, Any], str]]]:
-    """Return deterministic canonical intent templates per builtin tool."""
+def _canonical_intent_variants(
+    family: NativeSchemaFamily,
+) -> dict[str, list[tuple[CanonicalToolIntent, str]]]:
+    """Return deterministic canonical intent templates for one native family."""
+    if family == "claude":
+        return {
+            "Read": [
+                (
+                    CanonicalToolIntent(
+                        tool="Read",
+                        arguments={"file_path": "/workspace/src/calculator.py", "offset": 1, "limit": 80},
+                    ),
+                    "Read the first 80 lines of /workspace/src/calculator.py.",
+                ),
+                (
+                    CanonicalToolIntent(
+                        tool="Read",
+                        arguments={"file_path": "/workspace/README.md"},
+                    ),
+                    "Inspect /workspace/README.md.",
+                ),
+            ],
+            "Grep": [
+                (
+                    CanonicalToolIntent(
+                        tool="Grep",
+                        arguments={"pattern": "def add", "path": "/workspace/src", "glob": "*.py"},
+                    ),
+                    "Search /workspace/src for the add function definition.",
+                ),
+                (
+                    CanonicalToolIntent(
+                        tool="Grep",
+                        arguments={"pattern": "pytest", "path": "/workspace/tests"},
+                    ),
+                    "Search /workspace/tests for pytest usage.",
+                ),
+            ],
+            "Bash": [
+                (
+                    CanonicalToolIntent(
+                        tool="Bash",
+                        arguments={"command": "pytest -q", "timeout": 30000},
+                    ),
+                    "Run the test suite with pytest.",
+                ),
+                (
+                    CanonicalToolIntent(
+                        tool="Bash",
+                        arguments={"command": "ruff check .", "timeout": 30000},
+                    ),
+                    "Run ruff against the repository root.",
+                ),
+            ],
+            "Edit": [
+                (
+                    CanonicalToolIntent(
+                        tool="Edit",
+                        arguments={
+                            "file_path": "/workspace/src/calculator.py",
+                            "old_string": "return a - b",
+                            "new_string": "return a + b",
+                            "replace_all": False,
+                        },
+                    ),
+                    "Fix the add implementation in /workspace/src/calculator.py.",
+                ),
+            ],
+            "Write": [
+                (
+                    CanonicalToolIntent(
+                        tool="Write",
+                        arguments={
+                            "file_path": "/workspace/notes.txt",
+                            "content": "Validation complete.\n",
+                        },
+                    ),
+                    "Write a short validation note to /workspace/notes.txt.",
+                ),
+            ],
+            "Glob": [
+                (
+                    CanonicalToolIntent(
+                        tool="Glob",
+                        arguments={"pattern": "**/*.py", "path": "/workspace"},
+                    ),
+                    "List Python files under /workspace.",
+                ),
+            ],
+        }
+
     return {
-        "list_files": [
-            ({"path": ".", "recursive": True}, "List all files in the repository recursively."),
-            ({"path": "src", "recursive": True}, "Inspect the source tree under src recursively."),
-            ({"path": "tests", "recursive": False}, "Show the direct contents of the tests directory."),
-        ],
-        "read_file": [
+        "exec_command": [
             (
-                {"path": "src/calculator.py", "start_line": 1, "end_line": 80},
-                "Read the first 80 lines of src/calculator.py.",
+                CanonicalToolIntent(
+                    tool="exec_command",
+                    arguments={"cmd": "git status", "workdir": ".", "shell": "bash", "login": True},
+                ),
+                "Run git status from the workspace root.",
             ),
             (
-                {"path": "tests/test_calculator.py", "start_line": 1, "end_line": 120},
-                "Inspect the first 120 lines of tests/test_calculator.py.",
-            ),
-            (
-                {"path": "README.md"},
-                "Read the README file.",
+                CanonicalToolIntent(
+                    tool="exec_command",
+                    arguments={"cmd": "pytest -q", "workdir": ".", "shell": "bash", "login": True},
+                ),
+                "Run pytest in the workspace root.",
             ),
         ],
-        "search_code": [
+        "write_stdin": [
             (
-                {"query": "def add", "path": "src", "glob_pattern": "*.py"},
-                "Find where def add appears inside Python files under src.",
-            ),
-            (
-                {"query": "pytest", "path": "tests"},
-                "Search the tests directory for pytest usage.",
-            ),
-            (
-                {"query": "TODO", "path": "."},
-                "Locate TODO markers anywhere in the repository.",
+                CanonicalToolIntent(
+                    tool="write_stdin",
+                    arguments={"session_id": 1, "chars": "q\n", "yield_time_ms": 1000, "max_output_tokens": 4000},
+                ),
+                "Send input to an existing shell session.",
             ),
         ],
         "apply_patch": [
             (
-                {
-                    "diff": (
-                        "--- a/src/calculator.py\n"
-                        "+++ b/src/calculator.py\n"
-                        "@@ -1,2 +1,2 @@\n"
+                CanonicalToolIntent(
+                    tool="apply_patch",
+                    input_text=(
+                        "*** Begin Patch\n"
+                        "*** Update File: src/calculator.py\n"
+                        "@@\n"
                         "-def add(a, b):\n"
                         "-    return a - b\n"
                         "+def add(a, b):\n"
                         "+    return a + b\n"
-                    )
-                },
-                "Apply a patch that fixes add() in src/calculator.py.",
-            ),
-            (
-                {
-                    "diff": (
-                        "--- a/README.md\n"
-                        "+++ b/README.md\n"
-                        "@@ -1 +1 @@\n"
-                        "-Old title\n"
-                        "+New title\n"
-                    )
-                },
-                "Apply a patch that updates the README title.",
-            ),
-        ],
-        "run_command": [
-            (
-                {"command": "git status", "timeout": 5, "cwd": "."},
-                "Run git status from the repository root.",
-            ),
-            (
-                {"command": "pytest tests -q", "timeout": 30, "cwd": "."},
-                "Run the test suite quietly from the repository root.",
-            ),
-            (
-                {"command": "ruff check .", "timeout": 20, "cwd": "."},
-                "Run ruff against the repository root.",
-            ),
-        ],
-        "finish": [
-            (
-                {"answer": "Updated calculator.py and the tests now pass."},
-                "Finish the task and report that calculator.py was updated and tests now pass.",
-            ),
-            (
-                {"answer": "Inspected the repository and summarized the next change."},
-                "Finish by summarizing the next required change.",
+                        "*** End Patch\n"
+                    ),
+                ),
+                "Apply a strict patch that fixes add() in src/calculator.py.",
             ),
         ],
     }
@@ -153,9 +210,10 @@ def _iter_generated_intents(
     *,
     num_intents: int,
     seed: int,
+    family: NativeSchemaFamily,
 ) -> list[tuple[str, CanonicalToolIntent, str]]:
     """Generate deterministic synthetic canonical intents."""
-    variants_by_tool = _canonical_intent_variants()
+    variants_by_tool = _canonical_intent_variants(family)
     ordered_tools = list(variants_by_tool)
     results: list[tuple[str, CanonicalToolIntent, str]] = []
 
@@ -163,12 +221,12 @@ def _iter_generated_intents(
         tool_name = ordered_tools[intent_index % len(ordered_tools)]
         variants = variants_by_tool[tool_name]
         variant_index = (intent_index + seed) % len(variants)
-        arguments, task_prompt = variants[variant_index]
+        intent, task_prompt = variants[variant_index]
         task_id = f"synthetic_{tool_name}_{intent_index:04d}"
         results.append(
             (
                 task_id,
-                CanonicalToolIntent(tool=tool_name, arguments=arguments),
+                intent,
                 task_prompt,
             )
         )
@@ -176,11 +234,21 @@ def _iter_generated_intents(
     return results
 
 
-def _profile_from_spec(spec: SyntheticProfileSpec) -> ToolProfile:
+def _profile_from_spec(
+    spec: SyntheticProfileSpec,
+    *,
+    family: NativeSchemaFamily,
+) -> ToolProfile:
     """Build one ToolProfile from a synthetic profile spec."""
     if spec.mode == "base":
-        return build_base_tool_profile(profile_id=f"schema_following_base_{spec.seed}")
-    return ToolProfileSampler(seed=spec.seed).sample(spec.mode)
+        if family == "claude":
+            return build_native_claude_profile(
+                profile_id=f"schema_following_claude_base_{spec.seed}"
+            )
+        return build_native_codex_profile(
+            profile_id=f"schema_following_codex_base_{spec.seed}"
+        )
+    return ToolProfileSampler(seed=spec.seed, family=family).sample(spec.mode)
 
 
 def _tool_manifest_entry(profile: ToolProfile) -> list[dict[str, Any]]:
@@ -291,6 +359,7 @@ def _group_profile_ids_by_split_role(
 def generate_synthetic_schema_following_data(
     output_dir: str | Path,
     *,
+    family: NativeSchemaFamily,
     num_intents: int = 120,
     seed: int = 42,
     profile_specs: list[SyntheticProfileSpec] | None = None,
@@ -299,9 +368,16 @@ def generate_synthetic_schema_following_data(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    profile_specs = profile_specs or build_default_synthetic_profile_specs(seed=seed)
-    registry = build_builtin_registry()
-    intents = _iter_generated_intents(num_intents=num_intents, seed=seed)
+    profile_specs = profile_specs or build_default_synthetic_profile_specs(
+        seed=seed,
+        family=family,
+    )
+    registry = (
+        build_claude_canonical_registry()
+        if family == "claude"
+        else build_codex_canonical_registry()
+    )
+    intents = _iter_generated_intents(num_intents=num_intents, seed=seed, family=family)
     split_samples: dict[str, list[SchemaFollowingSample]] = {
         split: [] for split in SCHEMA_FOLLOWING_SPLIT_ORDER
     }
@@ -309,7 +385,7 @@ def generate_synthetic_schema_following_data(
     category_counts: dict[str, int] = {}
 
     for spec in profile_specs:
-        profile = _profile_from_spec(spec)
+        profile = _profile_from_spec(spec, family=family)
         profile_manifest.append(
             SyntheticProfileManifestEntry(
                 profile_id=profile.profile_id,
@@ -317,29 +393,50 @@ def generate_synthetic_schema_following_data(
                 mode=spec.mode,
                 seed=spec.seed,
                 split_role=spec.split_role,
+                family=family,
+                native_profile_kind=f"native_{family}",
                 tools=_tool_manifest_entry(profile),
             )
         )
 
         for intent_index, (task_id, canonical_intent, task_prompt) in enumerate(intents):
             canonical_tool = registry.get(canonical_intent.tool)
-            target_call = profile.project_canonical_call(
-                canonical_intent.tool,
-                canonical_intent.arguments,
-                call_id="call_1",
-                canonical_tool=canonical_tool,
-            )
-            _, roundtrip_args = profile.map_call_arguments(
-                target_call.name,
-                target_call.arguments,
-                canonical_tool=canonical_tool,
-            )
-            if roundtrip_args != canonical_intent.arguments:
-                raise ValueError(
-                    "Projection roundtrip mismatch for "
-                    f"{profile.profile_id}/{canonical_intent.tool}: "
-                    f"{roundtrip_args!r} != {canonical_intent.arguments!r}"
+            if canonical_intent.input_text is not None:
+                target_call = profile.project_canonical_payload(
+                    canonical_intent.tool,
+                    canonical_input_text=canonical_intent.input_text,
+                    call_id="call_1",
+                    canonical_tool=canonical_tool,
                 )
+                _, roundtrip_payload = profile.map_call_payload(
+                    target_call.name,
+                    input_text=target_call.input_text,
+                    canonical_tool=canonical_tool,
+                )
+                if roundtrip_payload != canonical_intent.input_text:
+                    raise ValueError(
+                        "Projection roundtrip mismatch for "
+                        f"{profile.profile_id}/{canonical_intent.tool}: "
+                        f"{roundtrip_payload!r} != {canonical_intent.input_text!r}"
+                    )
+            else:
+                target_call = profile.project_canonical_call(
+                    canonical_intent.tool,
+                    canonical_intent.arguments,
+                    call_id="call_1",
+                    canonical_tool=canonical_tool,
+                )
+                _, roundtrip_args = profile.map_call_arguments(
+                    target_call.name,
+                    target_call.arguments,
+                    canonical_tool=canonical_tool,
+                )
+                if roundtrip_args != canonical_intent.arguments:
+                    raise ValueError(
+                        "Projection roundtrip mismatch for "
+                        f"{profile.profile_id}/{canonical_intent.tool}: "
+                        f"{roundtrip_args!r} != {canonical_intent.arguments!r}"
+                    )
 
             requires_nested_args = _has_nested_values(target_call.arguments)
             sample_id = (
@@ -366,6 +463,7 @@ def generate_synthetic_schema_following_data(
                 loss_mask_policy="assistant_tool_call_only",
                 metadata={
                     "canonical_tool_name": canonical_intent.tool,
+                    "family": family,
                     "profile_mode": spec.mode,
                     "profile_seed": spec.seed,
                     "profile_split_role": spec.split_role,
@@ -394,6 +492,7 @@ def generate_synthetic_schema_following_data(
         {
             "version": 1,
             "seed": seed,
+            "family": family,
             "profiles": [
                 entry.model_dump(mode="json") for entry in profile_manifest
             ],
@@ -405,6 +504,7 @@ def generate_synthetic_schema_following_data(
             "dataset_type": "schema_following_synthetic",
             "version": 1,
             "seed": seed,
+            "family": family,
             "num_intents": num_intents,
             "sample_count": sum(split_counts.values()),
             "loss_mask_policy": "assistant_tool_call_only",

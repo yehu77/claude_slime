@@ -9,6 +9,8 @@ outputs/
 wandb/
 checkpoints/
 *.log
+*.Zone.Identifier
+*:Zone.Identifier
 .env
 .env.*
 !.env.example
@@ -35,3 +37,5 @@ models/**/*.pt
 models/**/*.pth
 models/**/*.ckpt
 models/**/*.distcp
+claude_code/
+codex-rs/

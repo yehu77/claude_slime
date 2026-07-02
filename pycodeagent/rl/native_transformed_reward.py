@@ -50,7 +50,7 @@ def evaluate_native_transformed_rl_completion(
         return _failed_parse_case(sample, expected, predicted_text, exc)
 
     predicted_name = payload["name"]
-    predicted_arguments = payload["arguments"]
+    predicted_arguments = payload.get("arguments")
     tool_name_ok = predicted_name == expected.name
     arguments_exact_match = predicted_arguments == expected.arguments
     schema_status, schema_error = _validate_against_tool_spec(
@@ -131,8 +131,10 @@ def _failed_parse_case(
 def _validate_against_tool_spec(
     tool_specs: list[dict[str, Any]],
     tool_name: str,
-    arguments: dict[str, Any],
+    arguments: dict[str, Any] | None,
 ) -> tuple[SchemaStatus, str | None]:
+    if arguments is None:
+        return "not_applicable", None
     spec = next(
         (tool_spec for tool_spec in tool_specs if tool_spec.get("name") == tool_name),
         None,

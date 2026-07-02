@@ -153,7 +153,7 @@ def evaluate_native_transformed_tool_name_sample(
         )
 
     predicted_name = payload["name"]
-    predicted_arguments = payload["arguments"]
+    predicted_arguments = payload.get("arguments")
     tool_name_ok = predicted_name == expected_name
     arguments_exact_match = predicted_arguments == expected_arguments
     error_code = None

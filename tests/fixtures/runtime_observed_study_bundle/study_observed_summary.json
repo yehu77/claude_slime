@@ -40,9 +40,21 @@
     "read_file": 4
   },
   "sample_count_by_content_delta_kind": {},
+  "sample_count_by_contract_kind": {
+    "function": 8
+  },
   "sample_count_by_execution_kind": {
     "file_read": 4,
     "finish_signal": 4
+  },
+  "sample_count_by_exposed_tool": {
+    "finish": 3,
+    "open_source": 1,
+    "read_file": 3,
+    "submit_result": 1
+  },
+  "sample_count_by_family": {
+    "legacy": 8
   },
   "sample_count_by_mode": {
     "argument_rename": 2,
@@ -76,6 +88,9 @@
       "argument_rename": 1,
       "schema_flat_to_nested": 1
     }
+  },
+  "sample_count_by_native_profile_kind": {
+    "legacy": 8
   },
   "sample_count_by_policy_decision": {
     "allow": 8

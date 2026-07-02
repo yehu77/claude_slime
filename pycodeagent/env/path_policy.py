@@ -185,6 +185,7 @@ def resolve_and_validate_writable_path(
     raw_path: str,
     workspace_root: Path,
     *,
+    allow_absolute: bool = False,
     must_exist: bool = False,
     must_be_file: bool = False,
     must_be_dir: bool = False,
@@ -194,6 +195,7 @@ def resolve_and_validate_writable_path(
     resolved = resolve_and_validate_path(
         raw_path,
         workspace_root,
+        allow_absolute=allow_absolute,
         must_exist=must_exist,
         must_be_file=must_be_file,
         must_be_dir=must_be_dir,

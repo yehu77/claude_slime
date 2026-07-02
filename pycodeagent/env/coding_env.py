@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, Any
 from pycodeagent.env.task import CodingTask
 from pycodeagent.env.verifier import run_verifier
 from pycodeagent.runtime_trace import RuntimeTraceWriter
+from pycodeagent.tools.bootstrap import ToolStackKind
 from pycodeagent.trajectory.recorder import RunRecorder
 from pycodeagent.trajectory.schema import RunStatus, Trajectory, VerifyResult
 
@@ -46,6 +47,7 @@ _IGNORE_COPY_PATTERNS = {
 }
 
 _IGNORED_DIFF_PARTS = {"__pycache__", ".git", ".pytest_cache"}
+_VALID_TOOL_STACK_KINDS = {"native_claude", "native_codex"}
 
 
 def _ignore_copy_patterns(directory: str, contents: list[str]) -> list[str]:
@@ -339,6 +341,7 @@ def _resolve_profile_and_runtime(
     runtime: "ToolRuntime | None",
     profile_mode: str | None,
     profile_seed: int,
+    tool_stack_kind: ToolStackKind,
 ) -> tuple["ToolProfile", "ToolRuntime"]:
     """Resolve the effective tool profile/runtime for a local run.
 
@@ -347,26 +350,76 @@ def _resolve_profile_and_runtime(
     - pass a concrete ``profile``
     - request a deterministic sampled profile via ``profile_mode/profile_seed``
 
-    If neither is supplied, the legacy default base profile/runtime is used.
+    If neither is supplied, the requested native family base profile/runtime is
+    used.
     """
     from pycodeagent.mutations.profile_sampler import build_sampled_tool_profile
-    from pycodeagent.tools.bootstrap import build_base_tool_runtime
+    from pycodeagent.tools.bootstrap import (
+        _build_tool_stack,
+        _infer_tool_stack_kind_from_profile,
+    )
+    from pycodeagent.tools.profile_factory import (
+        build_native_claude_profile,
+        build_native_codex_profile,
+    )
 
     if profile is not None and profile_mode is not None:
         raise ValueError(
             "run_coding_task accepts either profile or profile_mode, not both"
         )
+    if tool_stack_kind not in _VALID_TOOL_STACK_KINDS:
+        raise ValueError(f"Unknown tool_stack_kind: {tool_stack_kind!r}")
+
+    profile_stack_kind = (
+        _infer_tool_stack_kind_from_profile(profile)
+        if profile is not None
+        else None
+    )
+    if (
+        profile_stack_kind is not None
+        and tool_stack_kind != profile_stack_kind
+    ):
+        raise ValueError(
+            "run_coding_task received a native profile whose family conflicts "
+            f"with tool_stack_kind={tool_stack_kind!r}"
+        )
+    if profile is not None and profile_stack_kind is None:
+        raise ValueError(
+            "run_coding_task received a profile without native family metadata; "
+            "pass a profile built from native_claude/native_codex."
+        )
 
     if profile is None and profile_mode is not None:
-        profile = build_sampled_tool_profile(mode=profile_mode, seed=profile_seed)
+        profile = build_sampled_tool_profile(
+            mode=profile_mode,
+            seed=profile_seed,
+            family="claude" if tool_stack_kind == "native_claude" else "codex",
+        )
+        profile_stack_kind = tool_stack_kind
 
     if runtime is None:
-        _, default_profile, runtime = build_base_tool_runtime()
+        selected_stack_kind = tool_stack_kind
+        if profile is not None:
+            selected_stack_kind = (
+                profile_stack_kind or _infer_tool_stack_kind_from_profile(profile)
+            )
+        if selected_stack_kind is None:
+            raise ValueError(
+                "run_coding_task could not infer a native tool stack from the profile."
+            )
+
+        _, default_profile, runtime = _build_tool_stack(
+            selected_stack_kind,
+            profile_id=(profile.profile_id if profile is not None else None),
+        )
         if profile is None:
             profile = default_profile
 
     if profile is None:
-        _, profile, _ = build_base_tool_runtime()
+        if tool_stack_kind == "native_claude":
+            profile = build_native_claude_profile()
+        else:
+            profile = build_native_codex_profile()
 
     return profile, runtime
 
@@ -414,6 +467,7 @@ def run_coding_task(
     runtime: "ToolRuntime | None" = None,
     profile_mode: str | None = None,
     profile_seed: int = 0,
+    tool_stack_kind: ToolStackKind,
     context_policy_mode: str = "full_history",
     context_max_messages: int | None = None,
     context_max_tokens: int | None = None,
@@ -433,11 +487,13 @@ def run_coding_task(
         task: The coding task to solve.
         client: LLM client for the agent.
         output_dir: Directory to store run artifacts.
-        profile: Tool profile (default: base profile from bootstrap).
-        runtime: Tool runtime (default: built from bootstrap).
+        profile: Tool profile for the selected native family.
+        runtime: Tool runtime for the selected native family.
         profile_mode: Optional sampled profile mode to resolve at runtime entry.
-            When provided, this replaces the default base profile path.
+            When provided, this samples from the selected native family base.
         profile_seed: Deterministic seed used with ``profile_mode``.
+        tool_stack_kind: Explicit runtime stack family selection for the
+            formal local runtime entry.
         context_policy_mode: Request-time context selection policy for the
             local runtime.
         context_max_messages: Optional message-count limit used with
@@ -474,6 +530,7 @@ def run_coding_task(
         runtime=runtime,
         profile_mode=profile_mode,
         profile_seed=profile_seed,
+        tool_stack_kind=tool_stack_kind,
     )
 
     # Prepare workspace - uses unique directory to avoid conflicts
@@ -564,7 +621,11 @@ def run_coding_task(
     )
 
     # Run agent
-    ctx = ToolContext(workspace_root=workspace_root, task=workspace_task)
+    ctx = ToolContext(
+        workspace_root=workspace_root,
+        task=workspace_task,
+        artifact_root=output_dir,
+    )
     trace_writer = RuntimeTraceWriter.create(
         output_dir,
         run_id=output_dir.name or "local_runtime_run",

@@ -1,7 +1,7 @@
 {
-  "client_mode": "mimo_native_tools",
-  "model": "fill-your-model-name-here",
-  "base_url": "https://token-plan-cn.xiaomimimo.com/v1",
+  "client_mode": "openai_native_tools",
+  "model": "deepseek-v4-flash",
+  "base_url": "https://opencode.ai/zen/go/v1",
   "api_key_env": "PYCODEAGENT_API_KEY",
   "timeout_seconds": 120,
   "max_retries": 3,

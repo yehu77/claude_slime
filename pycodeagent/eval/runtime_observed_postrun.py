@@ -43,9 +43,13 @@ class RuntimeObservedStudyBundleResult(BaseModel):
     task_count: int
     run_count_by_mode: dict[str, int] = Field(default_factory=dict)
     sample_count_by_mode: dict[str, int] = Field(default_factory=dict)
+    sample_count_by_family: dict[str, int] = Field(default_factory=dict)
+    sample_count_by_native_profile_kind: dict[str, int] = Field(default_factory=dict)
+    sample_count_by_contract_kind: dict[str, int] = Field(default_factory=dict)
     trainable_sample_count_by_mode: dict[str, int] = Field(default_factory=dict)
     sample_count_by_seed: dict[str, int] = Field(default_factory=dict)
     sample_count_by_canonical_tool: dict[str, int] = Field(default_factory=dict)
+    sample_count_by_exposed_tool: dict[str, int] = Field(default_factory=dict)
     sample_count_by_mode_and_canonical_tool: dict[str, dict[str, int]] = Field(
         default_factory=dict
     )
@@ -192,9 +196,15 @@ def prepare_study_runtime_observed_bundle(
         task_count=summary_payload["task_count"],
         run_count_by_mode=summary_payload["run_count_by_mode"],
         sample_count_by_mode=summary_payload["sample_count_by_mode"],
+        sample_count_by_family=summary_payload["sample_count_by_family"],
+        sample_count_by_native_profile_kind=summary_payload[
+            "sample_count_by_native_profile_kind"
+        ],
+        sample_count_by_contract_kind=summary_payload["sample_count_by_contract_kind"],
         trainable_sample_count_by_mode=summary_payload["trainable_sample_count_by_mode"],
         sample_count_by_seed=summary_payload["sample_count_by_seed"],
         sample_count_by_canonical_tool=summary_payload["sample_count_by_canonical_tool"],
+        sample_count_by_exposed_tool=summary_payload["sample_count_by_exposed_tool"],
         sample_count_by_mode_and_canonical_tool=summary_payload[
             "sample_count_by_mode_and_canonical_tool"
         ],
@@ -355,8 +365,22 @@ def _build_study_observed_summary(
     sample_count_by_seed = Counter(
         str(sample.metadata.get("source_profile_seed", 0)) for sample in raw_samples
     )
+    sample_count_by_family = Counter(
+        str(sample.metadata.get("source_family", "unknown")) for sample in raw_samples
+    )
+    sample_count_by_native_profile_kind = Counter(
+        str(sample.metadata.get("source_native_profile_kind", "unknown"))
+        for sample in raw_samples
+    )
+    sample_count_by_contract_kind = Counter(
+        str(sample.metadata.get("source_contract_kind", "unknown"))
+        for sample in raw_samples
+    )
     sample_count_by_canonical_tool = Counter(
         str(sample.canonical_intent.tool) for sample in raw_samples
+    )
+    sample_count_by_exposed_tool = Counter(
+        str(sample.target_tool_call.name) for sample in raw_samples
     )
     sample_count_by_mode_and_canonical_tool: dict[str, Counter[str]] = {}
     sample_count_by_mode_and_schema_variant_category: dict[str, Counter[str]] = {}
@@ -428,9 +452,17 @@ def _build_study_observed_summary(
         "task_count": task_count,
         "run_count_by_mode": _sorted_mapping(run_count_by_mode),
         "sample_count_by_mode": _sorted_mapping(sample_count_by_mode),
+        "sample_count_by_family": _sorted_mapping(sample_count_by_family),
+        "sample_count_by_native_profile_kind": _sorted_mapping(
+            sample_count_by_native_profile_kind
+        ),
+        "sample_count_by_contract_kind": _sorted_mapping(
+            sample_count_by_contract_kind
+        ),
         "trainable_sample_count_by_mode": _sorted_mapping(sample_count_by_mode),
         "sample_count_by_seed": _sorted_mapping(sample_count_by_seed),
         "sample_count_by_canonical_tool": _sorted_mapping(sample_count_by_canonical_tool),
+        "sample_count_by_exposed_tool": _sorted_mapping(sample_count_by_exposed_tool),
         "sample_count_by_mode_and_canonical_tool": {
             mode: _sorted_mapping(counter)
             for mode, counter in sorted(sample_count_by_mode_and_canonical_tool.items())

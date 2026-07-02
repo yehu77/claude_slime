@@ -17,7 +17,10 @@ from pycodeagent.rl.schema_following import (
     SchemaFollowingSample,
 )
 from pycodeagent.rl.schema_following_dataset import write_schema_following_jsonl
-from pycodeagent.tools.bootstrap import build_builtin_registry
+from pycodeagent.tools.families import (
+    build_claude_canonical_registry,
+    build_codex_canonical_registry,
+)
 from pycodeagent.tools.spec import ToolArgumentError, ToolProfile
 from pycodeagent.trajectory.schema import (
     Message,
@@ -34,10 +37,13 @@ class RuntimeObservedProfileManifestEntry(BaseModel):
     profile_id: str
     mode: str
     seed: int
+    family: str | None = None
+    native_profile_kind: str | None = None
+    mutation_source_family: str | None = None
     mutation_axes: list[str] = Field(default_factory=list)
     compat_mode: str | None = None
     mutation_manifest_version: int = 1
-    reorder_anchor_policy: str = "finish_last"
+    reorder_anchor_policy: str = "preserve_source_order"
     tool_order_seed: int | None = None
     schema_variant_categories: dict[str, str | None] = Field(default_factory=dict)
     selected_variant_ids: dict[str, dict[str, str | None]] = Field(default_factory=dict)
@@ -175,6 +181,9 @@ def _tool_manifest_entry(profile: ToolProfile) -> list[dict[str, Any]]:
                 "exposed_name": tool.exposed_name,
                 "description": tool.description,
                 "input_schema": tool.input_schema,
+                "contract_kind": tool.contract_kind.value,
+                "input_format": tool.input_format,
+                "version": tool.version,
                 "metadata": tool.metadata,
                 "adapter": (
                     adapter.model_dump(mode="json")
@@ -239,6 +248,10 @@ def _profile_tool_order_seed(profile: ToolProfile) -> int | None:
     raw_value = profile.metadata.get("tool_order_seed")
     if raw_value is None:
         return None
+    try:
+        return int(raw_value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _profile_mutation_manifest_version(profile: ToolProfile) -> int:
@@ -247,10 +260,6 @@ def _profile_mutation_manifest_version(profile: ToolProfile) -> int:
         return int(raw_value)
     except (TypeError, ValueError):
         return 1
-    try:
-        return int(raw_value)
-    except (TypeError, ValueError):
-        return None
 
 
 def _runtime_provider_metadata(trajectory: Trajectory) -> dict[str, Any]:
@@ -258,6 +267,27 @@ def _runtime_provider_metadata(trajectory: Trajectory) -> dict[str, Any]:
     if not isinstance(raw_value, dict):
         return {}
     return dict(raw_value)
+
+
+def _canonical_registry_for_profile(profile: ToolProfile):
+    native_profile_kind = profile.metadata.get("native_profile_kind")
+    family = profile.metadata.get("family")
+    if native_profile_kind == "native_claude" or family == "claude":
+        return build_claude_canonical_registry()
+    if native_profile_kind == "native_codex" or family == "codex":
+        return build_codex_canonical_registry()
+    raise ValueError(
+        "Observed runtime export requires native-family profile metadata; "
+        f"got family={family!r}, native_profile_kind={native_profile_kind!r}"
+    )
+
+
+def _tool_call_matches_target(call, target: ExposedToolCallTarget) -> bool:
+    return (
+        call.name == target.name
+        and call.arguments == target.arguments
+        and call.input_text == target.input_text
+    )
 
 
 def _observation_index(trajectory: Trajectory) -> dict[str, ToolObservation]:
@@ -346,7 +376,6 @@ def generate_schema_following_from_runtime_runs(
 
     filter_config = filter_config or FilterConfig(include_failed=False)
     run_dirs = discover_run_dirs(source_dir, source_type=source_type)
-    registry = build_builtin_registry()
     split_samples: dict[str, list[SchemaFollowingSample]] = {"train": []}
     source_runs: list[dict[str, Any]] = []
     profile_manifest: dict[str, RuntimeObservedProfileManifestEntry] = {}
@@ -358,6 +387,7 @@ def generate_schema_following_from_runtime_runs(
     for run_dir in run_dirs:
         trajectory = _load_trajectory(run_dir)
         source_profile = _load_tool_profile(run_dir)
+        registry = _canonical_registry_for_profile(source_profile)
         runtime_trace_events = _load_runtime_trace_events(run_dir)
         observations_by_call_id = _observation_index(trajectory)
         mapping_events_by_call_id = _runtime_trace_event_index(
@@ -386,6 +416,14 @@ def generate_schema_following_from_runtime_runs(
         runtime_trace_present = (run_dir / "runtime_trace.jsonl").exists()
         verifier_passed = trajectory.verifier.passed if trajectory.verifier else False
         provider_metadata = _runtime_provider_metadata(trajectory)
+        source_family = source_profile.metadata.get("family") or "legacy"
+        native_profile_kind = (
+            source_profile.metadata.get("native_profile_kind") or "legacy"
+        )
+        mutation_source_family = (
+            source_profile.metadata.get("mutation_source_family")
+            or source_family
+        )
         run_observed_tool_call_count = 0
         run_exported_observed_tool_call_count = 0
         run_skipped_observed_tool_calls: list[dict[str, Any]] = []
@@ -396,6 +434,9 @@ def generate_schema_following_from_runtime_runs(
             "source_tool_profile_id": trajectory.tool_profile_id,
             "source_profile_mode": profile_mode,
             "source_profile_seed": profile_seed,
+            "source_family": source_family,
+            "source_native_profile_kind": native_profile_kind,
+            "mutation_source_family": mutation_source_family,
             "mutation_axes": mutation_axes,
             "compat_mode": compat_mode,
             "mutation_manifest_version": mutation_manifest_version,
@@ -434,6 +475,17 @@ def generate_schema_following_from_runtime_runs(
                 profile_id=source_profile.profile_id,
                 mode=profile_mode,
                 seed=profile_seed,
+                family=(str(source_family) if source_family is not None else None),
+                native_profile_kind=(
+                    str(native_profile_kind)
+                    if native_profile_kind is not None
+                    else None
+                ),
+                mutation_source_family=(
+                    str(mutation_source_family)
+                    if mutation_source_family is not None
+                    else None
+                ),
                 mutation_axes=mutation_axes,
                 compat_mode=(
                     str(compat_mode) if compat_mode is not None else None
@@ -528,9 +580,10 @@ def generate_schema_following_from_runtime_runs(
                 tool_reordered = bool(source_view.metadata.get("tool_reordered", False))
 
                 try:
-                    _, canonical_args = source_profile.map_call_arguments(
+                    _, canonical_payload = source_profile.map_call_payload(
                         call.name,
-                        call.arguments,
+                        exposed_args=call.arguments,
+                        input_text=call.input_text,
                         canonical_tool=canonical_tool,
                     )
                 except (ToolArgumentError, KeyError, TypeError) as exc:
@@ -556,21 +609,23 @@ def generate_schema_following_from_runtime_runs(
                     )
                     continue
 
-                roundtrip_call = source_profile.project_canonical_call(
+                roundtrip_call = source_profile.project_canonical_payload(
                     canonical_name,
-                    canonical_args,
+                    canonical_args=(
+                        canonical_payload if isinstance(canonical_payload, dict) else None
+                    ),
+                    canonical_input_text=(
+                        canonical_payload if isinstance(canonical_payload, str) else None
+                    ),
                     call_id=call.id,
                     canonical_tool=canonical_tool,
                 )
-                if (
-                    roundtrip_call.name != call.name
-                    or roundtrip_call.arguments != call.arguments
-                ):
+                if not _tool_call_matches_target(call, roundtrip_call):
                     reason = "roundtrip_mismatch"
                     detail = (
                         "Observed runtime call roundtrip mismatch: "
-                        f"{(roundtrip_call.name, roundtrip_call.arguments)!r} "
-                        f"!= {(call.name, call.arguments)!r}"
+                        f"{roundtrip_call.to_payload()!r} != "
+                        f"{ExposedToolCallTarget(call_id=call.id, name=call.name, arguments=call.arguments, input_text=call.input_text).to_payload()!r}"
                     )
                     run_skipped_observed_tool_calls.append(
                         _skip_observed_call_record(
@@ -596,6 +651,7 @@ def generate_schema_following_from_runtime_runs(
                     call_id=call.id,
                     name=call.name,
                     arguments=call.arguments,
+                    input_text=call.input_text,
                 )
                 execution_provenance = _derive_execution_provenance(
                     observation=observations_by_call_id.get(call.id),
@@ -617,7 +673,16 @@ def generate_schema_following_from_runtime_runs(
                         messages=context_messages,
                         canonical_intent=CanonicalToolIntent(
                             tool=canonical_name,
-                            arguments=canonical_args,
+                            arguments=(
+                                canonical_payload
+                                if isinstance(canonical_payload, dict)
+                                else {}
+                            ),
+                            input_text=(
+                                canonical_payload
+                                if isinstance(canonical_payload, str)
+                                else None
+                            ),
                         ),
                         target_tool_call=target_call,
                         target_text=target_call.render_text(),
@@ -628,6 +693,9 @@ def generate_schema_following_from_runtime_runs(
                             "source_tool_profile_id": trajectory.tool_profile_id,
                             "source_profile_mode": profile_mode,
                             "source_profile_seed": profile_seed,
+                            "source_family": source_family,
+                            "source_native_profile_kind": native_profile_kind,
+                            "mutation_source_family": mutation_source_family,
                             "mutation_axes": mutation_axes,
                             "compat_mode": compat_mode,
                             "mutation_manifest_version": mutation_manifest_version,
@@ -639,6 +707,11 @@ def generate_schema_following_from_runtime_runs(
                             "source_schema_variant_id": schema_variant_id,
                             "schema_variant_category": schema_variant_category,
                             "source_exposed_tool_name": call.name,
+                            "source_exposed_payload_kind": call.payload_kind.value,
+                            "source_contract_kind": source_view.contract_kind.value,
+                            "source_input_format": source_view.input_format,
+                            "source_tool_contract_kind": source_view.contract_kind.value,
+                            "source_tool_input_format": source_view.input_format,
                             "source_tool_call_id": call.id,
                             "source_message_index": message_index,
                             "source_step_index": tool_call_step_index,
@@ -683,6 +756,26 @@ def generate_schema_following_from_runtime_runs(
 
     split_counts = {split_name: len(samples) for split_name, samples in split_samples.items()}
     present_splits = [name for name, count in split_counts.items() if count > 0]
+    raw_samples = split_samples["train"]
+    sample_count_by_family: dict[str, int] = {}
+    sample_count_by_native_profile_kind: dict[str, int] = {}
+    sample_count_by_contract_kind: dict[str, int] = {}
+    sample_count_by_mode: dict[str, int] = {}
+    for sample in raw_samples:
+        family = str(sample.metadata.get("source_family", "unknown"))
+        sample_count_by_family[family] = sample_count_by_family.get(family, 0) + 1
+        native_kind = str(
+            sample.metadata.get("source_native_profile_kind", "unknown")
+        )
+        sample_count_by_native_profile_kind[native_kind] = (
+            sample_count_by_native_profile_kind.get(native_kind, 0) + 1
+        )
+        contract_kind = str(sample.metadata.get("source_contract_kind", "unknown"))
+        sample_count_by_contract_kind[contract_kind] = (
+            sample_count_by_contract_kind.get(contract_kind, 0) + 1
+        )
+        mode = str(sample.metadata.get("source_profile_mode", "unknown"))
+        sample_count_by_mode[mode] = sample_count_by_mode.get(mode, 0) + 1
     profile_manifest_path = output_dir / "profile_manifest.json"
     dataset_manifest_path = output_dir / "dataset_manifest.json"
     source_manifest_path = output_dir / "source_manifest.json"
@@ -710,6 +803,14 @@ def generate_schema_following_from_runtime_runs(
                 sorted(skipped_observed_call_counts_by_reason.items())
             ),
             "loss_mask_policy": "assistant_tool_call_only",
+            "sample_count_by_family": dict(sorted(sample_count_by_family.items())),
+            "sample_count_by_native_profile_kind": dict(
+                sorted(sample_count_by_native_profile_kind.items())
+            ),
+            "sample_count_by_contract_kind": dict(
+                sorted(sample_count_by_contract_kind.items())
+            ),
+            "sample_count_by_mode": dict(sorted(sample_count_by_mode.items())),
             "present_splits": present_splits,
             "profile_ids": [entry.profile_id for entry in manifest_profiles],
             "profile_manifest_path": profile_manifest_path.name,
@@ -741,6 +842,14 @@ def generate_schema_following_from_runtime_runs(
             "version": 1,
             "split_seed": split_seed,
             "split_counts": split_counts,
+            "sample_count_by_family": dict(sorted(sample_count_by_family.items())),
+            "sample_count_by_native_profile_kind": dict(
+                sorted(sample_count_by_native_profile_kind.items())
+            ),
+            "sample_count_by_contract_kind": dict(
+                sorted(sample_count_by_contract_kind.items())
+            ),
+            "sample_count_by_mode": dict(sorted(sample_count_by_mode.items())),
         },
     )
 

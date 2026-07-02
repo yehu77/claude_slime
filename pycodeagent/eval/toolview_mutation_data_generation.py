@@ -31,11 +31,18 @@ from pycodeagent.rl.training_prep import (
     SchemaFollowingTrainingPrepRecommendation,
     prepare_schema_following_training_input,
 )
-from pycodeagent.tools.bootstrap import build_base_tool_runtime
+from pycodeagent.tools.bootstrap import (
+    ToolStackKind,
+    build_native_claude_runtime,
+    build_native_codex_runtime,
+)
 
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 _DEFAULT_TASKS_PATH = _PROJECT_ROOT / "datasets" / "tasks" / "realistic_runtime_tasks.jsonl"
+_DEFAULT_NATIVE_FAMILY_MUTATION_CONFIG = (
+    _PROJECT_ROOT / "configs" / "tools" / "native_family_mutation_v1.yaml"
+)
 DEFAULT_MUTATION_DATA_PROFILE_MODES: tuple[str, str, str, str] = (
     "base",
     "argument_rename",
@@ -89,6 +96,8 @@ def run_real_provider_toolview_mutation_data_generation(
     profile_modes: list[str] | tuple[str, ...] = DEFAULT_MUTATION_DATA_PROFILE_MODES,
     profile_seed_by_mode: dict[str, int] | None = None,
     repeat_count: int = DEFAULT_MUTATION_DATA_REPEAT_COUNT,
+    tool_stack_kind: ToolStackKind,
+    mutation_config_path: str | Path | None = None,
     filter_config: FilterConfig | None = None,
     prepare_training_input: bool = True,
     split: str = "train",
@@ -118,6 +127,8 @@ def run_real_provider_toolview_mutation_data_generation(
         profile_modes=profile_modes,
         profile_seed_by_mode=profile_seed_by_mode,
         repeat_count=repeat_count,
+        tool_stack_kind=tool_stack_kind,
+        mutation_config_path=mutation_config_path,
         filter_config=filter_config,
         prepare_training_input=prepare_training_input,
         split=split,
@@ -143,6 +154,8 @@ def run_toolview_mutation_data_generation(
     profile_modes: list[str] | tuple[str, ...] = DEFAULT_MUTATION_DATA_PROFILE_MODES,
     profile_seed_by_mode: dict[str, int] | None = None,
     repeat_count: int = DEFAULT_MUTATION_DATA_REPEAT_COUNT,
+    tool_stack_kind: ToolStackKind,
+    mutation_config_path: str | Path | None = None,
     filter_config: FilterConfig | None = None,
     prepare_training_input: bool = True,
     split: str = "train",
@@ -168,6 +181,8 @@ def run_toolview_mutation_data_generation(
         profile_modes=profile_modes,
         profile_seed_by_mode=profile_seed_by_mode,
         repeat_count=repeat_count,
+        tool_stack_kind=tool_stack_kind,
+        mutation_config_path=mutation_config_path,
     )
     return build_toolview_mutation_data_generation_from_runs(
         source_runs_root,
@@ -177,6 +192,7 @@ def run_toolview_mutation_data_generation(
         profile_modes=profile_modes,
         profile_seed_by_mode=profile_seed_by_mode,
         repeat_count=repeat_count,
+        tool_stack_kind=tool_stack_kind,
         filter_config=filter_config,
         prepare_training_input=prepare_training_input,
         split=split,
@@ -201,6 +217,7 @@ def build_toolview_mutation_data_generation_from_runs(
     profile_modes: list[str] | tuple[str, ...] = DEFAULT_MUTATION_DATA_PROFILE_MODES,
     profile_seed_by_mode: dict[str, int] | None = None,
     repeat_count: int = DEFAULT_MUTATION_DATA_REPEAT_COUNT,
+    tool_stack_kind: ToolStackKind,
     filter_config: FilterConfig | None = None,
     prepare_training_input: bool = True,
     split: str = "train",
@@ -291,6 +308,7 @@ def build_toolview_mutation_data_generation_from_runs(
         "profile_modes": normalized_modes,
         "profile_seed_by_mode": normalized_profile_seeds,
         "repeat_count": repeat_count,
+        "tool_stack_kind": tool_stack_kind,
         "source_runs_root": str(source_runs_root),
         "raw_dataset_dir": str(raw_dataset_dir),
         "prepared_dataset_dir": str(prepared_dataset_dir) if prepared_dataset_dir else None,
@@ -320,6 +338,7 @@ def build_toolview_mutation_data_generation_from_runs(
         "profile_modes": normalized_modes,
         "profile_seed_by_mode": normalized_profile_seeds,
         "repeat_count": repeat_count,
+        "tool_stack_kind": tool_stack_kind,
         "training_prep_enabled": prepare_training_input,
         "contract_ok": contract_ok,
         "paths": {
@@ -376,17 +395,27 @@ def _materialize_source_runs(
     profile_modes: list[str] | tuple[str, ...],
     profile_seed_by_mode: dict[str, int] | None,
     repeat_count: int,
+    tool_stack_kind: ToolStackKind,
+    mutation_config_path: str | Path | None,
 ) -> None:
-    _, _, runtime = build_base_tool_runtime()
+    _, base_profile, runtime = _build_source_stack(tool_stack_kind)
     normalized_modes = [str(mode) for mode in profile_modes]
     normalized_profile_seeds = _normalized_profile_seed_by_mode(
         normalized_modes,
         profile_seed_by_mode,
     )
+    resolved_mutation_config = _resolve_mutation_config_path(
+        tool_stack_kind,
+        mutation_config_path,
+    )
 
     for mode in normalized_modes:
         profile_seed = normalized_profile_seeds[mode]
-        expected_profile = ToolProfileSampler(seed=profile_seed).sample(mode)
+        expected_profile = ToolProfileSampler(
+            seed=profile_seed,
+            mutation_config_path=resolved_mutation_config,
+            base_profile=base_profile,
+        ).sample(mode)
         profile_id = expected_profile.profile_id
         for task in tasks:
             for repeat_index in range(repeat_count):
@@ -404,14 +433,31 @@ def _materialize_source_runs(
                     client,
                     run_dir,
                     runtime=runtime,
-                    profile_mode=mode,
-                    profile_seed=profile_seed,
+                    profile=expected_profile,
+                    tool_stack_kind=tool_stack_kind,
                 )
                 if trajectory.tool_profile_id != profile_id:
                     raise ValueError(
                         "Runtime returned unexpected tool_profile_id for mutation data generation run: "
                         f"expected {profile_id}, got {trajectory.tool_profile_id}"
                     )
+
+
+def _build_source_stack(tool_stack_kind: ToolStackKind):
+    if tool_stack_kind == "native_claude":
+        return build_native_claude_runtime()
+    if tool_stack_kind == "native_codex":
+        return build_native_codex_runtime()
+    raise ValueError(f"Unknown tool_stack_kind: {tool_stack_kind!r}")
+
+
+def _resolve_mutation_config_path(
+    tool_stack_kind: ToolStackKind,
+    mutation_config_path: str | Path | None,
+) -> Path | None:
+    if mutation_config_path is not None:
+        return Path(mutation_config_path)
+    return _DEFAULT_NATIVE_FAMILY_MUTATION_CONFIG
 
 
 def _source_run_dir_name(
@@ -473,20 +519,34 @@ def _build_acceptance_report(
     source_profile_mode_present = all(
         bool(sample.metadata.get("source_profile_mode")) for sample in raw_samples
     )
+    family_metadata_present = all(
+        bool(sample.metadata.get("source_family")) for sample in raw_samples
+    )
+    contract_kind_metadata_present = all(
+        bool(sample.metadata.get("source_contract_kind")) for sample in raw_samples
+    )
     schema_variant_metadata_ok = True
     reorder_metadata_ok = True
     target_call_preserved = True
+    freeform_payload_preserved = True
     for sample in raw_samples:
         mode = str(sample.metadata.get("source_profile_mode", ""))
+        source_contract_kind = str(sample.metadata.get("source_contract_kind", "function"))
         if mode in {"argument_rename", "schema_flat_to_nested"}:
             category = sample.metadata.get("schema_variant_category")
-            if category not in {"argument_rename", "schema_flat_to_nested"}:
+            if (
+                source_contract_kind != "freeform"
+                and category not in {"argument_rename", "schema_flat_to_nested"}
+            ):
                 schema_variant_metadata_ok = False
         if mode == "tool_reorder":
             if "tool_order_changed" not in sample.metadata or "source_tool_reordered" not in sample.metadata:
                 reorder_metadata_ok = False
         if str(sample.target_tool_call.name) != str(sample.metadata.get("source_exposed_tool_name")):
             target_call_preserved = False
+        if source_contract_kind == "freeform":
+            if sample.target_tool_call.input_text is None:
+                freeform_payload_preserved = False
 
     completed_run_coverage_ok = all(
         completed_run_count_by_mode.get(mode, 0) > 0 for mode in configured_modes
@@ -511,6 +571,14 @@ def _build_acceptance_report(
             "passed": source_profile_mode_present,
             "detail": "Observed sample metadata must preserve source_profile_mode.",
         },
+        "family_metadata_present": {
+            "passed": family_metadata_present,
+            "detail": "Observed sample metadata must preserve source_family.",
+        },
+        "contract_kind_metadata_present": {
+            "passed": contract_kind_metadata_present,
+            "detail": "Observed sample metadata must preserve source_contract_kind.",
+        },
         "schema_variant_metadata_ok": {
             "passed": schema_variant_metadata_ok,
             "detail": "Rename/nested modes must preserve schema_variant_category on observed samples.",
@@ -522,6 +590,10 @@ def _build_acceptance_report(
         "target_call_preserved": {
             "passed": target_call_preserved,
             "detail": "Observed target_tool_call.name must match source_exposed_tool_name.",
+        },
+        "freeform_payload_preserved": {
+            "passed": freeform_payload_preserved,
+            "detail": "Freeform observed samples must preserve input_text payloads.",
         },
         "training_prep_ok": {
             "passed": training_prep_ok,

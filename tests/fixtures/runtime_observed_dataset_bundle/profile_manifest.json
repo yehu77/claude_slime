@@ -2,9 +2,12 @@
   "profiles": [
     {
       "compat_mode": null,
+      "family": "legacy",
       "mode": "base",
       "mutation_axes": [],
       "mutation_manifest_version": 1,
+      "mutation_source_family": "legacy",
+      "native_profile_kind": "legacy",
       "profile_id": "base",
       "reorder_anchor_policy": "finish_last",
       "schema_variant_categories": {
@@ -74,8 +77,10 @@
             "exposed_to_canonical": {}
           },
           "canonical_name": "list_files",
+          "contract_kind": "function",
           "description": "List files in the workspace directory.",
           "exposed_name": "list_files",
+          "input_format": null,
           "input_schema": {
             "properties": {
               "path": {
@@ -101,7 +106,8 @@
             "tool_order_index_base": 0,
             "tool_order_index_exposed": 0,
             "tool_reordered": false
-          }
+          },
+          "version": "default"
         },
         {
           "adapter": {
@@ -109,8 +115,10 @@
             "exposed_to_canonical": {}
           },
           "canonical_name": "read_file",
+          "contract_kind": "function",
           "description": "Read a file from the workspace.",
           "exposed_name": "read_file",
+          "input_format": null,
           "input_schema": {
             "properties": {
               "end_line": {
@@ -142,7 +150,8 @@
             "tool_order_index_base": 1,
             "tool_order_index_exposed": 1,
             "tool_reordered": false
-          }
+          },
+          "version": "default"
         },
         {
           "adapter": {
@@ -150,8 +159,10 @@
             "exposed_to_canonical": {}
           },
           "canonical_name": "write_file",
+          "contract_kind": "function",
           "description": "Write text to an existing file in the workspace.",
           "exposed_name": "write_file",
+          "input_format": null,
           "input_schema": {
             "properties": {
               "content": {
@@ -180,7 +191,8 @@
             "tool_order_index_base": 2,
             "tool_order_index_exposed": 2,
             "tool_reordered": false
-          }
+          },
+          "version": "default"
         },
         {
           "adapter": {
@@ -188,8 +200,10 @@
             "exposed_to_canonical": {}
           },
           "canonical_name": "create_file",
+          "contract_kind": "function",
           "description": "Create a new file in the workspace.",
           "exposed_name": "create_file",
+          "input_format": null,
           "input_schema": {
             "properties": {
               "content": {
@@ -217,7 +231,8 @@
             "tool_order_index_base": 3,
             "tool_order_index_exposed": 3,
             "tool_reordered": false
-          }
+          },
+          "version": "default"
         },
         {
           "adapter": {
@@ -225,8 +240,10 @@
             "exposed_to_canonical": {}
           },
           "canonical_name": "search_code",
+          "contract_kind": "function",
           "description": "Search for text in workspace files.",
           "exposed_name": "search_code",
+          "input_format": null,
           "input_schema": {
             "properties": {
               "glob_pattern": {
@@ -258,7 +275,8 @@
             "tool_order_index_base": 4,
             "tool_order_index_exposed": 4,
             "tool_reordered": false
-          }
+          },
+          "version": "default"
         },
         {
           "adapter": {
@@ -266,8 +284,10 @@
             "exposed_to_canonical": {}
           },
           "canonical_name": "apply_patch",
+          "contract_kind": "function",
           "description": "Apply a unified diff patch to workspace files.",
           "exposed_name": "apply_patch",
+          "input_format": null,
           "input_schema": {
             "properties": {
               "diff": {
@@ -291,7 +311,8 @@
             "tool_order_index_base": 5,
             "tool_order_index_exposed": 5,
             "tool_reordered": false
-          }
+          },
+          "version": "default"
         },
         {
           "adapter": {
@@ -299,8 +320,10 @@
             "exposed_to_canonical": {}
           },
           "canonical_name": "run_command",
+          "contract_kind": "function",
           "description": "Execute a controlled command within the workspace.",
           "exposed_name": "run_command",
+          "input_format": null,
           "input_schema": {
             "properties": {
               "command": {
@@ -332,7 +355,8 @@
             "tool_order_index_base": 6,
             "tool_order_index_exposed": 6,
             "tool_reordered": false
-          }
+          },
+          "version": "default"
         },
         {
           "adapter": {
@@ -340,8 +364,10 @@
             "exposed_to_canonical": {}
           },
           "canonical_name": "python_run",
+          "contract_kind": "function",
           "description": "Run a Python script or a narrow allowed Python test module inside the workspace.",
           "exposed_name": "python_run",
+          "input_format": null,
           "input_schema": {
             "properties": {
               "args": {
@@ -384,7 +410,8 @@
             "tool_order_index_base": 7,
             "tool_order_index_exposed": 7,
             "tool_reordered": false
-          }
+          },
+          "version": "default"
         },
         {
           "adapter": {
@@ -392,8 +419,10 @@
             "exposed_to_canonical": {}
           },
           "canonical_name": "finish",
+          "contract_kind": "function",
           "description": "Signal task completion with an optional answer.",
           "exposed_name": "finish",
+          "input_format": null,
           "input_schema": {
             "properties": {
               "answer": {
@@ -419,7 +448,8 @@
             "tool_order_index_base": 8,
             "tool_order_index_exposed": 8,
             "tool_reordered": false
-          }
+          },
+          "version": "default"
         }
       ]
     }
