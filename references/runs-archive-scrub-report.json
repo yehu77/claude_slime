@@ -1,0 +1,16 @@
+{
+  "archive_id": "rc054-20260718",
+  "artifact_count": 8855,
+  "changed_file_count": 8194,
+  "inventory_state_fingerprint": "fea8f4f533fc2a1e6bf5289a067e90703d60f8d4ccbeed5e57ca22b7f7568089",
+  "post_scrub_idempotency_failure_count": 0,
+  "replacement_counts": {
+    "absolute_user_path": 2760,
+    "compiled_cache_omitted": 261
+  },
+  "scanned_file_count": 8855,
+  "schema": "pycodeagent-runs-scrub-report/v1",
+  "source_preserved": true,
+  "tracked_content_policy": "Counts and statuses only; no source text or matched value.",
+  "unchanged_file_count": 661
+}

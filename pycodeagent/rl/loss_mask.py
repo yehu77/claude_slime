@@ -6,7 +6,7 @@ in the loss computation during training.
 Loss mask policy:
 - system content: mask out (loss = 0)
 - user content: mask out (loss = 0)
-- assistant content: trainable (loss = 1)
+- assistant content: mask out (loss = 0)
 - assistant tool calls: trainable (loss = 1)
 - tool observations: mask out (loss = 0)
 

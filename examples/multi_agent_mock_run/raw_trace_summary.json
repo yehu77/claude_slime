@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "trace_id": "task_001__trace",
+  "trace_id": "phase1_multi_agent_mock_task__trace",
   "agent_name": "mock_agent",
   "agent_version": "v1",
-  "task_id": "task_001",
+  "task_id": "phase1_multi_agent_mock_task",
   "workspace_dir": "<workspace_dir>",
-  "tool_catalog_id": "mock_agent__task_001__catalog",
+  "tool_catalog_id": "mock_agent__phase1_multi_agent_mock_task__catalog",
   "status": "completed",
   "final_diff": "diff --git a/README.md b/README.md\n",
   "verifier_result": {

@@ -7,6 +7,8 @@ import shutil
 import sys
 from pathlib import Path
 
+import pytest
+
 from pycodeagent.adapters import (
     ClaudeCodeAdapter,
     CodexCatalogProvider,
@@ -14,14 +16,16 @@ from pycodeagent.adapters import (
     KiloCodeAdapter,
 )
 from pycodeagent.adapters.external_cli_adapter import (
+    ArtifactTruthConflictError,
     decode_subprocess_output,
+    reconcile_sidecar_summary,
     resolve_command_argv,
 )
 from pycodeagent.env.task import CodingTask
 from pycodeagent.harness import AgentHarness
 from pycodeagent.testing import cleanup_test_path, make_unique_test_dir
 from pycodeagent.traces import NoOpTraceNormalizer, read_raw_trace
-from pycodeagent.trajectory.schema import RunStatus
+from pycodeagent.trajectory.schema import RunStatus, VerifyResult
 
 
 _TEST_NAMESPACE = "external_cli_adapters"
@@ -98,14 +102,6 @@ if {str(write_sidecar)}:
         "task_id": "task_001",
         "workspace_dir": str(workspace),
         "tool_catalog_id": f"{{agent_id}}_sidecar_catalog",
-        "status": "completed",
-        "final_diff": "",
-        "verifier_result": {{
-            "passed": True,
-            "score": 1.0,
-            "stdout": "ok",
-            "stderr": ""
-        }},
         "metadata": {{
             "capture_mode": "sidecar"
         }}
@@ -143,6 +139,29 @@ class TestExternalCliAdapters:
         assert decode_subprocess_output(b"ok\xffdone") == "ok�done"
         assert decode_subprocess_output(None) == ""
 
+    def test_sidecar_summary_conflict_fails_loudly(self) -> None:
+        fixture = Path(
+            "tests/fixtures/external_cli_wrapper_conflict_negative/"
+            "raw_trace_summary.json"
+        )
+        verifier = {
+            "passed": False,
+            "score": 0.0,
+            "stdout": "one failing test",
+            "stderr": "",
+        }
+
+        with pytest.raises(
+            ArtifactTruthConflictError,
+            match="verifier_result",
+        ):
+            reconcile_sidecar_summary(
+                sidecar_summary_path=fixture,
+                execution_status=RunStatus.COMPLETED,
+                final_diff="",
+                verifier=VerifyResult.model_validate(verifier),
+            )
+
     def test_codex_adapter_uses_sidecar_raw_trace_when_present(self) -> None:
         tmp = _get_test_dir()
         try:
@@ -168,6 +187,13 @@ class TestExternalCliAdapters:
             )
             assert raw_trace.summary.metadata["capture_mode"] == "sidecar"
             assert raw_trace.summary.agent_name == "codex_cli"
+            assert raw_trace.summary.final_diff
+            assert raw_trace.summary.verifier_result is not None
+            assert raw_trace.summary.verifier_result.passed
+            assert raw_trace.summary.status == RunStatus.COMPLETED
+            assert raw_trace.summary.metadata["execution_status"] == "completed"
+            assert raw_trace.summary.metadata["final_status"] == "completed"
+            assert raw_trace.summary.metadata["reward"] == 1.0
             assert result.run_artifacts.tool_catalog_path is not None
             assert result.tool_catalog is not None
             assert result.tool_catalog.source_kind == "sidecar"

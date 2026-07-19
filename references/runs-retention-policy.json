@@ -1,0 +1,154 @@
+{
+  "schema": "pycodeagent-runs-retention-policy/v1",
+  "policy_id": "rc053-conservative-local-manual-v1",
+  "owner": "repository-governance",
+  "inventory_schema": "pycodeagent-runs-inventory/v1",
+  "index_record_schema": "pycodeagent-retained-run-index-record/v1",
+  "defaults": {
+    "unknown_purpose_class": "unclassified_hold",
+    "unknown_or_present_risk_sensitivity": "restricted",
+    "no_risk_sensitivity": "internal",
+    "failure_disposition": "retain_and_report"
+  },
+  "retention_classes": [
+    {
+      "name": "contract_golden",
+      "minimum_retention_days": null,
+      "quarantine_days": null,
+      "expiry_disposition": "retain",
+      "deletion_eligible": false
+    },
+    {
+      "name": "unique_research_evidence",
+      "minimum_retention_days": null,
+      "quarantine_days": null,
+      "expiry_disposition": "retain",
+      "deletion_eligible": false
+    },
+    {
+      "name": "provider_raw",
+      "minimum_retention_days": 365,
+      "quarantine_days": 30,
+      "expiry_disposition": "manual_review",
+      "deletion_eligible": true
+    },
+    {
+      "name": "debug",
+      "minimum_retention_days": 90,
+      "quarantine_days": 30,
+      "expiry_disposition": "quarantine",
+      "deletion_eligible": true
+    },
+    {
+      "name": "failed",
+      "minimum_retention_days": 90,
+      "quarantine_days": 30,
+      "expiry_disposition": "quarantine",
+      "deletion_eligible": true
+    },
+    {
+      "name": "superseded",
+      "minimum_retention_days": 0,
+      "quarantine_days": 30,
+      "expiry_disposition": "quarantine",
+      "deletion_eligible": true
+    },
+    {
+      "name": "duplicate",
+      "minimum_retention_days": 0,
+      "quarantine_days": 30,
+      "expiry_disposition": "quarantine",
+      "deletion_eligible": true
+    },
+    {
+      "name": "unclassified_hold",
+      "minimum_retention_days": null,
+      "quarantine_days": null,
+      "expiry_disposition": "manual_review_hold",
+      "deletion_eligible": false
+    }
+  ],
+  "classification_rules": [
+    {
+      "rule_id": "failed-terminal-status",
+      "priority": 10,
+      "match": {
+        "status_any": [
+          "error",
+          "failed"
+        ]
+      },
+      "purpose_class": "failed"
+    },
+    {
+      "rule_id": "provider-payload-group",
+      "priority": 20,
+      "match": {
+        "group_class_any": [
+          "provider_payload_group"
+        ]
+      },
+      "purpose_class": "provider_raw"
+    },
+    {
+      "rule_id": "conservative-fallback",
+      "priority": 1000,
+      "match": {
+        "always": true
+      },
+      "purpose_class": "unclassified_hold"
+    }
+  ],
+  "sensitivity_policy": {
+    "risk_free_class": "internal",
+    "any_risk_class": "restricted",
+    "credential_review_trigger": "potential_authorization_material",
+    "unknown_risk_handling": "restricted",
+    "tracked_output_content": "redacted_metadata_only"
+  },
+  "storage_policy": {
+    "raw_asset_classes": [
+      "event_log",
+      "log",
+      "raw_provider_payload",
+      "trace",
+      "workspace_snapshot"
+    ],
+    "allowed_raw_location": "local_filesystem_outside_git_worktree",
+    "forbidden_raw_locations": [
+      "git_worktree",
+      "network_share",
+      "self_managed_object_storage",
+      "managed_cloud_storage"
+    ],
+    "tracked_repository_content": "redacted_metadata_only"
+  },
+  "scrub_policy": {
+    "source_overwrite_allowed": false,
+    "derivative_required": true,
+    "matched_text_in_tracked_report_allowed": false,
+    "failure_disposition": "retain_and_report"
+  },
+  "archive_policy": {
+    "digest_algorithms": [
+      "sha256",
+      "sha256-tree-manifest-v1"
+    ],
+    "temporary_restore_verification_required": true,
+    "failure_disposition": "retain_and_report"
+  },
+  "deletion_policy": {
+    "mode": "explicit_per_batch_user_authorization",
+    "wildcards_allowed": false,
+    "authorization_reuse_allowed": false,
+    "required_authorized_by": "repository_owner",
+    "required_preconditions": [
+      "retention_elapsed",
+      "quarantine_elapsed",
+      "backup_checksum_verified",
+      "temporary_restore_verified",
+      "scrub_or_sensitivity_review_complete"
+    ],
+    "failure_disposition": "retain_and_report"
+  }
+}

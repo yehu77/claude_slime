@@ -14,13 +14,14 @@ from pycodeagent.agent.provider_runtime import (
     build_llm_client,
     resolve_runtime_provider_config,
 )
-from pycodeagent.env.coding_env import run_coding_task
 from pycodeagent.env.task import CodingTask
+from pycodeagent.eval.run_campaign import execute_profile_run_campaigns
 from pycodeagent.eval.runtime_behavior_audit import (
     RunBehaviorSummary,
     RuntimeBehaviorAudit,
     build_runtime_behavior_audit,
 )
+from pycodeagent.tools.bootstrap import ToolStackKind
 
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -72,6 +73,7 @@ class BehaviorBaselineSummary(BaseModel):
     source_type: str
     source_path: str
     tasks_path: str | None = None
+    tool_stack_kind: ToolStackKind
     profile_mode: str
     repeat_count: int
     task_count: int
@@ -109,7 +111,11 @@ class BehaviorBaselineResult(BaseModel):
     runtime_behavior_audit_path: str
     behavior_baseline_summary_path: str
     failure_buckets_path: str
+    campaign_group_spec_path: str
+    campaign_group_manifest_path: str
+    campaign_contract_ok: bool
     provider: dict[str, Any] = Field(default_factory=dict)
+    tool_stack_kind: ToolStackKind
     task_count: int
     run_count: int
     repeat_count: int
@@ -141,21 +147,23 @@ def run_behavior_baseline(
     source_type: str = "batch",
     tasks_path: str | Path | None = None,
     provider: dict[str, Any] | None = None,
+    tool_stack_kind: ToolStackKind,
 ) -> BehaviorBaselineResult:
     output_root = Path(output_root)
     runs_root = output_root / "runs"
     runs_root.mkdir(parents=True, exist_ok=True)
-
-    for task in tasks:
-        for repeat_index in range(repeat_count):
-            run_dir = runs_root / f"{task.task_id}__{profile_mode}__rep_{repeat_index:02d}"
-            client = client_factory(task, repeat_index)
-            run_coding_task(
-                task,
-                client,
-                run_dir,
-                profile_mode=profile_mode,
-            )
+    campaign_result = execute_profile_run_campaigns(
+        campaign_id="real_provider_behavior_baseline",
+        tasks=tasks,
+        client_factory=(
+            lambda task, _mode, repeat_index: client_factory(task, repeat_index)
+        ),
+        output_root=runs_root,
+        profile_seed_by_mode={profile_mode: 0},
+        repeat_count=repeat_count,
+        tool_stack_kind=tool_stack_kind,
+        provider=provider,
+    )
 
     audit_path = output_root / "runtime_behavior_audit.json"
     audit = build_runtime_behavior_audit(
@@ -170,6 +178,7 @@ def run_behavior_baseline(
         task_count=len(tasks),
         tasks_path=tasks_path,
         provider=provider,
+        tool_stack_kind=tool_stack_kind,
     )
     summary_path = output_root / "behavior_baseline_summary.json"
     _write_json(summary_path, summary.model_dump(mode="json"))
@@ -184,7 +193,11 @@ def run_behavior_baseline(
         runtime_behavior_audit_path=str(audit_path),
         behavior_baseline_summary_path=str(summary_path),
         failure_buckets_path=str(failure_buckets_path),
+        campaign_group_spec_path=campaign_result.spec_path,
+        campaign_group_manifest_path=campaign_result.manifest_path,
+        campaign_contract_ok=campaign_result.contract_ok,
         provider=dict(provider or {}),
+        tool_stack_kind=tool_stack_kind,
         task_count=len(tasks),
         run_count=audit.run_count,
         repeat_count=repeat_count,
@@ -202,6 +215,7 @@ def run_real_provider_behavior_baseline(
     tasks_path: str | Path = _DEFAULT_TASKS_PATH,
     repeat_count: int = 3,
     profile_mode: str = "base",
+    tool_stack_kind: ToolStackKind,
 ) -> BehaviorBaselineResult:
     resolved_provider_config = (
         provider_config
@@ -217,6 +231,7 @@ def run_real_provider_behavior_baseline(
         profile_mode=profile_mode,
         tasks_path=tasks_path,
         provider=resolved_provider_config.runtime_provenance(),
+        tool_stack_kind=tool_stack_kind,
     )
 
 
@@ -228,6 +243,7 @@ def build_behavior_baseline_summary(
     task_count: int,
     tasks_path: str | Path | None = None,
     provider: dict[str, Any] | None = None,
+    tool_stack_kind: ToolStackKind,
 ) -> BehaviorBaselineSummary:
     failed_run_count = audit.run_count - audit.passed_run_count
     per_task = _build_per_task_baseline(audit.per_run)
@@ -236,6 +252,7 @@ def build_behavior_baseline_summary(
         source_type=audit.source_type,
         source_path=audit.source_path,
         tasks_path=str(tasks_path) if tasks_path is not None else None,
+        tool_stack_kind=tool_stack_kind,
         profile_mode=profile_mode,
         repeat_count=repeat_count,
         task_count=task_count,

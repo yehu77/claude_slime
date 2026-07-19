@@ -14,24 +14,17 @@ Rules:
 - Prefer environment variables for secrets instead of storing them inline.
 - Prefer external machine-local config directories over repo-local files.
 
-For the MIMO study scripts:
+For the generic MIMO/OpenAI-compatible connection helper:
 
 1. Copy `mimo_v25pro.local.example.json` to your machine-local config directory
 2. Name it `mimo_v25pro.local.json`
-3. Fill non-secret fields like `base_url`, `study_config_path`, and `output_dir`
+3. Fill non-secret connection fields such as `base_url` and retry settings
 4. Export the API key via `MIMO_API_KEY`
-
-PowerShell example:
-
-```powershell
-$env:PYCODEAGENT_LOCAL_CONFIG_DIR = "$env:LOCALAPPDATA\\pycodeagent\\configs"
-$env:MIMO_API_KEY = "your-api-key"
-python run_first_study_mimo.py
-```
 
 If you must keep a secret inline for a one-off local run, the loader still
 accepts `api_key`, but it will emit a warning and that is not the recommended
-path.
+path. This file is a connection example only; it does not select a study,
+task pack, or output directory.
 
 ## Formal Real-Provider Runtime Mainline
 
@@ -41,8 +34,9 @@ config contract instead of the older MIMO-only helper path.
 Use:
 
 - `configs/local/real_provider_runtime.local.example.json`
-- `run_runtime_smoke_real_provider.py`
-- `run_first_study_real_provider.py`
+- `python -B -m pycodeagent run`
+- `python -B -m pycodeagent campaign`
+- `python -B -m pycodeagent acceptance`
 - [docs/real_provider_runtime_usage.md](../../docs/real_provider_runtime_usage.md)
 
 Recommended secret flow:
@@ -50,7 +44,7 @@ Recommended secret flow:
 1. Copy [.env.example](../../.env.example) to `.env`
 2. Fill `PYCODEAGENT_API_KEY`
 3. Fill `PYCODEAGENT_MODEL`
-4. Run the smoke or study entrypoint
+4. Run the formal smoke task or an active runtime campaign subcommand
 
 The runtime will auto-load `.env` before resolving provider config. Exported
 shell variables still take precedence over `.env` values.

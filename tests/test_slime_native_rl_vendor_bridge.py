@@ -26,8 +26,8 @@ _VENDOR_MODULES = [
     "slime",
 ]
 _PYCODEAGENT_MODULES = [
-    "pycodeagent.rl.native_transformed_reward",
-    "pycodeagent.rl.native_transformed_rl_dataset",
+    "pycodeagent.auxiliary.native_transformed.reward",
+    "pycodeagent.auxiliary.native_transformed.rl_dataset",
 ]
 _TEST_NAMESPACE = "slime_native_rl_vendor_bridge"
 
@@ -145,8 +145,8 @@ class TestVendoredNativeRLBridge:
 
         assert sys.path == baseline
         assert module.__name__ == "slime.rollout.pycodeagent_native_rl"
-        assert "pycodeagent.rl.native_transformed_reward" not in sys.modules
-        assert "pycodeagent.rl.native_transformed_rl_dataset" not in sys.modules
+        assert "pycodeagent.auxiliary.native_transformed.reward" not in sys.modules
+        assert "pycodeagent.auxiliary.native_transformed.rl_dataset" not in sys.modules
 
     def test_missing_pycodeagent_dependency_raises_clear_error(
         self,

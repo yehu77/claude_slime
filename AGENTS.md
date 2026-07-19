@@ -1,4 +1,8 @@
-# AGENTS.md
+# Repository Agent Instructions
+
+This file is the tool-neutral source of truth for repository intent,
+priorities, contracts, and decision rules. Agent-specific entrypoints should
+link here and contain only genuine environment-specific differences.
 
 ## Project Goal
 
@@ -190,7 +194,7 @@ casually replaced:
     not redefine the repository's mainline away from runtime-centered and
     multi-agent trace collection
 
-See [docs/native_transformed_sft_pipeline.md](./docs/native_transformed_sft_pipeline.md)
+See [docs/auxiliary/native_transformed_sft_pipeline.md](./docs/auxiliary/native_transformed_sft_pipeline.md)
 for the minimal end-to-end path from real Codex API trace to
 native-transformed SFT training-prep output.
 

@@ -8,13 +8,15 @@ from pathlib import Path
 
 import pytest
 
-from pycodeagent.rl import build_native_transformed_sft_dataset
+from pycodeagent.auxiliary.native_transformed.sft_dataset import (
+    build_native_transformed_sft_dataset,
+)
+from pycodeagent.auxiliary.native_transformed.training_prep import (
+    prepare_native_transformed_sft_training_input,
+)
 from pycodeagent.rl.train_config import TrainConfig
 from pycodeagent.rl.train_dataset import TrainDataset
-from pycodeagent.rl.training_prep import (
-    prepare_native_transformed_sft_training_input,
-    prepare_slime_training_input,
-)
+from pycodeagent.rl.training_prep import prepare_slime_training_input
 from pycodeagent.rl.tokenizer_config import FakeTokenizerConfig, TokenizerConfig
 from pycodeagent.testing import cleanup_test_path, make_unique_test_dir
 from pycodeagent.trajectory.schema import Message, Role, RunStatus, Trajectory, VerifyResult

@@ -6,8 +6,7 @@ import math
 from pathlib import Path
 from typing import Any
 
-from pycodeagent.env.path_policy import PathPolicyError
-from pycodeagent.tools.command_safety import normalize_workdir
+from pycodeagent.env.path_policy import PathPolicyError, validate_cwd
 from pycodeagent.tools.context import ToolContext
 from pycodeagent.tools.execution_contract import build_execution_metadata
 from pycodeagent.tools.process_exec import (
@@ -562,7 +561,7 @@ class CodexShellRuntime:
             )
 
         try:
-            resolved_cwd = normalize_workdir(workdir, ctx.workspace_root)
+            resolved_cwd = validate_cwd(workdir, ctx.workspace_root)
         except PathPolicyError as exc:
             return _path_policy_error_result(
                 exc,

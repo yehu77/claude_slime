@@ -407,7 +407,15 @@ class RolloutDatasetBuilder:
                 has_direct_runs = True
                 yield item
 
-        # If no direct runs found, try legacy runs/ subdirectory
+        # RC-044 campaign layout: follow only terminal records. This excludes
+        # partial append-only attempts left by interruption.
+        if not has_direct_runs:
+            campaign_run_dirs = list(_discover_terminal_campaign_run_dirs(batch_dir))
+            if campaign_run_dirs:
+                yield from campaign_run_dirs
+                return
+
+        # If no direct or campaign runs were found, try legacy runs/ subdirectory.
         if not has_direct_runs:
             runs_dir = batch_dir / "runs"
             if runs_dir.exists():
@@ -587,3 +595,49 @@ def discover_run_dirs(
         return run_dirs
 
     raise ValueError(f"Unknown source_type: {source_type}")
+
+
+def _discover_terminal_campaign_run_dirs(source_dir: Path) -> Iterator[Path]:
+    """Resolve terminal trajectory attempts from RunCampaign records."""
+
+    for record_path in sorted(source_dir.rglob("campaign_run_record.json")):
+        try:
+            payload = json.loads(record_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise TrajectoryLoadError(
+                f"Invalid RunCampaign record: {record_path}"
+            ) from exc
+        if not isinstance(payload, dict):
+            raise TrajectoryLoadError(
+                f"RunCampaign record must be an object: {record_path}"
+            )
+        if payload.get("outcome") != "trajectory_recorded":
+            continue
+        artifact_paths = payload.get("artifact_paths")
+        if not isinstance(artifact_paths, dict):
+            raise TrajectoryLoadError(
+                f"RunCampaign record has no artifact_paths: {record_path}"
+            )
+        trajectory_relative = artifact_paths.get("trajectory")
+        if not isinstance(trajectory_relative, str) or not trajectory_relative:
+            raise TrajectoryLoadError(
+                f"RunCampaign record has no trajectory path: {record_path}"
+            )
+        try:
+            campaign_root = record_path.parents[2].resolve()
+        except IndexError as exc:
+            raise TrajectoryLoadError(
+                f"RunCampaign record has invalid placement: {record_path}"
+            ) from exc
+        trajectory_path = (campaign_root / trajectory_relative).resolve()
+        try:
+            trajectory_path.relative_to(campaign_root)
+        except ValueError as exc:
+            raise TrajectoryLoadError(
+                f"RunCampaign trajectory escapes campaign root: {record_path}"
+            ) from exc
+        if not trajectory_path.is_file():
+            raise TrajectoryLoadError(
+                f"RunCampaign trajectory is missing: {trajectory_path}"
+            )
+        yield trajectory_path.parent

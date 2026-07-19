@@ -1,0 +1,176 @@
+{
+  "schema": "repository-cleanup-training-prep-characterization/v3",
+  "goal_id": "RC-040",
+  "contract_version": 3,
+  "semantic_corpus": {
+    "success_case": {
+      "task_id": "prep_success",
+      "canonical_tool": "Read",
+      "exposed_tool": "inspect_file",
+      "arguments": {
+        "path": "main.py"
+      }
+    },
+    "failed_run_case": {
+      "task_id": "prep_failure",
+      "status": "error",
+      "reward": -0.5,
+      "verifier_passed": false
+    }
+  },
+  "shared_invariants": [
+    "segments_reconstruct_serialized_text",
+    "character_mask_length_matches_text",
+    "character_mask_sum_matches_trainable_char_count",
+    "token_arrays_are_aligned",
+    "masked_labels_use_ignore_index",
+    "task_and_tool_profile_identity_are_preserved",
+    "tokenizer_and_train_configs_are_loadable"
+  ],
+  "paths": {
+    "rollout": {
+      "entrypoint": "pycodeagent.rl.training_prep.prepare_slime_training_input",
+      "input_type": "trajectory_run_bundle",
+      "expected_sample_count": 2,
+      "expected_output_files": [
+        "bundle_manifest.json",
+        "contract_report.json",
+        "dataset_manifest.json",
+        "packed.jsonl",
+        "rollouts.jsonl",
+        "samples.jsonl",
+        "tokenized.jsonl",
+        "tokenizer_config.yaml",
+        "train_config.json",
+        "training_prep.json"
+      ],
+      "trainable_segment_kinds": [
+        "assistant_tool_call"
+      ],
+      "token_metadata_fields": [
+        "reward",
+        "status",
+        "task_id",
+        "tool_profile_id",
+        "trainable_char_count",
+        "verifier_passed",
+        "verifier_score"
+      ],
+      "preserves_run_outcome": true,
+      "writes_contract_report": true,
+      "verifies_packing": true,
+      "failure_behavior": "requires_explicit_tokenizer_and_filters_failed_runs_unless_included",
+      "difference_classification": "shared_bundle_source_adapter"
+    },
+    "schema_following": {
+      "entrypoint": "pycodeagent.rl.training_prep.prepare_schema_following_training_input",
+      "input_type": "schema_following_split",
+      "expected_sample_count": 2,
+      "expected_output_files": [
+        "bundle_manifest.json",
+        "contract_report.json",
+        "packed.jsonl",
+        "samples.jsonl",
+        "tokenized.jsonl",
+        "tokenizer_config.yaml",
+        "train_config.json",
+        "training_prep.json"
+      ],
+      "trainable_segment_kinds": [
+        "assistant_tool_call"
+      ],
+      "token_metadata_fields": [
+        "loss_mask_policy",
+        "mutation_category",
+        "sample_id",
+        "sample_type",
+        "source_type",
+        "split",
+        "task_id",
+        "tool_profile_id",
+        "trainable_char_count"
+      ],
+      "preserves_run_outcome": false,
+      "writes_contract_report": true,
+      "verifies_packing": true,
+      "failure_behavior": "requires_explicit_tokenizer_and_rejects_manifest_or_split_contract_mismatch",
+      "difference_classification": "shared_bundle_source_adapter"
+    },
+    "runtime_observed": {
+      "entrypoint": "pycodeagent.rl.training_prep.prepare_runtime_observed_schema_following_training_input",
+      "input_type": "runtime_trace_run_bundle",
+      "expected_sample_count": 1,
+      "expected_output_files": [
+        "prepared/bundle_manifest.json",
+        "prepared/contract_report.json",
+        "prepared/packed.jsonl",
+        "prepared/samples.jsonl",
+        "prepared/tokenized.jsonl",
+        "prepared/tokenizer_config.yaml",
+        "prepared/train_config.json",
+        "prepared/training_prep.json",
+        "raw_dataset/dataset_manifest.json",
+        "raw_dataset/profile_manifest.json",
+        "raw_dataset/source_manifest.json",
+        "raw_dataset/split_metrics.json",
+        "raw_dataset/train.jsonl",
+        "training_prep.json"
+      ],
+      "trainable_segment_kinds": [
+        "assistant_tool_call"
+      ],
+      "token_metadata_fields": [
+        "loss_mask_policy",
+        "mutation_category",
+        "sample_id",
+        "sample_type",
+        "source_family",
+        "source_profile_mode",
+        "source_type",
+        "split",
+        "task_id",
+        "tool_profile_id",
+        "trainable_char_count"
+      ],
+      "preserves_run_outcome": false,
+      "writes_contract_report": true,
+      "verifies_packing": true,
+      "failure_behavior": "supports_only_train_split_and_delegates_prepared_validation_to_schema_following",
+      "difference_classification": "shared_bundle_nested_source_adapter"
+    },
+    "native_transformed": {
+      "entrypoint": "pycodeagent.auxiliary.native_transformed.training_prep.prepare_native_transformed_sft_training_input",
+      "input_type": "validated_native_transformed_claude_api_split",
+      "expected_sample_count": 1,
+      "expected_output_files": [
+        "bundle_manifest.json",
+        "contract_report.json",
+        "packed.jsonl",
+        "samples.jsonl",
+        "tokenized.jsonl",
+        "tokenizer_config.yaml",
+        "train_config.json",
+        "training_prep.json"
+      ],
+      "trainable_segment_kinds": [
+        "assistant_tool_call"
+      ],
+      "token_metadata_fields": [
+        "loss_mask_policy",
+        "raw_source_type",
+        "sample_id",
+        "sample_type",
+        "source_type",
+        "task_id",
+        "tool_profile_id",
+        "trainable_char_count",
+        "transformation_mode"
+      ],
+      "preserves_run_outcome": false,
+      "writes_contract_report": true,
+      "verifies_packing": true,
+      "failure_behavior": "supports_only_train_split_and_requires_native_dataset_validation",
+      "difference_classification": "shared_bundle_source_adapter"
+    }
+  }
+}

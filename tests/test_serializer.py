@@ -209,13 +209,13 @@ class TestSerializeFullTrajectory:
             "assistant",
         ]
 
-    def test_assistant_content_trainable(self):
-        """Assistant content segments should be trainable."""
+    def test_assistant_content_not_trainable(self):
+        """Natural-language assistant content is context, not the tool-call target."""
         traj = make_full_trajectory()
         result = serialize_trajectory(traj)
         for seg in result.segments:
             if seg.kind == "assistant":
-                assert seg.trainable is True
+                assert seg.trainable is False
 
     def test_assistant_tool_call_trainable(self):
         """Assistant tool call segments should be trainable."""

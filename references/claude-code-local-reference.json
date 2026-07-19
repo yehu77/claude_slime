@@ -1,0 +1,49 @@
+{
+  "schema": "pycodeagent-local-reference-externalization/v1",
+  "reference_id": "claude-code-2.1.88-research-tree",
+  "goal_id": "RC-051",
+  "externalized_at": "2026-07-19",
+  "source": {
+    "former_worktree_path": "claude_code",
+    "source_absent_after_externalization": true,
+    "git_state_before_externalization": "ignored_untracked"
+  },
+  "destination": {
+    "root_expression": "${XDG_DATA_HOME:-$HOME/.local/share}/pycodeagent/references",
+    "relative_path": "claude-code/2.1.88/research-tree",
+    "local_machine_only": true,
+    "inside_git_worktree": false,
+    "external_storage_allowed": false,
+    "absolute_path_tracked": false
+  },
+  "identity": {
+    "package_name": "@anthropic-ai/claude-code",
+    "package_version": "2.1.88",
+    "digest_algorithm": "sha256-tree-manifest-v1",
+    "tree_sha256": "fe875b60f7df36978d5ee06d9e10823510a3c503664f619ddbb432b74e44bccb",
+    "entry_count": 1927,
+    "regular_file_count": 1927,
+    "directory_count_including_root": 323,
+    "symlink_count": 0,
+    "total_regular_file_bytes": 133151295
+  },
+  "verification": {
+    "source_digest_captured_before_copy": true,
+    "destination_absent_before_copy": true,
+    "destination_matched_before_source_removal": true,
+    "destination_matched_after_source_removal": true,
+    "copy_or_verification_mismatch": false
+  },
+  "content_boundary": {
+    "raw_tree_tracked": false,
+    "raw_file_names_tracked": false,
+    "raw_source_published": false,
+    "sanitized_metadata_only": true
+  },
+  "recovery": {
+    "external_copy_retained": true,
+    "restore_target": "claude_code",
+    "restore_requires_digest_verification": true,
+    "permanent_deletion_authorized": false
+  }
+}

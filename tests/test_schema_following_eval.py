@@ -9,7 +9,7 @@ from pycodeagent.rl.schema_following_eval import (
     build_schema_following_prompt_text,
     evaluate_schema_following_predictor,
 )
-from pycodeagent.rl.schema_following_generate import (
+from pycodeagent.baselines import (
     generate_synthetic_schema_following_data,
 )
 from pycodeagent.rl.schema_following_dataset import read_schema_following_jsonl

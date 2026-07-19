@@ -34,6 +34,22 @@ from pycodeagent.tools.contracts import ToolContractKind, coerce_tool_contract_k
 from pycodeagent.tools.spec import ToolAdapter, ToolProfile, ToolView
 
 
+MUTATION_CONFIG_SCHEMA_VERSION = 1
+
+
+def load_config_mapping(config_path: str | Path, *, kind: str = "Config") -> dict[str, Any]:
+    """Parse one YAML/JSON config file and require a top-level mapping."""
+    config_path = Path(config_path)
+    if not config_path.exists():
+        raise FileNotFoundError(f"{kind} file not found: {config_path}")
+
+    with open(config_path, encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+    if not isinstance(data, dict):
+        raise ValueError(f"{kind} must be a mapping, got {type(data).__name__}")
+    return data
+
+
 def _validate_and_build_profile(data: dict[str, Any]) -> ToolProfile:
     """Validate config dict and build ToolProfile.
 
@@ -135,16 +151,7 @@ def load_tool_profile(config_path: str | Path) -> ToolProfile:
         FileNotFoundError: If config file does not exist.
         ValueError: If config structure is invalid.
     """
-    config_path = Path(config_path)
-    if not config_path.exists():
-        raise FileNotFoundError(f"Config file not found: {config_path}")
-
-    with open(config_path, encoding="utf-8") as f:
-        data = yaml.safe_load(f)
-
-    if not isinstance(data, dict):
-        raise ValueError(f"Config must be a mapping, got {type(data).__name__}")
-
+    data = load_config_mapping(config_path)
     return _validate_and_build_profile(data)
 
 
@@ -202,14 +209,40 @@ def load_mutation_config(config_path: str | Path) -> dict[str, Any]:
     Returns:
         The parsed mutation config dict.
     """
-    config_path = Path(config_path)
-    if not config_path.exists():
-        raise FileNotFoundError(f"Mutation config not found: {config_path}")
+    data = load_config_mapping(config_path, kind="Mutation config")
+    return validate_mutation_config(data)
 
-    with open(config_path, encoding="utf-8") as f:
-        data = yaml.safe_load(f)
 
-    if not isinstance(data, dict):
-        raise ValueError(f"Mutation config must be a mapping, got {type(data).__name__}")
+def validate_mutation_config(data: dict[str, Any]) -> dict[str, Any]:
+    """Validate the versioned top-level mutation configuration contract."""
+    version = data.get("mutation_config_version")
+    if version != MUTATION_CONFIG_SCHEMA_VERSION:
+        raise ValueError(
+            "Mutation config must declare "
+            f"mutation_config_version={MUTATION_CONFIG_SCHEMA_VERSION}; got {version!r}"
+        )
 
+    profile_id_prefix = data.get("profile_id_prefix")
+    if not isinstance(profile_id_prefix, str) or not profile_id_prefix:
+        raise ValueError("Mutation config must have a non-empty string 'profile_id_prefix'")
+
+    tool_variants = data.get("tool_variants")
+    families = data.get("families")
+    if tool_variants is None and families is None:
+        raise ValueError("Mutation config must define 'tool_variants' or 'families'")
+    if tool_variants is not None and not isinstance(tool_variants, dict):
+        raise ValueError("Mutation config 'tool_variants' must be a mapping")
+    if families is not None:
+        if not isinstance(families, dict) or not families:
+            raise ValueError("Mutation config 'families' must be a non-empty mapping")
+        for family, family_config in families.items():
+            if not isinstance(family, str) or not family:
+                raise ValueError("Mutation config family names must be non-empty strings")
+            if not isinstance(family_config, dict):
+                raise ValueError(f"Mutation config families.{family!r} must be a mapping")
+            family_variants = family_config.get("tool_variants")
+            if not isinstance(family_variants, dict):
+                raise ValueError(
+                    f"Mutation config families.{family!r}.tool_variants must be a mapping"
+                )
     return data

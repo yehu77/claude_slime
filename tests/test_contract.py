@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from pycodeagent.rl.contract import verify_dataset_dir, verify_slime_contract
 from pycodeagent.rl.dataset_builder import RolloutDatasetBuilder
 from pycodeagent.rl.dataset_manifest import FilterConfig
@@ -226,7 +228,7 @@ class TestVerifySlimeContract:
         finally:
             _cleanup(tmp)
 
-    def test_verify_dataset_dir_detects_corruption(self):
+    def test_verify_dataset_dir_rejects_corrupt_prepared_sample(self):
         tmp = _get_test_dir()
         try:
             exp_dir = _make_experiment_dir(
@@ -250,17 +252,15 @@ class TestVerifySlimeContract:
             lines[0] = json.dumps(bad_sample, ensure_ascii=False)
             samples_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-            result = verify_dataset_dir(
-                dataset_dir,
-                fake_tokenizer_config=FakeTokenizerConfig(),
-                pack_max_length=64,
-            )
-
-            assert result.ok is False
-            assert any(
-                issue.code == "sample_mask_length_mismatch"
-                for issue in result.issues
-            )
+            with pytest.raises(
+                ValueError,
+                match="character_mask length must match serialized text",
+            ):
+                verify_dataset_dir(
+                    dataset_dir,
+                    fake_tokenizer_config=FakeTokenizerConfig(),
+                    pack_max_length=64,
+                )
         finally:
             _cleanup(tmp)
 

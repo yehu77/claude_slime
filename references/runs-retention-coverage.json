@@ -1,0 +1,30 @@
+{
+  "artifact_group_count": 741,
+  "classification_rule_counts": {
+    "conservative-fallback": 576,
+    "failed-terminal-status": 40,
+    "provider-payload-group": 125
+  },
+  "classification_status": "complete",
+  "classified_group_count": 741,
+  "content_policy": "Aggregate counts only; no raw content, secret matches, or per-run disposition decisions are serialized.",
+  "delete_authorized_count": 0,
+  "disposition_counts": {
+    "manual_review_hold": 576,
+    "retain_local": 165
+  },
+  "inventory_schema": "pycodeagent-runs-inventory/v1",
+  "inventory_state_fingerprint": "fea8f4f533fc2a1e6bf5289a067e90703d60f8d4ccbeed5e57ca22b7f7568089",
+  "observed_combination_count": 33,
+  "policy_id": "rc053-conservative-local-manual-v1",
+  "purpose_class_counts": {
+    "failed": 40,
+    "provider_raw": 125,
+    "unclassified_hold": 576
+  },
+  "schema": "pycodeagent-runs-retention-coverage/v1",
+  "sensitivity_counts": {
+    "internal": 8,
+    "restricted": 733
+  }
+}

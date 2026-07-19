@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "run_id": "model_backed_compaction_mini",
+  "task_id": "model_backed_compaction_mini",
+  "workspace_root": "workspace",
+  "started_at_unix_ms": 1700000000000,
+  "ended_at_unix_ms": 1700000000200,
+  "entry_log_path": "request_context.jsonl",
+  "total_entries": 1,
+  "last_entry_id": "request_context_entry_000001"
+}

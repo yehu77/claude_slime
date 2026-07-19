@@ -65,6 +65,7 @@ The current repository already supports:
   - flat-to-nested schema mutation
   - tool reorder
 - runtime traces and structured trajectories for local runs
+- fail-closed retention manifests, indexes, and checksums for every new run
 - observed dataset export from real runtime runs
 - training-prep output with tokenization and assistant-tool-call-only loss masks
 - `slime`-compatible downstream bundle generation
@@ -96,35 +97,49 @@ Concretely, the repository now emphasizes:
 
 Run the test suite:
 
-```powershell
+```bash
 python -B -m pytest tests -q
 ```
 
-Run a real-provider smoke test:
+Inspect the stable command tree:
 
-```powershell
-python run_runtime_smoke_real_provider.py
+```bash
+python -B -m pycodeagent --help
+```
+
+Run deterministic offline acceptance:
+
+```bash
+python -B -m pycodeagent acceptance \
+  --local-only \
+  --output-root /tmp/pycodeagent-acceptance
 ```
 
 Run the real-provider ToolView-mutation data path:
 
-```powershell
-python run_toolview_mutation_data_generation.py
-```
-
-Prepare a training bundle from study / experiment / batch outputs:
-
-```powershell
-python prepare_slime_training_data.py runs/studies/first_mutation_sensitivity_mimo_v25pro runs/training_prep ^
-  --source-type study ^
+```bash
+python -B -m pycodeagent campaign \
+  --kind toolview \
+  --output-root runs/formal_cli/toolview \
+  --provider-config /path/to/machine-local-provider.json \
   --fake-tokenizer
 ```
 
-If you are using a real tokenizer, replace `--fake-tokenizer` with:
+Prepare a training bundle from campaign runs:
 
-```powershell
---tokenizer-name path-or-hf-tokenizer-name
+```bash
+python -B -m pycodeagent prep \
+  --source-dir runs/formal_cli/toolview/runs \
+  --output-dir runs/formal_cli/training_prep \
+  --source-type batch \
+  --fake-tokenizer
 ```
+
+Fake tokenization is for deterministic contract checks. For real
+tokenization, replace `--fake-tokenizer` with
+`--tokenizer-name path-or-hf-tokenizer-name`. See
+[the formal CLI contract](./docs/formal_cli.md) for configuration precedence,
+exit codes, JSON output, and all six subcommands.
 
 ## Repository Layout
 
@@ -134,8 +149,15 @@ If you are using a real tokenizer, replace `--fake-tokenizer` with:
 - `datasets/`: task packs used for runtime studies
 - `docs/`: design notes, implementation plans, and runbooks
 - `examples/`: small example workspaces and tasks
-- `slime-main/`: vendored `slime` tree plus the repo-owned bridge layer
-- `codex-rs/`: local reference source tree for runtime-subsystem alignment work
+- `slime-main/`: vendored `slime` tree plus the repo-owned bridge layer; its
+  exact upstream source is frozen in
+  [`references/slime-upstream.lock.json`](./references/slime-upstream.lock.json)
+  and its nine repo-owned files are governed by
+  [`references/slime-overlay.manifest.json`](./references/slime-overlay.manifest.json)
+- `codex-rs/`: optional ignored reference tree for runtime-subsystem alignment;
+  its exact source and checksum are tracked in
+  [`references/codex-rs.lock.json`](./references/codex-rs.lock.json), and no
+  runtime or ordinary test depends on its presence
 
 ## What This Project Is Not
 
@@ -155,18 +177,27 @@ training contract integrity**.
 
 If you want the shortest path into the repo:
 
-- [CLAUDE.MD](./CLAUDE.MD): project intent and decision rules
-- [AGENTS.md](./AGENTS.md): repository-level guidance for agents and implementers
-- [docs/local_runtime_realism_mainline_plan.md](./docs/local_runtime_realism_mainline_plan.md):
-  why runtime realism is the current front-half priority
-- [docs/local_runtime_85_maturity_execution_plan.md](./docs/local_runtime_85_maturity_execution_plan.md):
-  the higher-bar runtime maturity plan
+- [AGENTS.md](./AGENTS.md): canonical, tool-neutral project intent and decision
+  rules
+- [CLAUDE.md](./CLAUDE.md): Claude Code compatibility entrypoint; repository
+  rules remain canonical in `AGENTS.md`
+- [docs/README.md](./docs/README.md): the canonical documentation map, reading
+  order, ownership, and archive boundary
+- [docs/adr/0001-native-family-runtime-boundary.md](./docs/adr/0001-native-family-runtime-boundary.md):
+  native-family terminology, selection, fallback, artifact, and acceptance contract
 - [docs/codex_rs_subsystem_implementation_plan.md](./docs/codex_rs_subsystem_implementation_plan.md):
-  subsystem-by-subsystem runtime implementation order
-- [docs/toolview_mutation_data_generation_plan.md](./docs/toolview_mutation_data_generation_plan.md):
-  the current real-provider schema-mutation data generation path
-- [docs/native_transformed_sft_pipeline.md](./docs/native_transformed_sft_pipeline.md):
-  minimal path from real API trace to training-prep output
+  the sole current subsystem-by-subsystem construction driver
+- [docs/codex_rs_reference.md](./docs/codex_rs_reference.md): exact source,
+  checksum verification, and optional bootstrap for the ignored `codex-rs/`
+  reference tree
+- [docs/formal_cli.md](./docs/formal_cli.md): stable subcommands, configuration
+  precedence, exit codes, and machine-readable output
+- [docs/local_runtime_industrial_gap_roadmap.md](./docs/local_runtime_industrial_gap_roadmap.md):
+  maturity map and acceptance framework
+- [docs/tool_runtime_native_family_acceptance_and_regression_plan.md](./docs/tool_runtime_native_family_acceptance_and_regression_plan.md):
+  current native-family acceptance runbook
+- [docs/source_route_boundaries.md](./docs/source_route_boundaries.md): controlled
+  baseline and auxiliary-route ownership/dependency rules
 - [PYCODEAGENT_MULTI_AGENT_SCAFFOLD_DESIGN.md](./PYCODEAGENT_MULTI_AGENT_SCAFFOLD_DESIGN.md):
   broader long-term raw-trace scaffold direction
 
@@ -176,4 +207,3 @@ If you want the shortest path into the repo:
 - Large model weights and caches should stay outside the source tree.
 - If you change rollout, export, tokenizer, serializer, or contract behavior,
   update tests in the same turn.
-

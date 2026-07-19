@@ -1,0 +1,33 @@
+{
+  "schema": "pycodeagent-external-reference-lock/v1",
+  "reference_id": "openai-codex-rs",
+  "purpose": "implementation_reference_only",
+  "runtime_dependency": false,
+  "source": {
+    "repository_url": "https://github.com/openai/codex.git",
+    "commit": "0beb5c7f32cf5459a51e3f6bc01e6509d7951854",
+    "commit_url": "https://github.com/openai/codex/commit/0beb5c7f32cf5459a51e3f6bc01e6509d7951854",
+    "subtree": "codex-rs",
+    "archive_url": "https://github.com/openai/codex/archive/0beb5c7f32cf5459a51e3f6bc01e6509d7951854.tar.gz"
+  },
+  "license": {
+    "spdx": "Apache-2.0",
+    "source_path": "LICENSE",
+    "url": "https://github.com/openai/codex/blob/0beb5c7f32cf5459a51e3f6bc01e6509d7951854/LICENSE"
+  },
+  "materialization": {
+    "path": "codex-rs",
+    "digest_algorithm": "sha256-tree-manifest-v1",
+    "tree_sha256": "26842e6859cb892c4872e9fa838585ba1696b90283d35574df0610b5e864ea81",
+    "entry_count": 4477,
+    "mode_policy": "ignored",
+    "expected_symlinks": {
+      "vendor/bubblewrap/LICENSE": "COPYING"
+    },
+    "portable_symlink_policy": "accept an exact link-target placeholder as equivalent to the declared symlink"
+  },
+  "bootstrap": {
+    "command": "python -B -m pycodeagent.dev.codex_reference bootstrap",
+    "verify_command": "python -B -m pycodeagent.dev.codex_reference verify"
+  }
+}

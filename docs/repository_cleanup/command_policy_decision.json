@@ -1,0 +1,88 @@
+{
+  "schema": "repository-cleanup-command-policy-decision/v1",
+  "goal_id": "RC-037",
+  "decided_at": "2026-07-19",
+  "decision": "delete_legacy_implementation",
+  "implementation_goal": "RC-038",
+  "implementation_status": "completed",
+  "implemented_at": "2026-07-19",
+  "audited_module": "pycodeagent/tools/command_safety.py",
+  "current_consumers": [
+    {
+      "consumer": "pycodeagent/tools/shell_runtimes.py",
+      "symbol": "normalize_workdir",
+      "replacement": "pycodeagent.env.path_policy.validate_cwd"
+    }
+  ],
+  "legacy_symbols_to_remove": [
+    "RUN_COMMAND_ALLOW_EXECUTABLES",
+    "RUN_COMMAND_ALLOWED_GIT_SUBCOMMANDS",
+    "RUN_COMMAND_DENIED_EXECUTABLES",
+    "CommandPolicyDecision",
+    "CommandExecutionResult",
+    "truncate_output",
+    "normalize_executable_name",
+    "allow_command",
+    "deny_command",
+    "classify_command_argv",
+    "normalize_workdir",
+    "build_command_metadata",
+    "run_subprocess",
+    "render_subprocess_output"
+  ],
+  "reasons": [
+    "Only normalize_workdir has an active repository caller, and it is a thin alias for validate_cwd.",
+    "The allowlist, decision model, subprocess executor, renderer, and metadata builder have no active callers or direct tests.",
+    "The two-state allow/deny model cannot represent the S5 allow/prompt/forbidden boundary.",
+    "The argv-only classifier does not parse the shell-string and compound-command surface executed by the active Claude and Codex runtimes.",
+    "Activating the legacy allowlist would reject common current runtime commands and silently change source-run behavior.",
+    "Process execution and output handling are already owned by process_exec.py and shell_runtimes.py."
+  ],
+  "preserved_behavior": [
+    "Working directories remain constrained to the resolved workspace by validate_cwd.",
+    "Protected file-write boundaries remain owned by path_policy.py.",
+    "Command execution remains owned by process_exec.py and shell_runtimes.py.",
+    "Existing execution metadata and runtime-trace artifacts are not reinterpreted as proof of an enforced command allowlist.",
+    "RC-038 must not broaden command execution or make a production-sandbox claim."
+  ],
+  "future_s5_contract": {
+    "reuse_legacy_data_model": false,
+    "reference": {
+      "lock": "references/codex-rs.lock.json",
+      "commit": "0beb5c7f32cf5459a51e3f6bc01e6509d7951854",
+      "subsystems": [
+        "codex-rs/execpolicy",
+        "codex-rs/shell-command"
+      ]
+    },
+    "required_properties": [
+      "separate policy evaluation from process execution",
+      "represent allow, prompt, and forbidden as distinct outcomes",
+      "preserve matched rule, matched prefix, justification, and fallback provenance",
+      "define deterministic behavior for no-match and unknown parsing",
+      "evaluate every effective segment of compound shell commands",
+      "distinguish requested permission or sandbox fields from effective policy decisions",
+      "emit policy facts into tool metadata and runtime traces",
+      "cover both command and file-action policy visibility without claiming production containment"
+    ],
+    "out_of_scope": [
+      "approval user interface",
+      "cross-platform production sandbox",
+      "provider-specific policy inference",
+      "automatic reuse of legacy executable allowlists"
+    ]
+  },
+  "rc038_acceptance": [
+    "replace normalize_workdir with a direct validate_cwd import",
+    "delete pycodeagent/tools/command_safety.py",
+    "prove zero remaining imports, exports, tests, and documentation claims for the legacy implementation",
+    "freeze workspace cwd rejection and current command execution behavior",
+    "correct active documentation so metadata visibility is not described as command-policy enforcement",
+    "pass safety-focused, mainline, local acceptance, full tests, and git diff --check"
+  ],
+  "implementation_evidence": [
+    "pycodeagent/tools/shell_runtimes.py imports validate_cwd directly",
+    "pycodeagent/tools/command_safety.py is absent",
+    "tests/test_command_safety_retirement.py freezes retirement and behavior boundaries"
+  ]
+}

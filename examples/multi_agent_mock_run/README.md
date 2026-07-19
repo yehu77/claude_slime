@@ -1,24 +1,17 @@
-# Multi-Agent Mock Run Example
+# Phase-one multi-agent mock golden
 
-This directory is a sanitized phase-one mock scaffold bundle.
+This directory is the single tracked golden for the phase-one synthetic multi-agent scaffold. It is generated from a fixed `MockAdapter` scenario using the strict native Claude ToolView (`mock_base`).
 
-It mirrors the golden fixture in:
+Do not edit these artifacts by hand. Update them with:
 
-`tests/fixtures/multi_agent_mock_bundle/`
+```bash
+python -B -m pycodeagent.testing.multi_agent_mock_golden --write
+```
 
-The snapshot is produced from:
+Verify both manifest integrity and deterministic regeneration with:
 
-- task prompt: `Inspect the repo and run tests.`
-- mock agent id: `mock_agent`
-- canonical target profile: `base`
+```bash
+python -B -m pycodeagent.testing.multi_agent_mock_golden --check
+```
 
-The checked-in files use `<workspace_dir>` as a stable placeholder instead of a
-machine-local absolute path.
-
-Included artifacts:
-
-- `raw_trace_summary.json`
-- `raw_trace.jsonl`
-- `canonical_trace.json`
-- `normalization_report.json`
-- `schema_following_sample.json`
+The bundle preserves RawAgentTrace, the emitted native tool catalog, agent identity, canonical normalization, and one representative schema-following sample. Tests consume this directory directly; no duplicated fixture is kept.

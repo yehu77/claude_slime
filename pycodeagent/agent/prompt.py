@@ -205,32 +205,6 @@ def build_compaction_messages(
     ]
 
 
-def format_history_for_prompt(messages: list[dict[str, Any]]) -> str:
-    """Format conversation history for inclusion in a prompt.
-
-    This is used when the LLM doesn't natively support message history,
-    requiring us to flatten it into the prompt.
-
-    Args:
-        messages: List of message dicts from the conversation.
-
-    Returns:
-        A formatted string representation of the history.
-    """
-    parts: list[str] = []
-    for msg in messages:
-        role = msg.get("role", "unknown")
-        content = msg.get("content", "")
-        if role == "system":
-            parts.append(f"<system>\n{content}\n</system>")
-        elif role == "user":
-            parts.append(f"<user>\n{content}\n</user>")
-        elif role == "assistant":
-            parts.append(f"<assistant>\n{content}\n</assistant>")
-        elif role == "tool":
-            tool_name = msg.get("tool_name", "tool")
-            parts.append(f"<tool name=\"{tool_name}\">\n{content}\n</tool>")
-    return "\n".join(parts)
 
 
 def build_parse_repair_message(parse_errors: list[str]) -> str:

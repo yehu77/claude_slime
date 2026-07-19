@@ -6,16 +6,27 @@
   "task_id": "external_smoke_task",
   "workspace_dir": "<workspace_dir>",
   "tool_catalog_id": null,
-  "status": "completed",
-  "final_diff": "",
+  "status": "failed",
+  "final_diff": "--- a/counter.py\n+++ b/counter.py\n@@ -4,3 +4,5 @@\n \n def inclusive_count(n: int) -> list[int]:\n     return list(range(n))\n+\n+# Wrapper touched this file.\n",
   "verifier_result": {
-    "passed": true,
-    "score": 1.0,
-    "stdout": "",
+    "passed": false,
+    "score": 0.0,
+    "stdout": ".FF                                                                      [100%]\n================================== FAILURES ===================================\n____________________________ test_inclusive_count _____________________________\n\n    def test_inclusive_count():\n>       assert inclusive_count(3) == [0, 1, 2, 3]\nE       assert [0, 1, 2] == [0, 1, 2, 3]\nE         \nE         Right contains one more item: 3\nE         Use -v to get more diff\n\ntest_counter.py:9: AssertionError\n__________________________ test_inclusive_count_zero __________________________\n\n    def test_inclusive_count_zero():\n>       assert inclusive_count(0) == [0]\nE       assert [] == [0]\nE         \nE         Right contains one more item: 0\nE         Use -v to get more diff\n\ntest_counter.py:13: AssertionError\n=========================== short test summary info ===========================\nFAILED test_counter.py::test_inclusive_count - assert [0, 1, 2] == [0, 1, 2, 3]\nFAILED test_counter.py::test_inclusive_count_zero - assert [] == [0]\n2 failed, 1 passed in <duration>\n",
     "stderr": ""
   },
   "metadata": {
     "capture_mode": "sidecar",
-    "wrapper": "claude_code_sidecar_wrapper"
+    "wrapper": "claude_code_sidecar_wrapper",
+    "execution_status": "completed",
+    "final_status": "failed",
+    "reward": 0.0,
+    "truth_precedence": {
+      "events": "raw_trace.jsonl",
+      "final_diff": "final.diff",
+      "verifier_result": "verifier.json",
+      "execution_status": "adapter subprocess result",
+      "final_status": "derived from execution_status and verifier_result",
+      "reward": "verifier_result.score"
+    }
   }
 }

@@ -1,0 +1,89 @@
+{
+  "schema": "repository-cleanup-local-reference-decision/v1",
+  "goal_id": "RC-050",
+  "decided_at": "2026-07-19",
+  "decision": "externalize_to_local_reference_store",
+  "implementation_goal": "RC-051",
+  "implementation_status": "completed",
+  "implemented_at": "2026-07-19",
+  "implementation_evidence": "references/claude-code-local-reference.json",
+  "asset": {
+    "current_path": "claude_code",
+    "git_state": "ignored_untracked",
+    "ignore_rule": ".gitignore:claude_code/",
+    "tracked_file_count": 0,
+    "audit_file_count": 1927,
+    "audit_directory_count": 323,
+    "audit_total_file_bytes": 133151295,
+    "package_name": "@anthropic-ai/claude-code",
+    "package_version": "2.1.88",
+    "top_level_artifacts": [
+      "LICENSE.md",
+      "README.md",
+      "bun.lock",
+      "cli.js",
+      "cli.js.map",
+      "extract-sourcemap.mjs",
+      "package.json",
+      "sdk-tools.d.ts",
+      "src-extracted/",
+      "vendor/"
+    ],
+    "selected_sha256": {
+      "package.json": "e21f9e98fa4ea8b4d007063d92c631df1bbed6d11c9e79c5fcdeb9f4859dc8fa",
+      "LICENSE.md": "8ce94b9478bb9868f9641f818e06cd722fbe55d4c22e2d2ed11971b20146173a",
+      "cli.js": "75c9611929d9a770fe2e3a393219d8b98f5de17fde539b2a7355c6db3fd2795f",
+      "cli.js.map": "7965012b7a5fc9e09d8d747a04c5c32b94696924536e217f686bb1e7ee70a657"
+    }
+  },
+  "dependency_audit": {
+    "tracked_path_consumers": [],
+    "runtime_dependency": false,
+    "adapter_resolution": "PATH executable named claude",
+    "semantic_agent_id_references_are_path_dependencies": false,
+    "notes": [
+      "claude_code agent identifiers and catalog names do not reference the local directory.",
+      "The source map contains embedded source content and src-extracted is a local research derivative.",
+      "An npm package at the same version is an acquisition lead, not proof that the complete derived tree is byte-reproducible."
+    ]
+  },
+  "sensitivity_and_distribution": {
+    "classification": "restricted_local_reference",
+    "contains_user_run_state": false,
+    "credential_file_evidence": "No .env, credential database, private-key container, session artifact, or user config was identified by the filename and structure audit.",
+    "caveat": "Auth-, token-, key-, and secret-related source filenames are implementation source, not evidence of live credentials.",
+    "storage_boundary": "local_machine_only",
+    "tracked_content_allowed": "sanitized metadata and checksums only",
+    "publication_allowed": false,
+    "reason": "The local tree includes packaged and source-map-derived implementation material governed by its bundled legal terms."
+  },
+  "destination": {
+    "root_expression": "${XDG_DATA_HOME:-$HOME/.local/share}/pycodeagent/references",
+    "relative_path": "claude-code/2.1.88/research-tree",
+    "inside_git_worktree": false,
+    "external_storage_allowed": false,
+    "purpose": "durable local research reference, not an evictable cache"
+  },
+  "rc051_preconditions": [
+    "resolve the destination without writing it into tracked files as a machine-specific absolute path",
+    "require the exact destination to be absent before copying",
+    "compute a deterministic full-tree digest and entry count before the move",
+    "copy the complete tree with file bytes and relative layout preserved",
+    "verify the destination digest and entry count before removing the source path",
+    "abort and retain the source on any copy or verification mismatch",
+    "do not upload, publish, archive to external storage, or commit raw tree contents",
+    "record only sanitized version, count, digest, source-absence, and destination-boundary evidence"
+  ],
+  "recovery": {
+    "retain_external_tree": true,
+    "destructive_delete_authorized": false,
+    "restore_method": "copy the verified external tree back to ignored path claude_code if local research requires it",
+    "source_lock_policy": "The selected metadata is an identity aid; it does not claim reproducibility of the derived tree."
+  },
+  "rationale": [
+    "The repository has no tracked path dependency on the directory.",
+    "Keeping 133 MB of ignored external implementation material in the worktree obscures the repository boundary.",
+    "The source-map-extracted research derivative may not be byte-reproducible from the package version alone.",
+    "A verified local move preserves research value without publishing or deleting the only known copy."
+  ]
+}

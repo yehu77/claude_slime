@@ -296,17 +296,14 @@ class TestLossMaskFromTrajectory:
             for i in range(span.start, span.end):
                 assert mask.character_mask[i] == expected
 
-    def test_trainable_only_assistant_content(self):
-        """Only assistant content should be trainable."""
+    def test_trainable_only_assistant_tool_calls(self):
+        """Only assistant tool-call segments should be trainable."""
         traj = make_full_trajectory()
         serialized = serialize_trajectory(traj)
         mask = build_loss_mask(serialized)
 
         for seg, span in zip(serialized.segments, mask.spans):
-            if seg.kind in ("assistant", "assistant_tool_call"):
-                assert span.trainable is True
-            else:
-                assert span.trainable is False
+            assert span.trainable is (seg.kind == "assistant_tool_call")
 
 
 class TestGetTrainableSegments:

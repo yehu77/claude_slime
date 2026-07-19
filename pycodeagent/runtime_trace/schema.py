@@ -6,7 +6,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-SCHEMA_VERSION = 1
+MANIFEST_SCHEMA_VERSION = 2
+EVENT_SCHEMA_VERSION = 1
 
 RuntimeTraceEventKind = Literal[
     "run_started",
@@ -33,10 +34,27 @@ RuntimeTraceEventKind = Literal[
 ]
 
 
+class RuntimeRetentionMetadata(BaseModel):
+    """Retention fields embedded in a runtime trace manifest."""
+
+    policy_id: str
+    purpose_class: str
+    sensitivity: Literal["internal", "restricted"]
+    risk_labels: list[str]
+    owner: str
+    retention: dict[str, str | None]
+    disposition: str
+    checksum_algorithm: Literal["sha256-tree-manifest-v1"]
+    source_checksum: str
+    manifest_path: str
+    index_path: str
+    lifecycle_log_path: str
+
+
 class RuntimeTraceManifest(BaseModel):
     """Manifest for one local runtime trace bundle."""
 
-    schema_version: int = SCHEMA_VERSION
+    schema_version: int = MANIFEST_SCHEMA_VERSION
     trace_id: str
     run_id: str
     task_id: str
@@ -46,6 +64,7 @@ class RuntimeTraceManifest(BaseModel):
     ended_at_unix_ms: int | None = None
     payload_dir: str
     event_log_path: str
+    retention: RuntimeRetentionMetadata
 
 
 class RuntimePayloadRef(BaseModel):
@@ -59,7 +78,7 @@ class RuntimePayloadRef(BaseModel):
 class RuntimeTraceEvent(BaseModel):
     """One append-only runtime event."""
 
-    schema_version: int = SCHEMA_VERSION
+    schema_version: int = EVENT_SCHEMA_VERSION
     seq: int
     event_id: str
     event_kind: RuntimeTraceEventKind

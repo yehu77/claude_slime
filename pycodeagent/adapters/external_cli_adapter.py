@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import shutil
@@ -11,6 +10,11 @@ from pathlib import Path
 from typing import Any
 
 from pycodeagent.adapters.base import AgentRunContext
+from pycodeagent.adapters.workspace_digest import (
+    WORKSPACE_DIGEST_ALGORITHM,
+    WORKSPACE_DIGEST_VERSION,
+    compute_workspace_digest,
+)
 from pycodeagent.env.coding_env import compute_diff
 from pycodeagent.env.task import CodingTask
 from pycodeagent.env.verifier import run_verifier
@@ -21,8 +25,13 @@ from pycodeagent.traces.raw_trace import (
     RawEvent,
     RawTraceSummary,
     write_raw_trace,
+    write_raw_trace_summary,
 )
 from pycodeagent.trajectory.schema import RunStatus, VerifyResult
+
+
+class ArtifactTruthConflictError(ValueError):
+    """A sidecar asserted a derived field that conflicts with harness evidence."""
 
 
 class ExternalCliArtifactAdapter:
@@ -80,7 +89,7 @@ class ExternalCliArtifactAdapter:
         return {}
 
     def run_task(self, task: CodingTask, context: AgentRunContext) -> RawAgentRunResult:
-        before_hash = hash_workspace(context.workspace_dir)
+        before_hash = compute_workspace_digest(context.workspace_dir)
         raw_trace_path = context.run_dir / "raw_trace.jsonl"
         raw_trace_summary_path = context.run_dir / "raw_trace_summary.json"
         tool_catalog_path = context.run_dir / "tool_catalog.json"
@@ -149,7 +158,13 @@ class ExternalCliArtifactAdapter:
         sidecar_used = sidecar_raw_trace_path.exists() and sidecar_summary_path.exists()
         if sidecar_used:
             _copy_if_needed(sidecar_raw_trace_path, raw_trace_path)
-            _copy_if_needed(sidecar_summary_path, raw_trace_summary_path)
+            summary = reconcile_sidecar_summary(
+                sidecar_summary_path=sidecar_summary_path,
+                execution_status=status,
+                final_diff=final_diff,
+                verifier=verifier,
+            )
+            write_raw_trace_summary(summary, raw_trace_summary_path)
         else:
             observed_trace = build_observed_fallback_trace(
                 agent_name=self.agent_id(),
@@ -183,7 +198,10 @@ class ExternalCliArtifactAdapter:
                     "sidecar_catalog_detected": sidecar_catalog_path.exists(),
                     "returncode": returncode,
                     "status": status.value,
+                    "execution_status": status.value,
                     "error": error,
+                    "workspace_digest_algorithm": WORKSPACE_DIGEST_ALGORITHM,
+                    "workspace_digest_version": WORKSPACE_DIGEST_VERSION,
                     "sidecar_protocol_env": {
                         "PYCODEAGENT_AGENT_ID": self.agent_id(),
                         "PYCODEAGENT_RUN_DIR": str(context.run_dir),
@@ -199,7 +217,7 @@ class ExternalCliArtifactAdapter:
             encoding="utf-8",
         )
 
-        after_hash = hash_workspace(context.workspace_dir)
+        after_hash = compute_workspace_digest(context.workspace_dir)
         return RawAgentRunResult(
             run_id=context.run_id,
             task_id=task.task_id,
@@ -220,6 +238,9 @@ class ExternalCliArtifactAdapter:
                 "sidecar_raw_trace_detected": sidecar_used,
                 "sidecar_catalog_detected": sidecar_catalog_path.exists(),
                 "command_prefix": self._command_prefix,
+                "execution_status": status.value,
+                "workspace_digest_algorithm": WORKSPACE_DIGEST_ALGORITHM,
+                "workspace_digest_version": WORKSPACE_DIGEST_VERSION,
             },
         )
 
@@ -282,6 +303,95 @@ def decode_subprocess_output(data: bytes | str | None) -> str:
     return data.decode("utf-8", errors="replace")
 
 
+def derive_final_status(
+    *,
+    execution_status: RunStatus,
+    verifier: VerifyResult,
+) -> RunStatus:
+    """Derive task outcome without conflating it with process execution."""
+    if execution_status != RunStatus.COMPLETED:
+        return execution_status
+    if not verifier.passed:
+        return RunStatus.FAILED
+    return RunStatus.COMPLETED
+
+
+def reconcile_sidecar_summary(
+    *,
+    sidecar_summary_path: Path,
+    execution_status: RunStatus,
+    final_diff: str,
+    verifier: VerifyResult,
+) -> RawTraceSummary:
+    """Rebuild derived summary fields from their authoritative artifacts.
+
+    A sidecar may omit ``status``, ``final_diff``, and ``verifier_result``.
+    If it supplies any of them, the value is treated as an explicit assertion
+    and must exactly match the harness-derived value.
+    """
+    try:
+        payload = json.loads(sidecar_summary_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Invalid sidecar raw trace summary: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise ValueError("Sidecar raw trace summary must be a JSON object")
+
+    final_status = derive_final_status(
+        execution_status=execution_status,
+        verifier=verifier,
+    )
+    authoritative = {
+        "status": final_status.value,
+        "final_diff": final_diff,
+        "verifier_result": verifier.model_dump(mode="json"),
+    }
+    conflicts: list[str] = []
+    for field, expected in authoritative.items():
+        if field not in payload:
+            continue
+        asserted = payload[field]
+        if field == "status":
+            asserted = RunStatus(asserted).value
+        elif field == "verifier_result":
+            asserted = VerifyResult.model_validate(asserted).model_dump(mode="json")
+        if asserted != expected:
+            conflicts.append(field)
+
+    sidecar_metadata = payload.get("metadata", {})
+    if not isinstance(sidecar_metadata, dict):
+        raise ValueError("Sidecar raw trace summary metadata must be a JSON object")
+    metadata_claims = {
+        "execution_status": execution_status.value,
+        "final_status": final_status.value,
+        "reward": verifier.score,
+    }
+    for field, expected in metadata_claims.items():
+        if field in sidecar_metadata and sidecar_metadata[field] != expected:
+            conflicts.append(f"metadata.{field}")
+
+    if conflicts:
+        joined = ", ".join(sorted(conflicts))
+        raise ArtifactTruthConflictError(
+            "Sidecar summary conflicts with authoritative artifacts: "
+            f"{joined}. Omit harness-derived fields from sidecar summaries."
+        )
+
+    payload.update(authoritative)
+    payload["metadata"] = {
+        **sidecar_metadata,
+        **metadata_claims,
+        "truth_precedence": {
+            "events": "raw_trace.jsonl",
+            "final_diff": "final.diff",
+            "verifier_result": "verifier.json",
+            "execution_status": "adapter subprocess result",
+            "final_status": "derived from execution_status and verifier_result",
+            "reward": "verifier_result.score",
+        },
+    }
+    return RawTraceSummary.model_validate(payload)
+
+
 def build_observed_fallback_trace(
     *,
     agent_name: str,
@@ -297,6 +407,10 @@ def build_observed_fallback_trace(
     final_diff: str,
     verifier: VerifyResult,
 ) -> RawAgentTrace:
+    final_status = derive_final_status(
+        execution_status=status,
+        verifier=verifier,
+    )
     events: list[RawEvent] = [
         RawEvent(
             event_id="event_001",
@@ -360,7 +474,11 @@ def build_observed_fallback_trace(
             source="adapter",
             visibility="internal",
             evidence_level="observed",
-            parsed_payload={"status": status.value, "returncode": returncode},
+            parsed_payload={
+                "execution_status": status.value,
+                "final_status": final_status.value,
+                "returncode": returncode,
+            },
             error=error,
             artifact_refs=[
                 ArtifactRef(artifact_kind="final_diff", path=str(context.run_dir / "final.diff")),
@@ -376,34 +494,28 @@ def build_observed_fallback_trace(
             task_id=task.task_id,
             workspace_dir=str(context.workspace_dir),
             tool_catalog_id=None,
-            status=status,
+            status=final_status,
             final_diff=final_diff,
             verifier_result=verifier,
             metadata={
                 "capture_mode": "observed_fallback",
                 "error": error,
                 "returncode": returncode,
+                "execution_status": status.value,
+                "final_status": final_status.value,
+                "reward": verifier.score,
+                "truth_precedence": {
+                    "events": "raw_trace.jsonl",
+                    "final_diff": "final.diff",
+                    "verifier_result": "verifier.json",
+                    "execution_status": "adapter subprocess result",
+                    "final_status": "derived from execution_status and verifier_result",
+                    "reward": "verifier_result.score",
+                },
             },
         ),
         events=events,
     )
-
-
-def hash_workspace(workspace_dir: Path) -> str:
-    digest = hashlib.sha256()
-    if not workspace_dir.exists():
-        digest.update(b"<missing>")
-        return digest.hexdigest()
-    for path in sorted(workspace_dir.rglob("*")):
-        relative = path.relative_to(workspace_dir).as_posix().encode("utf-8")
-        digest.update(relative)
-        digest.update(b"\0")
-        if path.is_file():
-            digest.update(path.read_bytes())
-        else:
-            digest.update(b"<dir>")
-        digest.update(b"\0")
-    return digest.hexdigest()
 
 
 def _copy_if_needed(source: Path, target: Path) -> None:

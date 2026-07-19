@@ -22,7 +22,8 @@ from typing import TYPE_CHECKING, Any
 
 from pycodeagent.env.task import CodingTask
 from pycodeagent.env.verifier import run_verifier
-from pycodeagent.runtime_trace import RuntimeTraceWriter
+from pycodeagent.runtime_trace import DEFAULT_RETENTION_CLASS, RuntimeTraceWriter
+from pycodeagent.runtime_trace.retention import DEFAULT_RETENTION_OWNER
 from pycodeagent.tools.bootstrap import ToolStackKind
 from pycodeagent.trajectory.recorder import RunRecorder
 from pycodeagent.trajectory.schema import RunStatus, Trajectory, VerifyResult
@@ -473,6 +474,8 @@ def run_coding_task(
     context_max_tokens: int | None = None,
     tool_token_reserve: int = 0,
     response_token_reserve: int = 0,
+    retention_class: str = DEFAULT_RETENTION_CLASS,
+    retention_owner: str = DEFAULT_RETENTION_OWNER,
 ) -> Trajectory:
     """Run a single coding task end-to-end.
 
@@ -502,6 +505,8 @@ def run_coding_task(
             using the runtime's deterministic token estimator.
         tool_token_reserve: Reserved token budget for exposed tool specs.
         response_token_reserve: Reserved token budget for model response space.
+        retention_class: RC-053 purpose class recorded before artifacts are written.
+        retention_owner: Accountable owner label for the retained run.
 
     Returns:
         The completed trajectory with verifier result and reward.
@@ -556,6 +561,8 @@ def run_coding_task(
             task_id=task.task_id,
             tool_profile_id=profile.profile_id,
             workspace_root=str(workspace_base),
+            retention_class=retention_class,
+            retention_owner=retention_owner,
         )
         trace_writer.append(
             "run_started",
@@ -576,7 +583,6 @@ def run_coding_task(
                 "stop_detail": str(e),
             },
         )
-        trace_writer.finalize()
         request_context_writer.finalize()
         retained_history_writer.finalize()
         # Record setup failure and persist minimal artifacts
@@ -604,6 +610,7 @@ def run_coding_task(
         error_verifier = VerifyResult(passed=False, score=0.0, stdout="", stderr=str(e))
         recorder.write_verifier_result(error_verifier)
         recorder.write_final_patch("")
+        trace_writer.finalize()
 
         return trajectory
 
@@ -632,6 +639,8 @@ def run_coding_task(
         task_id=workspace_task.task_id,
         tool_profile_id=profile.profile_id,
         workspace_root=str(workspace_root),
+        retention_class=retention_class,
+        retention_owner=retention_owner,
     )
     retained_history_writer = RetainedHistoryWriter.create(
         output_dir,
@@ -660,7 +669,6 @@ def run_coding_task(
         tool_token_reserve=tool_token_reserve,
         response_token_reserve=response_token_reserve,
     )
-    trace_writer.finalize()
     request_context_writer.finalize()
     retained_history_writer.finalize()
     try:
@@ -768,6 +776,7 @@ def run_coding_task(
     # Persist artifacts
     recorder = RunRecorder(output_dir)
     recorder.write_all(trajectory, profile, verify_result, patch_text)
+    trace_writer.finalize()
 
     return trajectory
 

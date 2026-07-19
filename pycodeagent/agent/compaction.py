@@ -30,6 +30,19 @@ from pycodeagent.trajectory.schema import Role
 from pycodeagent.trajectory.schema import ToolCall
 
 
+COMPACTION_CONTRACT_VERSION = 1
+CANONICAL_COMPACTION_OWNER = "pycodeagent.agent.compaction"
+MODEL_BACKED_COMPACTION_BACKEND = "inline_model"
+MODEL_BACKED_COMPACTION_FALLBACK_POLICY = "deterministic_compaction"
+MODEL_BACKED_COMPACTION_FAILURE_KINDS = (
+    "capability_unavailable",
+    "provider_error",
+    "structured_output_parse_error",
+    "schema_validation_error",
+    "compacted_span_mismatch",
+)
+
+
 class ContextSelectionPlan(BaseModel):
     """Formal request-time plan produced before building one model request."""
 
@@ -78,16 +91,6 @@ class ModelBackedCompactionOutput(BaseModel):
     summary_text: str
     carried_forward_state: CarriedForwardState
     compacted_span: ModelCompactedSpan
-
-
-class ModelBackedCompactionResult(BaseModel):
-    """Runtime result for one model-backed compaction attempt."""
-
-    backend_mode: str
-    used_model_backed_compaction: bool
-    fallback_reason: str | None = None
-    output: ModelBackedCompactionOutput | None = None
-    parse_error: str | None = None
 
 
 def normalize_model_backed_compaction_output_payload(
@@ -306,6 +309,13 @@ def apply_model_backed_fallback(
     failure_kind: str,
 ) -> ContextSelectionPlan:
     """Freeze one explicit fallback decision on top of the deterministic plan."""
+
+    if backend_mode != MODEL_BACKED_COMPACTION_BACKEND:
+        raise ValueError(f"Unsupported model-backed compaction backend: {backend_mode}")
+    if fallback_policy != MODEL_BACKED_COMPACTION_FALLBACK_POLICY:
+        raise ValueError(f"Unsupported compaction fallback policy: {fallback_policy}")
+    if failure_kind not in MODEL_BACKED_COMPACTION_FAILURE_KINDS:
+        raise ValueError(f"Unsupported compaction failure kind: {failure_kind}")
 
     return context_plan.model_copy(
         update={

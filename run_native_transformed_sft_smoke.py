@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from pycodeagent.rl.native_transformed_sft_smoke import run_native_transformed_sft_smoke
+from pycodeagent.auxiliary.native_transformed.sft_smoke import run_native_transformed_sft_smoke
 
 
 def main() -> int:

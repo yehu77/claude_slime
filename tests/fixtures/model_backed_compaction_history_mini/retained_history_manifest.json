@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "run_id": "model_backed_compaction_mini",
+  "task_id": "model_backed_compaction_mini",
+  "workspace_root": "workspace",
+  "started_at_unix_ms": 1700000000000,
+  "ended_at_unix_ms": 1700000000200,
+  "entry_log_path": "retained_history.jsonl",
+  "total_entries": 11,
+  "entry_counts_by_kind": {
+    "source_message": 8,
+    "replacement_summary": 1,
+    "carry_forward_state": 1,
+    "history_control": 1
+  },
+  "last_entry_id": "retained_entry_000011"
+}

@@ -136,12 +136,16 @@ class TestExternalCliKiloWrapperGolden:
             )
             run_dir = Path(str(result["bundle_dir"]))
             workspace_dir = run_dir / "workspace"
+            summary = _load_json(run_dir / "raw_trace_summary.json")
+            verifier = _load_json(run_dir / "verifier.json")
+            canonical = _load_json(run_dir / "canonical_trace.json")
+            final_diff = (run_dir / "final.diff").read_text(encoding="utf-8")
 
             assert result["tool_catalog_path"] is None
             assert not (run_dir / "tool_catalog.json").exists()
 
             assert _normalize_value(
-                _load_json(run_dir / "raw_trace_summary.json"),
+                summary,
                 repo_root=repo_root,
                 run_dir=run_dir,
                 workspace_dir=workspace_dir,
@@ -151,6 +155,15 @@ class TestExternalCliKiloWrapperGolden:
                 run_dir=run_dir,
                 workspace_dir=workspace_dir,
             )
+            assert result["status"] == "completed"
+            assert summary["metadata"]["execution_status"] == "completed"
+            assert summary["status"] == summary["metadata"]["final_status"] == "failed"
+            assert summary["final_diff"] == final_diff
+            assert summary["verifier_result"] == verifier
+            assert summary["metadata"]["reward"] == verifier["score"] == 0.0
+            assert canonical["status"] == summary["status"]
+            assert canonical["final_diff"] == final_diff
+            assert canonical["verifier_result"] == verifier
 
             assert _normalize_value(
                 _load_jsonl(run_dir / "raw_trace.jsonl"),
@@ -177,7 +190,7 @@ class TestExternalCliKiloWrapperGolden:
             )
 
             assert _normalize_value(
-                _load_json(run_dir / "verifier.json"),
+                verifier,
                 repo_root=repo_root,
                 run_dir=run_dir,
                 workspace_dir=workspace_dir,

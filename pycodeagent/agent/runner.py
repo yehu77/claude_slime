@@ -32,6 +32,8 @@ from pycodeagent.agent.llm_client import (
     StructuredOutputSchema,
 )
 from pycodeagent.agent.compaction import (
+    MODEL_BACKED_COMPACTION_BACKEND,
+    MODEL_BACKED_COMPACTION_FALLBACK_POLICY,
     ModelBackedCompactionOutput,
     apply_model_backed_compaction_output,
     apply_model_backed_fallback,
@@ -769,31 +771,6 @@ def _message_to_dict(
     return result
 
 
-def _meaningful_progress_observed(
-    non_finish_tool_call_count: int,
-    distinct_non_finish_tool_names: set[str],
-    saw_mutation_progress: bool,
-    saw_validation_progress: bool,
-) -> bool:
-    return non_finish_tool_call_count > 0 and (
-        saw_mutation_progress
-        or saw_validation_progress
-        or len(distinct_non_finish_tool_names) > 1
-    )
-
-
-def _active_recent_failure_kind(
-    recent_failure_kind: str | None,
-    recent_failure_turn: int | None,
-    current_turn: int,
-) -> str | None:
-    if recent_failure_kind is None or recent_failure_turn is None:
-        return None
-    if current_turn - recent_failure_turn > 2:
-        return None
-    return recent_failure_kind
-
-
 def _append_runtime_repair_messages(
     trajectory: Trajectory,
     parsed: ParseResult,
@@ -959,49 +936,6 @@ def _pending_issue_kind_value(pending_issue_kind: Any) -> str | None:
     return getattr(pending_issue_kind, "value", str(pending_issue_kind))
 
 
-def _sync_session_pending_issue(
-    session_context: RuntimeSessionContext,
-    *,
-    turn_index: int,
-    resolution_trigger: str,
-) -> None:
-    session_state = session_context.session_state
-    recovery_state = session_state.recovery_state
-    current_kind = _pending_issue_kind_value(recovery_state.pending_issue_kind)
-    current_detail = recovery_state.pending_issue_detail
-    active = session_state.active_pending_issue
-
-    if current_kind is None:
-        if active is None:
-            return
-        cleared_issue = active.model_copy(deep=True)
-        cleared_issue.last_observed_turn = turn_index
-        cleared_issue.cleared_at_turn = turn_index
-        cleared_issue.resolution_trigger = resolution_trigger
-        session_state.last_cleared_pending_issue = cleared_issue
-        session_state.active_pending_issue = None
-        return
-
-    if active is not None and active.kind == current_kind:
-        active.detail = current_detail
-        active.last_observed_turn = turn_index
-        return
-
-    if active is not None:
-        replaced_issue = active.model_copy(deep=True)
-        replaced_issue.last_observed_turn = turn_index
-        replaced_issue.cleared_at_turn = turn_index
-        replaced_issue.resolution_trigger = "replaced_by_pending_issue"
-        session_state.last_cleared_pending_issue = replaced_issue
-
-    session_state.active_pending_issue = PendingIssueRecord(
-        kind=current_kind,
-        detail=current_detail,
-        opened_at_turn=turn_index,
-        last_observed_turn=turn_index,
-    )
-
-
 def _apply_context_selection_result(
     session_context: RuntimeSessionContext,
     context_result,
@@ -1073,8 +1007,8 @@ def _maybe_run_model_backed_compaction(
     ):
         fallback_plan = apply_model_backed_fallback(
             context_plan,
-            backend_mode="inline_model",
-            fallback_policy="deterministic_compaction",
+            backend_mode=MODEL_BACKED_COMPACTION_BACKEND,
+            fallback_policy=MODEL_BACKED_COMPACTION_FALLBACK_POLICY,
             fallback_reason="capability_unavailable",
             failure_kind="capability_unavailable",
         )
@@ -1082,7 +1016,7 @@ def _maybe_run_model_backed_compaction(
             trace_writer,
             turn_context.turn_index,
             context_plan=fallback_plan,
-            backend_mode="inline_model",
+            backend_mode=MODEL_BACKED_COMPACTION_BACKEND,
             failure_kind="capability_unavailable",
             detail="Client capabilities do not allow model-backed compaction",
         )
@@ -1093,8 +1027,8 @@ def _maybe_run_model_backed_compaction(
     except Exception as exc:
         fallback_plan = apply_model_backed_fallback(
             context_plan,
-            backend_mode="inline_model",
-            fallback_policy="deterministic_compaction",
+            backend_mode=MODEL_BACKED_COMPACTION_BACKEND,
+            fallback_policy=MODEL_BACKED_COMPACTION_FALLBACK_POLICY,
             fallback_reason="provider_error",
             failure_kind="provider_error",
         )
@@ -1102,7 +1036,7 @@ def _maybe_run_model_backed_compaction(
             trace_writer,
             turn_context.turn_index,
             context_plan=fallback_plan,
-            backend_mode="inline_model",
+            backend_mode=MODEL_BACKED_COMPACTION_BACKEND,
             failure_kind="provider_error",
             detail=f"{type(exc).__name__}: {exc}",
         )
@@ -1112,8 +1046,8 @@ def _maybe_run_model_backed_compaction(
         detail = response.structured_output_parse_error or "missing_structured_output"
         fallback_plan = apply_model_backed_fallback(
             context_plan,
-            backend_mode="inline_model",
-            fallback_policy="deterministic_compaction",
+            backend_mode=MODEL_BACKED_COMPACTION_BACKEND,
+            fallback_policy=MODEL_BACKED_COMPACTION_FALLBACK_POLICY,
             fallback_reason="structured_output_parse_error",
             failure_kind="structured_output_parse_error",
         )
@@ -1121,7 +1055,7 @@ def _maybe_run_model_backed_compaction(
             trace_writer,
             turn_context.turn_index,
             context_plan=fallback_plan,
-            backend_mode="inline_model",
+            backend_mode=MODEL_BACKED_COMPACTION_BACKEND,
             failure_kind="structured_output_parse_error",
             detail=detail,
             response=response,
@@ -1136,8 +1070,8 @@ def _maybe_run_model_backed_compaction(
     except Exception as exc:
         fallback_plan = apply_model_backed_fallback(
             context_plan,
-            backend_mode="inline_model",
-            fallback_policy="deterministic_compaction",
+            backend_mode=MODEL_BACKED_COMPACTION_BACKEND,
+            fallback_policy=MODEL_BACKED_COMPACTION_FALLBACK_POLICY,
             fallback_reason="schema_validation_error",
             failure_kind="schema_validation_error",
         )
@@ -1145,7 +1079,7 @@ def _maybe_run_model_backed_compaction(
             trace_writer,
             turn_context.turn_index,
             context_plan=fallback_plan,
-            backend_mode="inline_model",
+            backend_mode=MODEL_BACKED_COMPACTION_BACKEND,
             failure_kind="schema_validation_error",
             detail=str(exc),
             response=response,
@@ -1159,8 +1093,8 @@ def _maybe_run_model_backed_compaction(
     if span_validation_error is not None:
         fallback_plan = apply_model_backed_fallback(
             context_plan,
-            backend_mode="inline_model",
-            fallback_policy="deterministic_compaction",
+            backend_mode=MODEL_BACKED_COMPACTION_BACKEND,
+            fallback_policy=MODEL_BACKED_COMPACTION_FALLBACK_POLICY,
             fallback_reason="compacted_span_mismatch",
             failure_kind="compacted_span_mismatch",
         )
@@ -1168,7 +1102,7 @@ def _maybe_run_model_backed_compaction(
             trace_writer,
             turn_context.turn_index,
             context_plan=fallback_plan,
-            backend_mode="inline_model",
+            backend_mode=MODEL_BACKED_COMPACTION_BACKEND,
             failure_kind="compacted_span_mismatch",
             detail=span_validation_error,
             response=response,
@@ -1178,7 +1112,7 @@ def _maybe_run_model_backed_compaction(
     updated_plan = apply_model_backed_compaction_output(
         context_plan,
         output=output,
-        backend_mode="inline_model",
+        backend_mode=MODEL_BACKED_COMPACTION_BACKEND,
     )
     _emit_context_compaction_completed(
         trace_writer,
@@ -1320,7 +1254,7 @@ def _emit_context_compaction_requested(
         turn_index=turn_index,
         data={
             "turn_index": turn_index,
-            "backend_mode": "inline_model",
+            "backend_mode": MODEL_BACKED_COMPACTION_BACKEND,
             "request_kind": request.request_kind,
             "policy_mode": context_plan.policy_mode,
             "model_backed_requested": context_plan.model_backed_requested,
@@ -1371,7 +1305,10 @@ def _emit_context_compaction_completed(
         turn_index=turn_index,
         data={
             "turn_index": turn_index,
-            "backend_mode": context_plan.compaction_backend_mode or "inline_model",
+            "backend_mode": (
+                context_plan.compaction_backend_mode
+                or MODEL_BACKED_COMPACTION_BACKEND
+            ),
             "request_kind": response.request_kind,
             "model_backed_requested": context_plan.model_backed_requested,
             "model_backed_used": context_plan.model_backed_used,

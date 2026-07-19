@@ -21,10 +21,10 @@ logger = logging.getLogger(__name__)
 def _load_pycodeagent_dependencies():
     """Resolve pycodeagent imports only when the RL bridge is used."""
     try:
-        from pycodeagent.rl.native_transformed_reward import (
+        from pycodeagent.auxiliary.native_transformed.reward import (
             evaluate_native_transformed_rl_completion,
         )
-        from pycodeagent.rl.native_transformed_rl_dataset import (
+        from pycodeagent.auxiliary.native_transformed.rl_dataset import (
             NativeTransformedRLPromptSample,
             read_native_transformed_rl_jsonl,
             render_native_transformed_rl_prompt_text,

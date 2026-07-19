@@ -17,38 +17,17 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 from pycodeagent.rl.contract import (
-    ContractVerificationResult,
-    verify_dataset_dir,
-    verify_schema_following_contract,
+    validate_rollout_dataset_source,
+    validate_schema_following_source,
 )
 from pycodeagent.rl.dataset_builder import RolloutDatasetBuilder, discover_run_dirs
 from pycodeagent.rl.dataset_manifest import FilterConfig
-from pycodeagent.rl.claude_api_sft_dataset_io import read_claude_api_sft_jsonl
-from pycodeagent.rl.claude_api_sft_training import (
-    build_claude_api_sft_prepared_samples,
-    write_claude_api_sft_prepared_samples,
-)
-from pycodeagent.rl.native_transformed_sft_dataset_validate import (
-    validate_native_transformed_sft_dataset,
-)
-from pycodeagent.rl.schema_following_training import (
-    build_schema_following_prepared_samples,
-    load_schema_following_split,
-    write_schema_following_prepared_samples,
-)
 from pycodeagent.rl.schema_following_from_runtime import (
     generate_schema_following_from_runtime_runs,
 )
-from pycodeagent.rl.slime_bridge import load_prepared_rollout_bundle
-from pycodeagent.rl.tensorize import (
-    tensorize_rollout,
-    tensorize_schema_following_sample,
-    tensorize_text,
-)
-from pycodeagent.rl.tokenizer import BaseTokenizerAdapter, resolve_tokenizer_adapter
+from pycodeagent.rl.training_bundle import TrainingBundleBuilder
+from pycodeagent.rl.tokenizer import BaseTokenizerAdapter
 from pycodeagent.rl.tokenizer_config import FakeTokenizerConfig, TokenizerConfig
-from pycodeagent.rl.train_config import TrainConfig
-from pycodeagent.rl.train_dataset import TrainDataset
 from pycodeagent.trajectory.schema import RunStatus
 
 
@@ -60,6 +39,8 @@ class TrainingPrepRecommendation(BaseModel):
     prepared_dataset_dir: str
     canonical_rollout_input: str
     canonical_training_input: str
+    packed_training_input: str
+    bundle_manifest_path: str
     include_failed: bool
     verifier_passed: bool | None
     recommended_max_length: int
@@ -84,6 +65,8 @@ class SchemaFollowingTrainingPrepRecommendation(BaseModel):
     prepared_dataset_dir: str
     canonical_sample_input: str
     canonical_training_input: str
+    packed_training_input: str
+    bundle_manifest_path: str
     recommended_max_length: int
     recommended_batch_size: int
     recommended_learning_rate: float
@@ -91,29 +74,6 @@ class SchemaFollowingTrainingPrepRecommendation(BaseModel):
     tokenized_example_count: int
     contract_ok: bool
     contract_report_path: str
-    tokenizer_config_path: str
-    train_config_path: str
-    notes: list[str] = Field(default_factory=list)
-
-
-class NativeTransformedSFTTrainingPrepRecommendation(BaseModel):
-    """Concrete recommendation for native-transformed Claude API SFT training."""
-
-    source_type: str
-    source_path: str
-    split: str
-    prepared_dataset_dir: str
-    validation_ok: bool
-    validation_report_path: str
-    primary_sample_input: str
-    primary_prepared_input: str
-    primary_training_input: str
-    recommended_max_length: int
-    recommended_batch_size: int
-    recommended_learning_rate: float
-    raw_sample_count: int
-    prepared_sample_count: int
-    tokenized_example_count: int
     tokenizer_config_path: str
     train_config_path: str
     notes: list[str] = Field(default_factory=list)
@@ -129,6 +89,8 @@ class RuntimeObservedSchemaFollowingTrainingPrepRecommendation(BaseModel):
     prepared_dataset_dir: str
     canonical_sample_input: str
     canonical_training_input: str
+    packed_training_input: str
+    bundle_manifest_path: str
     discovered_run_count: int
     included_run_count: int
     observed_sample_count: int
@@ -163,12 +125,6 @@ def prepare_slime_training_input(
     source_dir = Path(source_dir)
     output_dir = Path(output_dir)
 
-    tokenizer, resolved_tokenizer_config = resolve_tokenizer_adapter(
-        tokenizer=tokenizer,
-        tokenizer_config=tokenizer_config,
-        fake_tokenizer_config=fake_tokenizer_config,
-        default_max_length=max_length,
-    )
     output_dir.mkdir(parents=True, exist_ok=True)
 
     filter_config = FilterConfig(
@@ -186,59 +142,29 @@ def prepare_slime_training_input(
         filter_config=filter_config,
     )
 
-    tokenizer_metadata = dict(resolved_tokenizer_config.metadata)
-    tokenizer_metadata.update(
-        {
+    prepared_samples, rollouts, source_issues = validate_rollout_dataset_source(
+        dataset_build.output_dir
+    )
+    bundle = TrainingBundleBuilder().build(
+        prepared_samples,
+        output_dir,
+        source_type=source_type,
+        source_path=source_dir,
+        run_id=run_id,
+        max_length=max_length,
+        batch_size=batch_size,
+        learning_rate=learning_rate,
+        max_steps=max_steps,
+        seed=seed,
+        tokenizer=tokenizer,
+        tokenizer_config=tokenizer_config,
+        fake_tokenizer_config=fake_tokenizer_config,
+        tokenizer_metadata={
             "prepared_from": str(source_dir),
             "source_type": source_type,
             "canonical_rollout_input": "rollouts.jsonl",
-        }
-    )
-    tokenizer_config = resolved_tokenizer_config.model_copy(
-        update={
-            "max_length": max_length,
-            "truncation": True,
-            "padding": "do_not_pad",
-            "metadata": tokenizer_metadata,
-        }
-    )
-
-    contract_result = verify_dataset_dir(
-        dataset_build.output_dir,
-        source_type=source_type,
-        source_path=str(source_dir),
-        tokenizer=tokenizer,
-        tokenizer_config=tokenizer_config,
-        pack_max_length=max_length,
-        write_report=True,
-    )
-    if not contract_result.ok:
-        raise ValueError(
-            "Training input preparation failed contract verification. "
-            f"See {dataset_build.output_dir / 'contract_report.json'}"
-        )
-
-    rollouts = load_prepared_rollout_bundle(dataset_build.output_dir).rollouts
-    tokenized_examples = [
-        tensorize_rollout(rollout, tokenizer, tokenizer_config) for rollout in rollouts
-    ]
-    tokenized_dataset = TrainDataset.from_examples(tokenized_examples)
-    tokenized_path = output_dir / "tokenized.jsonl"
-    tokenized_dataset.save_jsonl(tokenized_path)
-
-    tokenizer_config_path = output_dir / "tokenizer_config.yaml"
-    tokenizer_config.save(tokenizer_config_path)
-
-    train_output_dir = output_dir / "training_outputs"
-    train_config = TrainConfig(
-        run_id=run_id,
-        dataset_path=str(tokenized_path),
-        output_dir=str(train_output_dir),
-        max_steps=max_steps,
-        batch_size=batch_size,
-        learning_rate=learning_rate,
-        seed=seed,
-        metadata={
+        },
+        train_metadata={
             "prepared_from": str(source_dir),
             "source_type": source_type,
             "canonical_rollout_input": "rollouts.jsonl",
@@ -246,15 +172,23 @@ def prepare_slime_training_input(
             "include_failed": include_failed,
             "verifier_passed": verifier_passed,
         },
+        bundle_metadata={
+            "source_adapter": "rollout_dataset",
+            "include_failed": include_failed,
+            "verifier_passed": verifier_passed,
+        },
+        source_artifacts=["dataset_manifest.json", "rollouts.jsonl"],
+        source_issues=source_issues,
+        rollout_count=len(rollouts),
+        allow_empty=True,
     )
-    train_config_path = output_dir / "train_config.json"
-    train_config.save(train_config_path)
 
     notes = [
         "Use rollouts.jsonl as the canonical upstream export for downstream training prep.",
-        "Use tokenized.jsonl as the direct TrainDataset input for the current training loop.",
+        "Use tokenized.jsonl as the direct TrainDataset input for a downstream training consumer.",
+        "Use packed.jsonl for the checksummed packed representation; verify bundle_manifest.json before consumption.",
         "Default include_failed=False excludes non-completed runs while preserving completed verifier-failed runs.",
-        f"Current recommended max_length={max_length}; smaller values should be revalidated with verify_slime_contract.py.",
+        f"Current recommended max_length={max_length}; smaller values should be revalidated with python -B -m pycodeagent verify.",
     ]
 
     recommendation = TrainingPrepRecommendation(
@@ -263,178 +197,23 @@ def prepare_slime_training_input(
         prepared_dataset_dir=str(output_dir),
         canonical_rollout_input="rollouts.jsonl",
         canonical_training_input="tokenized.jsonl",
+        packed_training_input="packed.jsonl",
+        bundle_manifest_path=str(bundle.manifest_path),
         include_failed=include_failed,
         verifier_passed=verifier_passed,
         recommended_max_length=max_length,
         recommended_batch_size=batch_size,
         recommended_learning_rate=learning_rate,
-        tokenized_example_count=len(tokenized_examples),
-        completed_run_count=contract_result.status_counts.get(
+        tokenized_example_count=bundle.manifest.tokenized_count,
+        completed_run_count=bundle.contract_result.status_counts.get(
             RunStatus.COMPLETED.value, 0
         ),
-        excluded_run_count=len(run_dirs) - len(tokenized_examples),
-        contract_ok=contract_result.ok,
-        contract_report_path=str(output_dir / "contract_report.json"),
-        tokenizer_config_path=str(tokenizer_config_path),
-        train_config_path=str(train_config_path),
+        excluded_run_count=len(run_dirs) - bundle.manifest.sample_count,
+        contract_ok=bundle.contract_result.ok,
+        contract_report_path=str(bundle.contract_report_path),
+        tokenizer_config_path=str(bundle.tokenizer_config_path),
+        train_config_path=str(bundle.train_config_path),
         notes=notes,
-    )
-    _write_recommendation(output_dir / "training_prep.json", recommendation)
-    return recommendation
-
-
-def prepare_native_transformed_sft_training_input(
-    source_dir: str | Path,
-    output_dir: str | Path,
-    *,
-    split: str = "train",
-    max_length: int = 2048,
-    batch_size: int = 8,
-    learning_rate: float = 1e-4,
-    max_steps: int = 1000,
-    seed: int = 42,
-    tokenizer: BaseTokenizerAdapter | None = None,
-    tokenizer_config: TokenizerConfig | None = None,
-    fake_tokenizer_config: FakeTokenizerConfig | None = None,
-    run_id: str = "native_transformed_sft_train",
-) -> NativeTransformedSFTTrainingPrepRecommendation:
-    """Prepare training artifacts from a validated native-transformed SFT dataset.
-
-    This intentionally reuses the existing Claude API SFT sample format. The
-    source dataset stays primary; this layer only serializes, masks, tokenizes,
-    and writes the current training-loop bundle.
-    """
-    source_dir = Path(source_dir)
-    output_dir = Path(output_dir)
-    split_path = source_dir / f"{split}.jsonl"
-
-    if split != "train":
-        raise ValueError("Native transformed SFT training prep currently supports split='train'")
-
-    validation = validate_native_transformed_sft_dataset(source_dir)
-    if not validation.ok:
-        raise ValueError(
-            "Native transformed SFT training input failed validation. "
-            f"See {validation.validation_report_path}"
-        )
-
-    tokenizer, resolved_tokenizer_config = resolve_tokenizer_adapter(
-        tokenizer=tokenizer,
-        tokenizer_config=tokenizer_config,
-        fake_tokenizer_config=fake_tokenizer_config,
-        default_max_length=max_length,
-    )
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    raw_samples = read_claude_api_sft_jsonl(split_path)
-    prepared_samples = build_claude_api_sft_prepared_samples(raw_samples)
-    prepared_path = output_dir / "samples.jsonl"
-    write_claude_api_sft_prepared_samples(prepared_samples, prepared_path)
-
-    tokenizer_metadata = dict(resolved_tokenizer_config.metadata)
-    tokenizer_metadata.update(
-        {
-            "prepared_from": str(source_dir),
-            "source_type": "native_transformed_claude_api_sft",
-            "source_split": split,
-            "primary_sample_input": f"{split}.jsonl",
-            "primary_prepared_input": "samples.jsonl",
-        }
-    )
-    tokenizer_config = resolved_tokenizer_config.model_copy(
-        update={
-            "max_length": max_length,
-            "truncation": True,
-            "padding": "do_not_pad",
-            "metadata": tokenizer_metadata,
-        }
-    )
-
-    tokenized_examples = [
-        tensorize_text(
-            sample.text,
-            sample.character_mask,
-            tokenizer,
-            tokenizer_config,
-            metadata={
-                **sample.metadata,
-                "sample_id": sample.sample_id,
-                "sample_type": sample.sample_type,
-                "source_type": "native_transformed_claude_api_sft",
-                "raw_source_type": sample.source_type,
-                "task_id": sample.task_id,
-                "tool_profile_id": sample.tool_profile_id,
-                "loss_mask_policy": sample.loss_mask_policy,
-                "trainable_char_count": sample.trainable_char_count,
-            },
-        )
-        for sample in prepared_samples
-    ]
-    empty_trainable_examples = [
-        example.metadata.get("sample_id", "<unknown>")
-        for example in tokenized_examples
-        if example.trainable_token_count == 0
-    ]
-    if empty_trainable_examples:
-        preview = ", ".join(str(sample_id) for sample_id in empty_trainable_examples[:5])
-        raise ValueError(
-            "Native transformed SFT training prep produced examples with no trainable "
-            f"tokens after tokenization/truncation: {preview}. Increase --max-length "
-            "or use a tokenizer/truncation policy that preserves assistant targets."
-        )
-    tokenized_dataset = TrainDataset.from_examples(tokenized_examples)
-    tokenized_path = output_dir / "tokenized.jsonl"
-    tokenized_dataset.save_jsonl(tokenized_path)
-
-    tokenizer_config_path = output_dir / "tokenizer_config.yaml"
-    tokenizer_config.save(tokenizer_config_path)
-
-    train_output_dir = output_dir / "training_outputs"
-    train_config = TrainConfig(
-        run_id=run_id,
-        dataset_path=str(tokenized_path),
-        output_dir=str(train_output_dir),
-        max_steps=max_steps,
-        batch_size=batch_size,
-        learning_rate=learning_rate,
-        seed=seed,
-        metadata={
-            "prepared_from": str(source_dir),
-            "source_type": "native_transformed_claude_api_sft",
-            "source_split": split,
-            "primary_sample_input": f"{split}.jsonl",
-            "primary_prepared_input": "samples.jsonl",
-            "primary_training_input": "tokenized.jsonl",
-            "validation_report_path": validation.validation_report_path,
-        },
-    )
-    train_config_path = output_dir / "train_config.json"
-    train_config.save(train_config_path)
-
-    recommendation = NativeTransformedSFTTrainingPrepRecommendation(
-        source_type="native_transformed_claude_api_sft",
-        source_path=str(source_dir),
-        split=split,
-        prepared_dataset_dir=str(output_dir),
-        validation_ok=validation.ok,
-        validation_report_path=validation.validation_report_path,
-        primary_sample_input=f"{split}.jsonl",
-        primary_prepared_input="samples.jsonl",
-        primary_training_input="tokenized.jsonl",
-        recommended_max_length=max_length,
-        recommended_batch_size=batch_size,
-        recommended_learning_rate=learning_rate,
-        raw_sample_count=len(raw_samples),
-        prepared_sample_count=len(prepared_samples),
-        tokenized_example_count=len(tokenized_examples),
-        tokenizer_config_path=str(tokenizer_config_path),
-        train_config_path=str(train_config_path),
-        notes=[
-            "Use the validated native-transformed train.jsonl as the primary upstream input.",
-            "No additional raw dataset format is introduced by this preparation step.",
-            "Prepared samples reuse the Claude API SFT serializer and assistant-selected-block loss mask.",
-            "Use tokenized.jsonl as the direct TrainDataset input for the current training loop.",
-        ],
     )
     _write_recommendation(output_dir / "training_prep.json", recommendation)
     return recommendation
@@ -454,86 +233,57 @@ def prepare_schema_following_training_input(
     tokenizer_config: TokenizerConfig | None = None,
     fake_tokenizer_config: FakeTokenizerConfig | None = None,
     run_id: str = "schema_following_train",
+    allow_empty: bool = False,
 ) -> SchemaFollowingTrainingPrepRecommendation:
     """Prepare a recommended training bundle from a schema-following dataset split."""
     source_dir = Path(source_dir)
     output_dir = Path(output_dir)
 
-    tokenizer, resolved_tokenizer_config = resolve_tokenizer_adapter(
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    prepared_samples, source_issues = validate_schema_following_source(
+        source_dir,
+        split=split,
+    )
+    bundle = TrainingBundleBuilder().build(
+        prepared_samples,
+        output_dir,
+        source_type="schema_following",
+        source_path=source_dir,
+        run_id=run_id,
+        max_length=max_length,
+        batch_size=batch_size,
+        learning_rate=learning_rate,
+        max_steps=max_steps,
+        seed=seed,
         tokenizer=tokenizer,
         tokenizer_config=tokenizer_config,
         fake_tokenizer_config=fake_tokenizer_config,
-        default_max_length=max_length,
-    )
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    raw_samples = load_schema_following_split(source_dir, split=split)
-    prepared_samples = build_schema_following_prepared_samples(raw_samples)
-    write_schema_following_prepared_samples(prepared_samples, output_dir / "samples.jsonl")
-
-    tokenizer_metadata = dict(resolved_tokenizer_config.metadata)
-    tokenizer_metadata.update(
-        {
+        tokenizer_metadata={
             "prepared_from": str(source_dir),
             "source_type": "schema_following",
             "source_split": split,
             "canonical_sample_input": f"{split}.jsonl",
-        }
-    )
-    tokenizer_config = resolved_tokenizer_config.model_copy(
-        update={
-            "max_length": max_length,
-            "truncation": True,
-            "padding": "do_not_pad",
-            "metadata": tokenizer_metadata,
-        }
-    )
-
-    contract_result = verify_schema_following_contract(
-        source_dir,
-        output_dir,
-        split=split,
-        tokenizer=tokenizer,
-        tokenizer_config=tokenizer_config,
-        pack_max_length=max_length,
-        write_report=True,
-    )
-    if not contract_result.ok:
-        raise ValueError(
-            "Schema-following training input preparation failed contract verification. "
-            f"See {output_dir / 'contract_report.json'}"
-        )
-
-    tokenized_examples = [
-        tensorize_schema_following_sample(sample, tokenizer, tokenizer_config)
-        for sample in prepared_samples
-    ]
-    tokenized_dataset = TrainDataset.from_examples(tokenized_examples)
-    tokenized_path = output_dir / "tokenized.jsonl"
-    tokenized_dataset.save_jsonl(tokenized_path)
-
-    tokenizer_config_path = output_dir / "tokenizer_config.yaml"
-    tokenizer_config.save(tokenizer_config_path)
-
-    train_output_dir = output_dir / "training_outputs"
-    train_config = TrainConfig(
-        run_id=run_id,
-        dataset_path=str(tokenized_path),
-        output_dir=str(train_output_dir),
-        max_steps=max_steps,
-        batch_size=batch_size,
-        learning_rate=learning_rate,
-        seed=seed,
-        metadata={
+        },
+        train_metadata={
             "prepared_from": str(source_dir),
             "source_type": "schema_following",
             "source_split": split,
             "canonical_sample_input": f"{split}.jsonl",
             "canonical_training_input": "tokenized.jsonl",
         },
+        bundle_metadata={
+            "source_adapter": "schema_following",
+            "split": split,
+        },
+        source_artifacts=[
+            f"{split}.jsonl",
+            "dataset_manifest.json",
+            "split_metrics.json",
+        ],
+        source_issues=source_issues,
+        allow_empty=allow_empty,
     )
-    train_config_path = output_dir / "train_config.json"
-    train_config.save(train_config_path)
 
     recommendation = SchemaFollowingTrainingPrepRecommendation(
         source_type="schema_following",
@@ -542,19 +292,22 @@ def prepare_schema_following_training_input(
         prepared_dataset_dir=str(output_dir),
         canonical_sample_input=f"{split}.jsonl",
         canonical_training_input="tokenized.jsonl",
+        packed_training_input="packed.jsonl",
+        bundle_manifest_path=str(bundle.manifest_path),
         recommended_max_length=max_length,
         recommended_batch_size=batch_size,
         recommended_learning_rate=learning_rate,
-        prepared_sample_count=len(prepared_samples),
-        tokenized_example_count=len(tokenized_examples),
-        contract_ok=contract_result.ok,
-        contract_report_path=str(output_dir / "contract_report.json"),
-        tokenizer_config_path=str(tokenizer_config_path),
-        train_config_path=str(train_config_path),
+        prepared_sample_count=bundle.manifest.sample_count,
+        tokenized_example_count=bundle.manifest.tokenized_count,
+        contract_ok=bundle.contract_result.ok,
+        contract_report_path=str(bundle.contract_report_path),
+        tokenizer_config_path=str(bundle.tokenizer_config_path),
+        train_config_path=str(bundle.train_config_path),
         notes=[
             "Use the selected split JSONL as the canonical upstream schema-following input.",
             "Prepared samples keep only assistant_tool_call trainable under the current loss mask policy.",
-            "Use tokenized.jsonl as the direct TrainDataset input for the current training loop.",
+            "Use tokenized.jsonl as the direct TrainDataset input for a downstream training consumer.",
+            "packed.jsonl and bundle_manifest.json are produced by the shared training-bundle contract.",
         ],
     )
     _write_recommendation(output_dir / "training_prep.json", recommendation)
@@ -608,6 +361,7 @@ def prepare_runtime_observed_schema_following_training_input(
         tokenizer_config=tokenizer_config,
         fake_tokenizer_config=fake_tokenizer_config,
         run_id=run_id,
+        allow_empty=True,
     )
 
     recommendation = RuntimeObservedSchemaFollowingTrainingPrepRecommendation(
@@ -618,6 +372,8 @@ def prepare_runtime_observed_schema_following_training_input(
         prepared_dataset_dir=str(prepared_dataset_dir),
         canonical_sample_input="raw_dataset/train.jsonl",
         canonical_training_input="prepared/tokenized.jsonl",
+        packed_training_input="prepared/packed.jsonl",
+        bundle_manifest_path=str(prepared_dataset_dir / "bundle_manifest.json"),
         discovered_run_count=export_result.discovered_run_count,
         included_run_count=export_result.included_run_count,
         observed_sample_count=export_result.sample_count,
@@ -631,6 +387,7 @@ def prepare_runtime_observed_schema_following_training_input(
         notes=[
             "Use raw_dataset/train.jsonl as the canonical observed ToolView sample export.",
             "Prepared samples preserve assistant_tool_call_only masking through the existing schema-following path.",
+            "The prepared directory is a shared checksummed bundle; raw_dataset remains source-owned evidence.",
             "runtime_trace remains an audit artifact and is not the primary exporter input in this milestone.",
         ],
     )

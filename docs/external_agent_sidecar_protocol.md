@@ -70,13 +70,37 @@ The harness uses the presence of both `raw_trace.jsonl` and
 
 ## Precedence Rules
 
-1. If sidecar raw trace files exist, the adapter preserves them and does not
-   synthesize a fallback raw trace.
-2. If sidecar raw trace files do not exist, the adapter emits an
-   `observed_fallback` raw trace from subprocess execution artifacts.
-3. If `tool_catalog.json` exists, it becomes `RawAgentRunResult.tool_catalog_path`.
-4. If no sidecar catalog exists, normal harness catalog fallback rules apply:
+1. If sidecar raw trace files exist, the adapter preserves `raw_trace.jsonl`
+   and does not synthesize fallback events.
+2. The sidecar summary owns trace identity and capture metadata, but it does
+   not own harness-derived outcome fields. Sidecars should omit `status`,
+   `final_diff`, `verifier_result`, and the outcome fields described below.
+3. The adapter rebuilds those derived summary fields after execution. An
+   explicitly supplied value is an assertion: if it disagrees with its
+   authoritative artifact, the run fails with `ArtifactTruthConflictError`.
+   It is never silently preferred or overwritten.
+4. If sidecar raw trace files do not exist, the adapter emits an
+   `observed_fallback` raw trace from the same authoritative artifacts.
+5. If `tool_catalog.json` exists, it becomes
+   `RawAgentRunResult.tool_catalog_path`.
+6. If no sidecar catalog exists, normal harness catalog fallback rules apply:
    adapter artifact path first, then `ToolCatalogProvider`, then `None`.
+
+### Field-level truth matrix
+
+| Field | Authoritative source | Derived/preserved behavior |
+| --- | --- | --- |
+| events and tool calls | `raw_trace.jsonl` | sidecar events are preserved |
+| `final_diff` | harness-generated `final.diff` | copied into the summary |
+| `verifier_result` | harness-generated `verifier.json` | copied into the summary |
+| `execution_status` | adapter subprocess result | preserved separately in metadata and `RawAgentRunResult.status` |
+| `final_status` / summary `status` | execution status, then verifier result | non-completed execution wins; otherwise failed verifier means `failed` |
+| `reward` | `verifier_result.score` | stored in summary metadata |
+
+`execution_status=completed` and `final_status=failed` are intentionally
+compatible: the CLI can exit successfully while its workspace still fails the
+task verifier. The summary metadata records the matrix under
+`truth_precedence` so downstream consumers can audit the derivation.
 
 ## Scope Boundary
 

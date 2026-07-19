@@ -1,6 +1,6 @@
 """Offline slime bridge for pycodeagent-prepared training bundles.
 
-Use this when training from ``prepare_slime_training_data.py`` outputs instead
+Use this when training from ``python -B -m pycodeagent prep`` outputs instead
 of generating fresh rollouts online.
 """
 

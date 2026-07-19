@@ -1,0 +1,200 @@
+{
+  "schema": "repository-cleanup-root-wrapper-disposition/v1",
+  "goal_id": "RC-046",
+  "audited_at": "2026-07-18",
+  "formal_cli": "python -B -m pycodeagent",
+  "entries": [
+    {
+      "asset": "claude_gateway_proxy.py",
+      "route": "auxiliary_compatibility_gateway",
+      "known_repository_consumers": [],
+      "known_external_consumers": "unknown",
+      "formal_replacement": null,
+      "disposition": "keep_route_specific",
+      "status": "active",
+      "rationale": "Temporary Claude gateway compatibility surface has no equivalent formal CLI service."
+    },
+    {
+      "asset": "export_claude_api_sft_dataset.py",
+      "route": "auxiliary_claude_api_sft",
+      "known_repository_consumers": [
+        "tests/test_root_cli.py"
+      ],
+      "known_external_consumers": "unknown",
+      "formal_replacement": null,
+      "disposition": "keep_route_specific",
+      "status": "active",
+      "rationale": "Exports the auxiliary Claude API SFT format, not runtime-observed ToolView data."
+    },
+    {
+      "asset": "export_native_transformed_rl_dataset.py",
+      "route": "auxiliary_native_transformed_rl",
+      "known_repository_consumers": [
+        "tests/auxiliary/"
+      ],
+      "known_external_consumers": "unknown",
+      "formal_replacement": null,
+      "disposition": "keep_route_specific",
+      "status": "active",
+      "rationale": "Auxiliary native-transformed RL exporter is outside the six-command mainline."
+    },
+    {
+      "asset": "export_native_transformed_sft_dataset.py",
+      "route": "auxiliary_native_transformed_sft",
+      "known_repository_consumers": [
+        "tests/test_root_cli.py",
+        "tests/auxiliary/"
+      ],
+      "known_external_consumers": "unknown",
+      "formal_replacement": null,
+      "disposition": "keep_route_specific",
+      "status": "active",
+      "rationale": "Auxiliary native-transformed SFT exporter has different inputs and contracts from formal export."
+    },
+    {
+      "asset": "generate_schema_following_data.py",
+      "route": "controlled_schema_following_baseline",
+      "known_repository_consumers": [
+        "tests/test_root_cli.py"
+      ],
+      "known_external_consumers": "unknown",
+      "formal_replacement": null,
+      "disposition": "keep_route_specific",
+      "status": "active",
+      "rationale": "Controlled synthetic and trajectory-derived baseline generator is not a runtime-observed export alias."
+    },
+    {
+      "asset": "prepare_native_transformed_sft_training_data.py",
+      "route": "auxiliary_native_transformed_sft",
+      "known_repository_consumers": [
+        "tests/test_root_cli.py",
+        "tests/auxiliary/"
+      ],
+      "known_external_consumers": "unknown",
+      "formal_replacement": null,
+      "disposition": "keep_route_specific",
+      "status": "active",
+      "rationale": "Auxiliary native-transformed SFT preparation owns a route-specific input format."
+    },
+    {
+      "asset": "prepare_schema_following_training_data.py",
+      "route": "controlled_schema_following_baseline",
+      "known_repository_consumers": [
+        "tests/test_root_cli.py"
+      ],
+      "known_external_consumers": "unknown",
+      "formal_replacement": null,
+      "disposition": "keep_route_specific",
+      "status": "active",
+      "rationale": "Controlled schema-following preparation is not equivalent to formal run-artifact preparation."
+    },
+    {
+      "asset": "prepare_slime_training_data.py",
+      "route": "mainline_formal_cli",
+      "known_repository_consumers": [],
+      "known_external_consumers": "unknown",
+      "formal_replacement": "python -B -m pycodeagent prep",
+      "disposition": "delete",
+      "status": "retired",
+      "rationale": "Formal prep service preserves the tokenizer, packing, manifest, and contract behavior."
+    },
+    {
+      "asset": "run_external_agent_smoke.py",
+      "route": "external_agent_raw_trace",
+      "known_repository_consumers": [
+        "tests/test_root_cli.py"
+      ],
+      "known_external_consumers": "unknown",
+      "formal_replacement": null,
+      "disposition": "keep_route_specific",
+      "status": "active",
+      "rationale": "External-agent raw-trace adapter smoke is not a repo-owned runtime command."
+    },
+    {
+      "asset": "run_native_family_acceptance.py",
+      "route": "mainline_formal_cli",
+      "known_repository_consumers": [],
+      "known_external_consumers": "unknown",
+      "formal_replacement": "python -B -m pycodeagent acceptance",
+      "disposition": "delete",
+      "status": "retired",
+      "rationale": "Formal acceptance service owns both local-only and provider-backed native-family acceptance."
+    },
+    {
+      "asset": "run_native_transformed_sft_smoke.py",
+      "route": "auxiliary_native_transformed_sft",
+      "known_repository_consumers": [
+        "tests/test_root_cli.py",
+        "tests/auxiliary/"
+      ],
+      "known_external_consumers": "unknown",
+      "formal_replacement": null,
+      "disposition": "keep_route_specific",
+      "status": "active",
+      "rationale": "Auxiliary native-transformed SFT smoke is not a mainline runtime acceptance alias."
+    },
+    {
+      "asset": "run_real_provider_behavior_baseline.py",
+      "route": "mainline_formal_cli",
+      "known_repository_consumers": [],
+      "known_external_consumers": "unknown",
+      "formal_replacement": "python -B -m pycodeagent campaign --kind behavior",
+      "disposition": "delete",
+      "status": "retired",
+      "rationale": "Formal behavior campaign service owns the same provider-backed baseline."
+    },
+    {
+      "asset": "run_real_provider_credibility_bundle.py",
+      "route": "mainline_formal_cli",
+      "known_repository_consumers": [],
+      "known_external_consumers": "unknown",
+      "formal_replacement": "python -B -m pycodeagent campaign --kind credibility",
+      "disposition": "delete",
+      "status": "retired",
+      "rationale": "Formal credibility campaign service owns the same evidence bundle."
+    },
+    {
+      "asset": "run_runtime_smoke_real_provider.py",
+      "route": "mainline_formal_cli",
+      "known_repository_consumers": [],
+      "known_external_consumers": "unknown",
+      "formal_replacement": "python -B -m pycodeagent run --tasks datasets/tasks/real_provider_smoke_tasks.jsonl --task-id real_provider_smoke_read_then_finish",
+      "disposition": "delete",
+      "status": "retired",
+      "rationale": "The fixed smoke now has a declared task-pack identity and runs through the formal run service."
+    },
+    {
+      "asset": "run_toolview_mutation_data_generation.py",
+      "route": "mainline_formal_cli",
+      "known_repository_consumers": [],
+      "known_external_consumers": "unknown",
+      "formal_replacement": "python -B -m pycodeagent campaign --kind toolview",
+      "disposition": "delete",
+      "status": "retired",
+      "rationale": "Formal ToolView campaign service owns the same observed-data generation route."
+    },
+    {
+      "asset": "validate_native_transformed_sft_dataset.py",
+      "route": "auxiliary_native_transformed_sft",
+      "known_repository_consumers": [
+        "tests/test_root_cli.py",
+        "tests/auxiliary/"
+      ],
+      "known_external_consumers": "unknown",
+      "formal_replacement": null,
+      "disposition": "keep_route_specific",
+      "status": "active",
+      "rationale": "Auxiliary native-transformed dataset validation differs from formal run-source verification."
+    },
+    {
+      "asset": "verify_slime_contract.py",
+      "route": "mainline_formal_cli",
+      "known_repository_consumers": [],
+      "known_external_consumers": "unknown",
+      "formal_replacement": "python -B -m pycodeagent verify",
+      "disposition": "delete",
+      "status": "retired",
+      "rationale": "Formal verify service owns the same slime contract verification."
+    }
+  ]
+}

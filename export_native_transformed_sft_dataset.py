@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from pycodeagent.rl.native_transformed_sft_dataset import (
+from pycodeagent.auxiliary.native_transformed.sft_dataset import (
     build_native_transformed_sft_dataset,
 )
 

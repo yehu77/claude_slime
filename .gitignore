@@ -4,6 +4,9 @@ __pycache__/
 pytest-cache-files-*/
 .mypy_cache/
 .ruff_cache/
+.agents/
+.codex/
+.venv*/
 runs/
 outputs/
 wandb/

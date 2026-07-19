@@ -20,7 +20,7 @@ def _native_response(
     *,
     assistant_text: str,
     tool_call: tuple[str, str, dict] | None = None,
-    request_kind: str = "generate",
+    request_kind: str = "agent_turn",
     structured_output: dict | None = None,
 ) -> GenerateResponse:
     tool_calls: list[ToolCallCandidate] = []
@@ -174,6 +174,31 @@ def test_verify_p3b_compaction_acceptance_passes_for_model_backed_bundle() -> No
             context_max_messages=6,
         )
 
+        trace_events = [
+            json.loads(line)
+            for line in (output_dir / "runtime_trace.jsonl").read_text(
+                encoding="utf-8"
+            ).splitlines()
+            if line.strip()
+        ]
+        turn_four_event_kinds = [
+            str(event["event_kind"])
+            for event in trace_events
+            if event.get("turn_index") == 4
+        ]
+        compaction_sequence = [
+            "context_compaction_requested",
+            "context_compaction_completed",
+            "context_selection_planned",
+            "context_compaction_applied",
+            "model_request_built",
+        ]
+        compaction_positions = [
+            turn_four_event_kinds.index(event_kind)
+            for event_kind in compaction_sequence
+        ]
+        assert compaction_positions == sorted(compaction_positions)
+
         report = verify_p3b_compaction_acceptance(
             output_dir,
             require_real_provider=False,
@@ -262,5 +287,86 @@ def test_verify_p3b_compaction_acceptance_rejects_non_model_backed_bundle() -> N
             or "context_compaction_applied" in error
             for error in report.errors
         )
+    finally:
+        cleanup_test_path(tmp)
+
+
+def test_model_backed_parse_failure_is_append_only_and_continues_with_fallback() -> None:
+    tmp = make_unique_test_dir("p3b_compaction_fallback")
+    try:
+        output_dir, trajectory = _run_trace_bundle(
+            tmp=tmp,
+            task_id="trace_model_backed_fallback_task",
+            task_prompt="Inspect three times and finish.",
+            responses=[
+                _native_response(
+                    assistant_text="Inspecting once.",
+                    tool_call=("c1", "Read", {"file_path": "main.py"}),
+                ),
+                _native_response(
+                    assistant_text="Inspecting again.",
+                    tool_call=("c2", "Glob", {"pattern": "*", "path": "."}),
+                ),
+                _native_response(
+                    assistant_text="Inspecting once more.",
+                    tool_call=("c3", "Read", {"file_path": "main.py"}),
+                ),
+                GenerateResponse.from_native_tool_calling(
+                    assistant_text="not valid structured output",
+                    tool_calls=[],
+                    finish_reason="stop",
+                    response_id="resp_compaction_parse_failure",
+                    request_kind="context_compaction",
+                    structured_output=None,
+                    structured_output_parse_error="invalid JSON",
+                ),
+                _native_response(assistant_text="Done."),
+            ],
+            max_turns=6,
+            context_policy_mode="model_backed_compaction",
+            context_max_messages=6,
+        )
+
+        trace_events = [
+            json.loads(line)
+            for line in (output_dir / "runtime_trace.jsonl").read_text(
+                encoding="utf-8"
+            ).splitlines()
+            if line.strip()
+        ]
+        turn_four = [
+            event for event in trace_events if event.get("turn_index") == 4
+        ]
+        kinds = [event["event_kind"] for event in turn_four]
+        expected_order = [
+            "context_compaction_requested",
+            "context_compaction_failed",
+            "context_selection_planned",
+            "context_compaction_applied",
+            "model_request_built",
+            "model_response_received",
+        ]
+        positions = [kinds.index(kind) for kind in expected_order]
+        assert positions == sorted(positions)
+
+        failed = next(
+            event
+            for event in turn_four
+            if event["event_kind"] == "context_compaction_failed"
+        )
+        assert failed["data"]["failure_kind"] == "structured_output_parse_error"
+        assert failed["data"]["fallback_policy"] == "deterministic_compaction"
+        assert failed["data"]["fallback_applied"] is True
+
+        applied = next(
+            event
+            for event in turn_four
+            if event["event_kind"] == "context_compaction_applied"
+        )
+        assert applied["data"]["model_backed_requested"] is True
+        assert applied["data"]["model_backed_used"] is False
+        assert applied["data"]["fallback_applied"] is True
+        assert applied["data"]["compaction_applied"] is True
+        assert trajectory.messages[-1].content == "Done."
     finally:
         cleanup_test_path(tmp)

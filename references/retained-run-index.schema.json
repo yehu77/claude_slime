@@ -1,0 +1,382 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/pycodeagent/retained-run-index-record-v1.schema.json",
+  "title": "PyCodeAgent retained-run index JSONL record",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/header"
+    },
+    {
+      "$ref": "#/$defs/entry"
+    },
+    {
+      "$ref": "#/$defs/deletion_authorization"
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "timestamp": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "target": {
+      "type": "object",
+      "required": [
+        "kind",
+        "path"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "artifact_group",
+            "artifact"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "header": {
+      "type": "object",
+      "required": [
+        "schema",
+        "record_type",
+        "index_id",
+        "policy_id",
+        "inventory_schema",
+        "inventory_state_fingerprint",
+        "example"
+      ],
+      "properties": {
+        "schema": {
+          "const": "pycodeagent-retained-run-index-record/v1"
+        },
+        "record_type": {
+          "const": "index"
+        },
+        "index_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "policy_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "inventory_schema": {
+          "const": "pycodeagent-runs-inventory/v1"
+        },
+        "inventory_state_fingerprint": {
+          "$ref": "#/$defs/sha256"
+        },
+        "example": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "entry": {
+      "type": "object",
+      "required": [
+        "schema",
+        "record_type",
+        "target",
+        "purpose_class",
+        "sensitivity",
+        "risk_labels",
+        "owner",
+        "retention",
+        "disposition",
+        "storage",
+        "checksums",
+        "scrub",
+        "restore",
+        "credential_review",
+        "deletion_authorization_id"
+      ],
+      "properties": {
+        "schema": {
+          "const": "pycodeagent-retained-run-index-record/v1"
+        },
+        "record_type": {
+          "const": "entry"
+        },
+        "target": {
+          "$ref": "#/$defs/target"
+        },
+        "purpose_class": {
+          "enum": [
+            "contract_golden",
+            "unique_research_evidence",
+            "provider_raw",
+            "debug",
+            "failed",
+            "superseded",
+            "duplicate",
+            "unclassified_hold"
+          ]
+        },
+        "sensitivity": {
+          "enum": [
+            "internal",
+            "restricted"
+          ]
+        },
+        "risk_labels": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "retention": {
+          "type": "object",
+          "required": [
+            "starts_at",
+            "expires_at",
+            "quarantine_until"
+          ],
+          "properties": {
+            "starts_at": {
+              "type": "string",
+              "minLength": 1
+            },
+            "expires_at": {
+              "$ref": "#/$defs/timestamp"
+            },
+            "quarantine_until": {
+              "$ref": "#/$defs/timestamp"
+            }
+          },
+          "additionalProperties": false
+        },
+        "disposition": {
+          "enum": [
+            "retain_active",
+            "retain_local",
+            "manual_review_hold",
+            "quarantine",
+            "delete_authorized"
+          ]
+        },
+        "storage": {
+          "type": "object",
+          "required": [
+            "kind",
+            "location_ref"
+          ],
+          "properties": {
+            "kind": {
+              "enum": [
+                "current_local",
+                "local_filesystem_outside_git_worktree"
+              ]
+            },
+            "location_ref": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "checksums": {
+          "type": "object",
+          "required": [
+            "algorithm",
+            "source",
+            "archive"
+          ],
+          "properties": {
+            "algorithm": {
+              "enum": [
+                "sha256",
+                "sha256-tree-manifest-v1"
+              ]
+            },
+            "source": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/sha256"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "archive": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/sha256"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "scrub": {
+          "type": "object",
+          "required": [
+            "status",
+            "report_ref",
+            "source_preserved"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "pending",
+                "not_required",
+                "verified"
+              ]
+            },
+            "report_ref": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "source_preserved": {
+              "const": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "restore": {
+          "type": "object",
+          "required": [
+            "status",
+            "verified_at"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "pending",
+                "not_applicable",
+                "verified"
+              ]
+            },
+            "verified_at": {
+              "$ref": "#/$defs/timestamp"
+            }
+          },
+          "additionalProperties": false
+        },
+        "credential_review": {
+          "type": "object",
+          "required": [
+            "status",
+            "reviewed_at"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "pending",
+                "not_required",
+                "complete"
+              ]
+            },
+            "reviewed_at": {
+              "$ref": "#/$defs/timestamp"
+            }
+          },
+          "additionalProperties": false
+        },
+        "deletion_authorization_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "deletion_authorization": {
+      "type": "object",
+      "required": [
+        "schema",
+        "record_type",
+        "authorization_id",
+        "authorized_by",
+        "authorized_at",
+        "inventory_state_fingerprint",
+        "targets",
+        "preconditions"
+      ],
+      "properties": {
+        "schema": {
+          "const": "pycodeagent-retained-run-index-record/v1"
+        },
+        "record_type": {
+          "const": "deletion_authorization"
+        },
+        "authorization_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authorized_by": {
+          "const": "repository_owner"
+        },
+        "authorized_at": {
+          "type": "string",
+          "minLength": 1
+        },
+        "inventory_state_fingerprint": {
+          "$ref": "#/$defs/sha256"
+        },
+        "targets": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/target"
+          }
+        },
+        "preconditions": {
+          "type": "object",
+          "required": [
+            "retention_elapsed",
+            "quarantine_elapsed",
+            "backup_checksum_verified",
+            "temporary_restore_verified",
+            "scrub_or_sensitivity_review_complete"
+          ],
+          "properties": {
+            "retention_elapsed": {
+              "const": true
+            },
+            "quarantine_elapsed": {
+              "const": true
+            },
+            "backup_checksum_verified": {
+              "const": true
+            },
+            "temporary_restore_verified": {
+              "const": true
+            },
+            "scrub_or_sensitivity_review_complete": {
+              "const": true
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

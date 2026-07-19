@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "trace_id": "minimal_conflict_trace",
+  "agent_name": "synthetic_wrapper",
+  "agent_version": "raw_trace_v1",
+  "task_id": "truth_conflict_negative",
+  "workspace_dir": "<workspace_dir>",
+  "verifier_result": {
+    "passed": true,
+    "score": 1.0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "metadata": {
+    "capture_mode": "sidecar",
+    "fixture_role": "minimal_truth_conflict_negative"
+  }
+}

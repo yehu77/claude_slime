@@ -4,11 +4,15 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 from pycodeagent.eval.native_family_acceptance import (
-    CommandResult,
+    _REGRESSION_NATIVE_RUNTIME,
+    _REGRESSION_RUNTIME_OBSERVED,
     _run_entrypoint_checks,
     _run_generation_smokes,
     _run_native_codex_direct_flow,
+    _validate_regression_test_paths,
     run_native_family_acceptance,
 )
 
@@ -63,37 +67,49 @@ def test_generation_smokes_preserve_family_contract_distinctions(
     assert by_family["codex"].sample_count_by_family == {"codex": 4}
     assert by_family["codex"].sample_count_by_contract_kind == {"freeform": 4}
 
+    for family, expected_stack in (
+        ("claude", "native_claude"),
+        ("codex", "native_codex"),
+    ):
+        output_root = Path(by_family[family].output_root)
+        manifest = json.loads(
+            (output_root / "toolview_mutation_data_generation_manifest.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        summary = json.loads(
+            (output_root / "toolview_mutation_data_generation_summary.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        assert manifest["tool_stack_kind"] == expected_stack
+        assert summary["tool_stack_kind"] == expected_stack
+
+
+def test_mainline_regression_paths_are_checked_in_files() -> None:
+    configured_paths = [
+        *_REGRESSION_NATIVE_RUNTIME,
+        *_REGRESSION_RUNTIME_OBSERVED,
+    ]
+
+    assert "tests/test_task_pack_integrity.py" in configured_paths
+    assert "tests/test_realistic_task_consumers.py" in configured_paths
+    assert "tests/test_route_boundaries.py" in configured_paths
+    assert _validate_regression_test_paths(configured_paths) == configured_paths
+    assert all(
+        (Path(__file__).resolve().parents[1] / path).is_file()
+        for path in configured_paths
+    )
+
+
+def test_mainline_regression_path_validation_rejects_missing_file() -> None:
+    with pytest.raises(FileNotFoundError, match="regression paths do not exist"):
+        _validate_regression_test_paths(["tests/test_missing_mainline_gate.py"])
+
 
 def test_run_native_family_acceptance_local_only_writes_stabilized_report(
     tmp_path: Path,
-    monkeypatch,
 ) -> None:
-    def _fake_pytest_suite(
-        name: str,
-        test_paths: list[str],
-        logs_root: Path,
-        python_executable: Path,
-    ) -> CommandResult:
-        logs_root.mkdir(parents=True, exist_ok=True)
-        stdout_path = logs_root / f"{name}.stdout.log"
-        stderr_path = logs_root / f"{name}.stderr.log"
-        stdout_path.write_text("ok\n", encoding="utf-8")
-        stderr_path.write_text("", encoding="utf-8")
-        return CommandResult(
-            name=name,
-            command=[str(python_executable), "-m", "pytest", "-q", *test_paths],
-            exit_code=0,
-            duration_seconds=0.0,
-            passed=True,
-            stdout_path=str(stdout_path),
-            stderr_path=str(stderr_path),
-        )
-
-    monkeypatch.setattr(
-        "pycodeagent.eval.native_family_acceptance._run_pytest_suite",
-        _fake_pytest_suite,
-    )
-
     report = run_native_family_acceptance(
         tmp_path / "acceptance",
         include_real_provider=False,
@@ -105,6 +121,12 @@ def test_run_native_family_acceptance_local_only_writes_stabilized_report(
     assert report.stabilized is True
     assert report.codex_real_provider_transport_limited is True
     assert report.real_provider_tasks == []
+    assert [result.name for result in report.regression_commands] == [
+        "native_runtime_mainline",
+        "runtime_observed_mainline",
+    ]
+    assert all(result.passed for result in report.regression_commands)
+    assert all("mainline" in result.command for result in report.regression_commands)
     assert all(result.passed for result in report.generation_smokes)
     assert saved["stabilized"] is True
     assert saved["codex_real_provider_transport_limited"] is True

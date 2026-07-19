@@ -22,11 +22,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 from pycodeagent.mutations.description_mutator import DescriptionMutator
 from pycodeagent.mutations.name_mutator import NameMutator
-from pycodeagent.mutations.profile_loader import load_tool_profile
+from pycodeagent.mutations.profile_loader import (
+    load_config_mapping,
+    load_mutation_config,
+    load_tool_profile,
+    load_tool_profile_from_dict,
+)
 from pycodeagent.mutations.schema_mutator import (
     SCHEMA_VARIANT_CATEGORIES,
     SchemaCandidate,
@@ -68,20 +71,6 @@ def _stable_variant_id(*parts: object) -> str:
     payload = "\0".join(str(part) for part in parts)
     digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()[:8]
     return digest
-
-
-def _load_mutation_config(config_path: Path) -> dict[str, Any]:
-    """Load mutation config from YAML file."""
-    if not config_path.exists():
-        raise FileNotFoundError(f"Mutation config not found: {config_path}")
-
-    with open(config_path, encoding="utf-8") as f:
-        data = yaml.safe_load(f)
-
-    if not isinstance(data, dict):
-        raise ValueError(f"Mutation config must be a mapping, got {type(data).__name__}")
-
-    return data
 
 
 def _stable_hash_int(*parts: object) -> int:
@@ -199,7 +188,7 @@ class ToolProfileSampler:
 
     def _get_mutation_config(self) -> dict[str, Any]:
         if self._mutation_config is None:
-            self._mutation_config = _load_mutation_config(self.mutation_config_path)
+            self._mutation_config = load_mutation_config(self.mutation_config_path)
         return self._mutation_config
 
     def _get_base_profile(self) -> ToolProfile:
@@ -669,6 +658,7 @@ class ToolProfileSampler:
         profile_metadata.update(
             {
                 "mutation_manifest_version": _MUTATION_MANIFEST_VERSION,
+                "mutation_config_version": config["mutation_config_version"],
                 "mode": mode,
                 "seed": self.seed,
                 "mutation_axes": list(spec["mutation_axes"]),
@@ -715,8 +705,7 @@ def build_sampled_tool_profile(
     """Convenience function to build a sampled profile."""
     if config_path is not None:
         config_path = Path(config_path)
-        with open(config_path, encoding="utf-8") as f:
-            data = yaml.safe_load(f)
+        data = load_config_mapping(config_path)
         if isinstance(data, dict) and ("tool_variants" in data or "families" in data):
             sampler = ToolProfileSampler(
                 seed=seed,
@@ -725,7 +714,7 @@ def build_sampled_tool_profile(
                 family=family,
             )
             return sampler.sample(mode)
-        return load_tool_profile(config_path)
+        return load_tool_profile_from_dict(data)
 
     sampler = ToolProfileSampler(
         seed=seed,

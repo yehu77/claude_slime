@@ -1,0 +1,22 @@
+{
+  "archive_id": "rc054-20260718",
+  "archive_payload_sha256": "cf939cdd5444be9d80f789e7d890c8ddcaf63479dccaa15da50bbae3d704bfd5",
+  "archive_total_bytes": 56952245,
+  "artifact_count": 8855,
+  "artifact_group_count": 741,
+  "classification_id": "rc054-owner-classification-20260718",
+  "contract_metadata_match_count": 8855,
+  "delete_authorized_count": 0,
+  "execution_time": "2026-07-18T12:07:43.693788Z",
+  "inventory_state_fingerprint": "fea8f4f533fc2a1e6bf5289a067e90703d60f8d4ccbeed5e57ca22b7f7568089",
+  "policy_id": "rc053-conservative-local-manual-v1",
+  "restore_status": "verified",
+  "restore_verified_artifact_count": 8855,
+  "restore_verified_group_count": 741,
+  "retained_index_sha256": "3e1dbf0ce374da4454850116123075df15210eced49e34a06c320f7b9596f9db",
+  "schema": "pycodeagent-runs-archive-manifest/v1",
+  "scrub_status": "verified",
+  "source_preserved": true,
+  "source_total_bytes": 59472914,
+  "storage_location_ref": "local-archive:rc054-20260718"
+}

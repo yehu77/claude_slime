@@ -1,0 +1,355 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/pycodeagent/runs-inventory-record-v1.schema.json",
+  "title": "PyCodeAgent redacted runs inventory record",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/inventory_record"
+    },
+    {
+      "$ref": "#/$defs/artifact_group_record"
+    },
+    {
+      "$ref": "#/$defs/artifact_record"
+    }
+  ],
+  "$defs": {
+    "metadata": {
+      "type": "object",
+      "required": [
+        "run_id",
+        "task_id",
+        "profile_id",
+        "family",
+        "status",
+        "schema_version"
+      ],
+      "properties": {
+        "run_id": {
+          "$ref": "#/$defs/redacted_scalar"
+        },
+        "task_id": {
+          "$ref": "#/$defs/redacted_scalar"
+        },
+        "profile_id": {
+          "$ref": "#/$defs/redacted_scalar"
+        },
+        "family": {
+          "$ref": "#/$defs/redacted_scalar"
+        },
+        "status": {
+          "$ref": "#/$defs/redacted_scalar"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/redacted_scalar"
+        }
+      },
+      "additionalProperties": false
+    },
+    "redacted_scalar": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        {
+          "type": "object",
+          "required": [
+            "redacted"
+          ],
+          "properties": {
+            "redacted": {
+              "const": true
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "type": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "risk_labels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "inventory_schema",
+        "runs_root",
+        "state_fingerprint",
+        "artifact_count",
+        "artifact_group_count",
+        "total_bytes",
+        "classification_status",
+        "classified_artifact_count",
+        "classified_group_count",
+        "artifact_class_counts",
+        "group_class_counts",
+        "parse_status_counts",
+        "manifest_status_counts",
+        "sensitive_risk_label_counts",
+        "duplicate_group_count",
+        "duplicate_file_count",
+        "duplicate_redundant_bytes",
+        "inventory_file",
+        "content_policy"
+      ],
+      "properties": {
+        "inventory_schema": {
+          "const": "pycodeagent-runs-inventory/v1"
+        },
+        "runs_root": {
+          "type": "string"
+        },
+        "state_fingerprint": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "artifact_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "artifact_group_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "classification_status": {
+          "const": "complete"
+        },
+        "classified_artifact_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "classified_group_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "artifact_class_counts": {
+          "$ref": "#/$defs/count_map"
+        },
+        "group_class_counts": {
+          "$ref": "#/$defs/count_map"
+        },
+        "parse_status_counts": {
+          "$ref": "#/$defs/count_map"
+        },
+        "manifest_status_counts": {
+          "$ref": "#/$defs/count_map"
+        },
+        "sensitive_risk_label_counts": {
+          "$ref": "#/$defs/count_map"
+        },
+        "duplicate_group_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "duplicate_file_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "duplicate_redundant_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "inventory_file": {
+          "type": "string"
+        },
+        "content_policy": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "count_map": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "inventory_record": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/summary"
+        },
+        {
+          "type": "object",
+          "required": [
+            "schema",
+            "record_type"
+          ],
+          "properties": {
+            "schema": {
+              "const": "pycodeagent-runs-inventory-record/v1"
+            },
+            "record_type": {
+              "const": "inventory"
+            }
+          }
+        }
+      ]
+    },
+    "artifact_group_record": {
+      "type": "object",
+      "required": [
+        "schema",
+        "record_type",
+        "path",
+        "campaign",
+        "artifact_count",
+        "total_bytes",
+        "group_class",
+        "classification_status",
+        "manifest_status",
+        "metadata",
+        "sensitive_risk_labels"
+      ],
+      "properties": {
+        "schema": {
+          "const": "pycodeagent-runs-inventory-record/v1"
+        },
+        "record_type": {
+          "const": "artifact_group"
+        },
+        "path": {
+          "type": "string"
+        },
+        "campaign": {
+          "type": "string"
+        },
+        "artifact_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "total_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "group_class": {
+          "type": "string"
+        },
+        "classification_status": {
+          "const": "classified"
+        },
+        "manifest_status": {
+          "enum": [
+            "absent",
+            "present_valid",
+            "present_with_issues"
+          ]
+        },
+        "metadata": {
+          "$ref": "#/$defs/metadata"
+        },
+        "sensitive_risk_labels": {
+          "$ref": "#/$defs/risk_labels"
+        }
+      },
+      "additionalProperties": false
+    },
+    "artifact_record": {
+      "type": "object",
+      "required": [
+        "schema",
+        "record_type",
+        "path",
+        "parent_group",
+        "campaign",
+        "size_bytes",
+        "mtime_ns",
+        "mtime_utc",
+        "file_kind",
+        "artifact_class",
+        "classification_status",
+        "parse_status",
+        "manifest_status",
+        "manifest_reference_status",
+        "metadata",
+        "sensitive_risk_labels",
+        "duplicate_group_id"
+      ],
+      "properties": {
+        "schema": {
+          "const": "pycodeagent-runs-inventory-record/v1"
+        },
+        "record_type": {
+          "const": "artifact"
+        },
+        "path": {
+          "type": "string"
+        },
+        "parent_group": {
+          "type": "string"
+        },
+        "campaign": {
+          "type": "string"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mtime_ns": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mtime_utc": {
+          "type": "string"
+        },
+        "file_kind": {
+          "enum": [
+            "regular",
+            "symlink",
+            "special"
+          ]
+        },
+        "artifact_class": {
+          "type": "string"
+        },
+        "classification_status": {
+          "const": "classified"
+        },
+        "parse_status": {
+          "type": "string"
+        },
+        "manifest_status": {
+          "type": "string"
+        },
+        "manifest_reference_status": {
+          "type": "string"
+        },
+        "metadata": {
+          "$ref": "#/$defs/metadata"
+        },
+        "sensitive_risk_labels": {
+          "$ref": "#/$defs/risk_labels"
+        },
+        "duplicate_group_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

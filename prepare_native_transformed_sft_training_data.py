@@ -6,7 +6,9 @@ import argparse
 import json
 from pathlib import Path
 
-from pycodeagent.rl.training_prep import prepare_native_transformed_sft_training_input
+from pycodeagent.auxiliary.native_transformed.training_prep import (
+    prepare_native_transformed_sft_training_input,
+)
 from pycodeagent.rl.tokenizer_config import FakeTokenizerConfig, TokenizerConfig
 
 

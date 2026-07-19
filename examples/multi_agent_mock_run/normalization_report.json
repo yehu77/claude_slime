@@ -1,15 +1,14 @@
 {
   "schema_version": 1,
-  "trace_id": "task_001__trace",
-  "catalog_id": "mock_agent__task_001__catalog",
+  "trace_id": "phase1_multi_agent_mock_task__trace",
+  "catalog_id": "mock_agent__phase1_multi_agent_mock_task__catalog",
   "mapped_events": [
     "event_004",
     "event_007",
-    "event_008",
-    "event_011"
+    "event_008"
   ],
   "unmapped_events": [
-    "event_013"
+    "event_010"
   ],
   "ambiguous_events": [],
   "warnings": [],

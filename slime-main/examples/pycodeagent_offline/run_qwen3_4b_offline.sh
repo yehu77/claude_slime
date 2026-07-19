@@ -9,7 +9,7 @@ set -euo pipefail
 # - MEGATRON_DIR: Megatron-LM checkout used by slime
 # - MODEL_HF_DIR: HuggingFace checkpoint directory
 # - MODEL_TORCH_DIST_DIR: converted Megatron torch_dist checkpoint
-# - PREPARED_BUNDLE_DIR: output of prepare_slime_training_data.py
+# - PREPARED_BUNDLE_DIR: output of `python -B -m pycodeagent prep`
 # - TRAIN_OUTPUT_DIR: slime checkpoint/output directory
 
 CODEX_REPO="${CODEX_REPO:-/workspace/claude_slime}"

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import shutil
 from pathlib import Path
 from typing import Any, Callable
 
@@ -18,6 +17,7 @@ from pycodeagent.agent.provider_runtime import (
 from pycodeagent.env.coding_env import run_coding_task
 from pycodeagent.env.task import CodingTask
 from pycodeagent.eval.real_provider_behavior_baseline import load_realistic_runtime_tasks
+from pycodeagent.eval.run_campaign import execute_profile_run_campaigns
 from pycodeagent.mutations.profile_sampler import ToolProfileSampler
 from pycodeagent.rl.dataset_manifest import FilterConfig
 from pycodeagent.rl.schema_following_dataset import read_schema_following_jsonl
@@ -67,6 +67,7 @@ class ToolViewMutationDataGenerationResult(BaseModel):
     prepared_dataset_dir: str | None = None
     tasks_path: str | None = None
     provider: dict[str, Any] = Field(default_factory=dict)
+    tool_stack_kind: ToolStackKind
     profile_modes: list[str] = Field(default_factory=list)
     profile_seed_by_mode: dict[str, int] = Field(default_factory=dict)
     repeat_count: int
@@ -86,6 +87,9 @@ class ToolViewMutationDataGenerationResult(BaseModel):
     acceptance_report_path: str
     generation_summary_path: str
     generation_manifest_path: str
+    campaign_group_spec_path: str | None = None
+    campaign_group_manifest_path: str | None = None
+    campaign_contract_ok: bool | None = None
 
 
 def run_real_provider_toolview_mutation_data_generation(
@@ -173,16 +177,54 @@ def run_toolview_mutation_data_generation(
     output_root = Path(output_root)
     source_runs_root = output_root / "runs"
     source_runs_root.mkdir(parents=True, exist_ok=True)
+    normalized_modes = [str(mode) for mode in profile_modes]
+    normalized_profile_seeds = _normalized_profile_seed_by_mode(
+        normalized_modes,
+        profile_seed_by_mode,
+    )
+    _, base_profile, runtime = _build_source_stack(tool_stack_kind)
+    resolved_mutation_config = _resolve_mutation_config_path(
+        tool_stack_kind,
+        mutation_config_path,
+    )
+    profiles = {
+        mode: ToolProfileSampler(
+            seed=normalized_profile_seeds[mode],
+            mutation_config_path=resolved_mutation_config,
+            base_profile=base_profile,
+        ).sample(mode)
+        for mode in normalized_modes
+    }
 
-    _materialize_source_runs(
-        tasks,
-        client_factory,
-        source_runs_root,
-        profile_modes=profile_modes,
-        profile_seed_by_mode=profile_seed_by_mode,
+    def run_mutation_case(task, client, attempt_root, case, _campaign):
+        expected_profile = profiles[case.profile_mode]
+        trajectory = run_coding_task(
+            task,
+            client,
+            attempt_root,
+            runtime=runtime,
+            profile=expected_profile,
+            tool_stack_kind=tool_stack_kind,
+        )
+        if trajectory.tool_profile_id != expected_profile.profile_id:
+            raise ValueError(
+                "Runtime returned unexpected tool_profile_id for mutation "
+                "data generation run: "
+                f"expected {expected_profile.profile_id}, "
+                f"got {trajectory.tool_profile_id}"
+            )
+        return trajectory
+
+    campaign_result = execute_profile_run_campaigns(
+        campaign_id="toolview_mutation_data_generation",
+        tasks=tasks,
+        client_factory=client_factory,
+        output_root=source_runs_root,
+        profile_seed_by_mode=normalized_profile_seeds,
         repeat_count=repeat_count,
         tool_stack_kind=tool_stack_kind,
-        mutation_config_path=mutation_config_path,
+        provider=provider,
+        run_executor=run_mutation_case,
     )
     return build_toolview_mutation_data_generation_from_runs(
         source_runs_root,
@@ -205,6 +247,9 @@ def run_toolview_mutation_data_generation(
         tokenizer_config=tokenizer_config,
         fake_tokenizer_config=fake_tokenizer_config,
         run_id=run_id,
+        campaign_group_spec_path=campaign_result.spec_path,
+        campaign_group_manifest_path=campaign_result.manifest_path,
+        campaign_contract_ok=campaign_result.contract_ok,
     )
 
 
@@ -230,6 +275,9 @@ def build_toolview_mutation_data_generation_from_runs(
     tokenizer_config: TokenizerConfig | None = None,
     fake_tokenizer_config: FakeTokenizerConfig | None = None,
     run_id: str = "toolview_mutation_data_generation",
+    campaign_group_spec_path: str | Path | None = None,
+    campaign_group_manifest_path: str | Path | None = None,
+    campaign_contract_ok: bool | None = None,
 ) -> ToolViewMutationDataGenerationResult:
     """Build raw observed exports and optional training prep from source runs."""
     if split != "train":
@@ -285,7 +333,7 @@ def build_toolview_mutation_data_generation_from_runs(
     contract_ok = export_result.sample_count > 0 and (
         not prepare_training_input
         or bool(prepared_recommendation and prepared_recommendation.contract_ok)
-    )
+    ) and campaign_contract_ok is not False
     acceptance_report = _build_acceptance_report(
         configured_modes=normalized_modes,
         source_run_count_by_mode=source_run_count_by_mode,
@@ -323,6 +371,17 @@ def build_toolview_mutation_data_generation_from_runs(
         "training_prep_contract_ok": (
             prepared_recommendation.contract_ok if prepared_recommendation is not None else None
         ),
+        "campaign_group_spec_path": (
+            str(campaign_group_spec_path)
+            if campaign_group_spec_path is not None
+            else None
+        ),
+        "campaign_group_manifest_path": (
+            str(campaign_group_manifest_path)
+            if campaign_group_manifest_path is not None
+            else None
+        ),
+        "campaign_contract_ok": campaign_contract_ok,
         "contract_ok": contract_ok,
     }
     generation_summary_path = output_root / "toolview_mutation_data_generation_summary.json"
@@ -351,7 +410,18 @@ def build_toolview_mutation_data_generation_from_runs(
             "training_prep_path": str(training_prep_path) if training_prep_path else None,
             "acceptance_report_path": str(acceptance_report_path),
             "generation_summary_path": str(generation_summary_path),
+            "campaign_group_spec_path": (
+                str(campaign_group_spec_path)
+                if campaign_group_spec_path is not None
+                else None
+            ),
+            "campaign_group_manifest_path": (
+                str(campaign_group_manifest_path)
+                if campaign_group_manifest_path is not None
+                else None
+            ),
         },
+        "campaign_contract_ok": campaign_contract_ok,
     }
     generation_manifest_path = output_root / "toolview_mutation_data_generation_manifest.json"
     _write_json(generation_manifest_path, generation_manifest)
@@ -363,6 +433,7 @@ def build_toolview_mutation_data_generation_from_runs(
         prepared_dataset_dir=(str(prepared_dataset_dir) if prepared_dataset_dir else None),
         tasks_path=(str(tasks_path) if tasks_path is not None else None),
         provider=normalized_provider,
+        tool_stack_kind=tool_stack_kind,
         profile_modes=normalized_modes,
         profile_seed_by_mode=normalized_profile_seeds,
         repeat_count=repeat_count,
@@ -384,63 +455,18 @@ def build_toolview_mutation_data_generation_from_runs(
         acceptance_report_path=str(acceptance_report_path),
         generation_summary_path=str(generation_summary_path),
         generation_manifest_path=str(generation_manifest_path),
+        campaign_group_spec_path=(
+            str(campaign_group_spec_path)
+            if campaign_group_spec_path is not None
+            else None
+        ),
+        campaign_group_manifest_path=(
+            str(campaign_group_manifest_path)
+            if campaign_group_manifest_path is not None
+            else None
+        ),
+        campaign_contract_ok=campaign_contract_ok,
     )
-
-
-def _materialize_source_runs(
-    tasks: list[CodingTask],
-    client_factory: Callable[[CodingTask, str, int], BaseLLMClient],
-    source_runs_root: Path,
-    *,
-    profile_modes: list[str] | tuple[str, ...],
-    profile_seed_by_mode: dict[str, int] | None,
-    repeat_count: int,
-    tool_stack_kind: ToolStackKind,
-    mutation_config_path: str | Path | None,
-) -> None:
-    _, base_profile, runtime = _build_source_stack(tool_stack_kind)
-    normalized_modes = [str(mode) for mode in profile_modes]
-    normalized_profile_seeds = _normalized_profile_seed_by_mode(
-        normalized_modes,
-        profile_seed_by_mode,
-    )
-    resolved_mutation_config = _resolve_mutation_config_path(
-        tool_stack_kind,
-        mutation_config_path,
-    )
-
-    for mode in normalized_modes:
-        profile_seed = normalized_profile_seeds[mode]
-        expected_profile = ToolProfileSampler(
-            seed=profile_seed,
-            mutation_config_path=resolved_mutation_config,
-            base_profile=base_profile,
-        ).sample(mode)
-        profile_id = expected_profile.profile_id
-        for task in tasks:
-            for repeat_index in range(repeat_count):
-                run_dir = source_runs_root / _source_run_dir_name(
-                    task.task_id,
-                    mode,
-                    repeat_index,
-                    profile_id,
-                )
-                if run_dir.exists():
-                    shutil.rmtree(run_dir)
-                client = client_factory(task, mode, repeat_index)
-                trajectory = run_coding_task(
-                    task,
-                    client,
-                    run_dir,
-                    runtime=runtime,
-                    profile=expected_profile,
-                    tool_stack_kind=tool_stack_kind,
-                )
-                if trajectory.tool_profile_id != profile_id:
-                    raise ValueError(
-                        "Runtime returned unexpected tool_profile_id for mutation data generation run: "
-                        f"expected {profile_id}, got {trajectory.tool_profile_id}"
-                    )
 
 
 def _build_source_stack(tool_stack_kind: ToolStackKind):
@@ -458,15 +484,6 @@ def _resolve_mutation_config_path(
     if mutation_config_path is not None:
         return Path(mutation_config_path)
     return _DEFAULT_NATIVE_FAMILY_MUTATION_CONFIG
-
-
-def _source_run_dir_name(
-    task_id: str,
-    mode: str,
-    repeat_index: int,
-    profile_id: str,
-) -> str:
-    return f"{task_id}__{mode}__rep_{repeat_index:02d}__{profile_id}"
 
 
 def _normalized_profile_seed_by_mode(

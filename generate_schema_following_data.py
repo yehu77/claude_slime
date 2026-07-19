@@ -1,4 +1,4 @@
-"""Generate schema-following datasets from synthetic or trajectory-derived sources."""
+"""Generate controlled synthetic or trajectory-derived baseline datasets."""
 
 from __future__ import annotations
 
@@ -6,26 +6,24 @@ import argparse
 import json
 from pathlib import Path
 
-from pycodeagent.rl.dataset_manifest import FilterConfig
-from pycodeagent.rl.schema_following_from_trajectories import (
+from pycodeagent.baselines import (
+    SyntheticSchemaFollowingGenerationResult,
     TrajectoryDerivedGenerationResult,
     generate_schema_following_from_trajectories,
-)
-from pycodeagent.rl.schema_following_generate import (
-    SyntheticSchemaFollowingGenerationResult,
     generate_synthetic_schema_following_data,
 )
+from pycodeagent.rl.dataset_manifest import FilterConfig
 
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Generate schema-following datasets for pycodeagent.",
+        description="Generate controlled schema-following baseline datasets.",
     )
     subparsers = parser.add_subparsers(dest="subcommand", required=True)
 
     synthetic = subparsers.add_parser(
         "synthetic",
-        help="Generate synthetic schema-following data from canonical intents.",
+        help="Generate a synthetic baseline from canonical intents.",
     )
     synthetic.add_argument("output_dir", help="Directory to write synthetic dataset files")
     synthetic.add_argument("--num-intents", type=int, default=120)
@@ -33,7 +31,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     trajectory = subparsers.add_parser(
         "trajectory-derived",
-        help="Generate schema-following data from recorded run trajectories.",
+        help="Generate a baseline from recorded run trajectories.",
     )
     trajectory.add_argument("source_dir", help="Study, experiment, or batch directory")
     trajectory.add_argument("output_dir", help="Directory to write trajectory-derived dataset files")

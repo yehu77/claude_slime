@@ -7,7 +7,10 @@ import pytest
 
 from pycodeagent.agent.llm_client import BaseLLMClient, FakeLLMClient, GenerateRequest, GenerateResponse
 from pycodeagent.env.task import CodingTask
-from pycodeagent.eval.real_provider_behavior_baseline import run_behavior_baseline
+from pycodeagent.eval.real_provider_behavior_baseline import (
+    load_realistic_runtime_tasks,
+    run_behavior_baseline,
+)
 from pycodeagent.testing import cleanup_test_path, make_request_test_dir
 
 
@@ -30,6 +33,20 @@ def _make_repo(root: Path, name: str, files: dict[str, str]) -> Path:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content, encoding="utf-8")
     return repo
+
+
+def test_default_realistic_task_loader_preserves_v1_contracts() -> None:
+    tasks = load_realistic_runtime_tasks()
+
+    assert [task.task_id for task in tasks] == [
+        "realistic_revise_add_one_001",
+        "realistic_patch_calculator_001",
+        "realistic_subdir_formatter_001",
+    ]
+    assert all(task.repo_path.is_absolute() for task in tasks)
+    assert all(task.metadata_contract() is not None for task in tasks)
+    assert all(task.metadata_contract().schema_version == 1 for task in tasks)
+    assert all(task.requires_runtime_validation_evidence() for task in tasks)
 
 
 class _ErrorClient(BaseLLMClient):
@@ -154,6 +171,7 @@ class TestRealProviderBehaviorBaseline:
             profile_mode="base",
             tasks_path=test_root / "tasks.jsonl",
             provider={"provider_kind": "test", "client_mode": "fake"},
+            tool_stack_kind="native_claude",
         )
 
         assert result.audit.run_count == 4
@@ -175,6 +193,7 @@ class TestRealProviderBehaviorBaseline:
         assert summary["task_count"] == 4
         assert summary["run_count"] == 4
         assert summary["provider"]["client_mode"] == "fake"
+        assert summary["tool_stack_kind"] == "native_claude"
         assert summary["runs_with_finish_without_progress"] == 2
         assert summary["runs_with_finish_after_recent_failure"] == 2
         assert summary["per_task"]["success_revise"]["runs_with_revision_after_failure"] == 1

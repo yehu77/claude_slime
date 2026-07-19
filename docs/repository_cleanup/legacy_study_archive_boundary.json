@@ -1,0 +1,502 @@
+{
+  "schema": "repository-cleanup-legacy-study-archive-boundary/v1",
+  "goal_id": "RC-025",
+  "decision_ref": "docs/repository_cleanup/legacy_study_route_decision.json",
+  "archive_contract": {
+    "archive_id": "legacy-study-readonly-v1",
+    "archive_root": "archive/legacy-study-v1",
+    "layout": "preserve_repository_relative_paths",
+    "execution_status": "historical_reference_only",
+    "python_importable": false,
+    "pytest_collectable": false,
+    "checksum_algorithm": "sha256",
+    "move_installation": "copy_verify_then_remove_source_in_same_reviewed_diff",
+    "compatibility_shims": "forbidden_without_separate_contract",
+    "manifest_path": "archive/legacy-study-v1/archive_manifest.json"
+  },
+  "assets": [
+    {
+      "path": "pycodeagent/eval/analysis.py",
+      "kind": "python_module",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": "archive/legacy-study-v1/pycodeagent/eval/analysis.py",
+      "reason": "Legacy experiment-output analysis coupled to the retired study report model."
+    },
+    {
+      "path": "pycodeagent/eval/batch_runner.py",
+      "kind": "python_module",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": "archive/legacy-study-v1/pycodeagent/eval/batch_runner.py",
+      "reason": "Legacy task-profile loop superseded by the future RC-043 campaign contract."
+    },
+    {
+      "path": "pycodeagent/eval/experiment_config.py",
+      "kind": "python_module",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": "archive/legacy-study-v1/pycodeagent/eval/experiment_config.py",
+      "reason": "Legacy experiment configuration is part of the archived study orchestration."
+    },
+    {
+      "path": "pycodeagent/eval/experiment_runner.py",
+      "kind": "python_module",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": "archive/legacy-study-v1/pycodeagent/eval/experiment_runner.py",
+      "reason": "Legacy experiment loop is not an active native-family campaign owner."
+    },
+    {
+      "path": "pycodeagent/eval/metrics.py",
+      "kind": "python_module",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": "archive/legacy-study-v1/pycodeagent/eval/metrics.py",
+      "reason": "Metrics consume the legacy RunSummary shape and have no active campaign consumer."
+    },
+    {
+      "path": "pycodeagent/eval/report.py",
+      "kind": "python_module",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": "archive/legacy-study-v1/pycodeagent/eval/report.py",
+      "reason": "Report files are coupled to the legacy batch and study output layout."
+    },
+    {
+      "path": "pycodeagent/eval/run_study.py",
+      "kind": "python_module",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": "archive/legacy-study-v1/pycodeagent/eval/run_study.py",
+      "reason": "Programmatic entrypoint for the route retired by RC-024."
+    },
+    {
+      "path": "pycodeagent/eval/study_config.py",
+      "kind": "python_module",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": "archive/legacy-study-v1/pycodeagent/eval/study_config.py",
+      "reason": "Configuration contract belongs to the non-active legacy study route."
+    },
+    {
+      "path": "pycodeagent/eval/study_report.py",
+      "kind": "python_module",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": "archive/legacy-study-v1/pycodeagent/eval/study_report.py",
+      "reason": "Report contract is coupled to MutationStudyRunner outputs."
+    },
+    {
+      "path": "pycodeagent/eval/study_runner.py",
+      "kind": "python_module",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": "archive/legacy-study-v1/pycodeagent/eval/study_runner.py",
+      "reason": "MutationStudyRunner is the central retired orchestration loop."
+    },
+    {
+      "path": "configs/studies/first_mutation_sensitivity.json",
+      "kind": "study_config",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": "archive/legacy-study-v1/configs/studies/first_mutation_sensitivity.json",
+      "reason": "Configuration selects the legacy toy pack and study runner."
+    },
+    {
+      "path": "configs/studies/schema_failure_attribution_v1.json",
+      "kind": "study_config",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": "archive/legacy-study-v1/configs/studies/schema_failure_attribution_v1.json",
+      "reason": "Configuration selects the legacy toy pack and study runner."
+    },
+    {
+      "path": "datasets/tasks/toy_tasks.jsonl",
+      "kind": "task_pack",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": "archive/legacy-study-v1/datasets/tasks/toy_tasks.jsonl",
+      "reason": "Twelve-task generic-tool dataset is consumed only by the retired study configs."
+    },
+    {
+      "path": "tests/test_batch_report.py",
+      "kind": "legacy_test",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": "archive/legacy-study-v1/tests/test_batch_report.py",
+      "reason": "Tests only the legacy RunSummary report surface."
+    },
+    {
+      "path": "tests/test_experiment_config.py",
+      "kind": "legacy_test",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": "archive/legacy-study-v1/tests/test_experiment_config.py",
+      "reason": "Tests only the archived ExperimentConfig contract."
+    },
+    {
+      "path": "tests/test_metrics.py",
+      "kind": "legacy_test",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": "archive/legacy-study-v1/tests/test_metrics.py",
+      "reason": "Tests metrics over the archived RunSummary representation."
+    },
+    {
+      "path": "tests/test_phase2_batch_consistency.py",
+      "kind": "legacy_test",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": "archive/legacy-study-v1/tests/test_phase2_batch_consistency.py",
+      "reason": "Consistency checks are specific to the legacy batch report stack."
+    },
+    {
+      "path": "tests/test_run_study.py",
+      "kind": "legacy_test",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": "archive/legacy-study-v1/tests/test_run_study.py",
+      "reason": "Tests only the retired programmatic study entrypoint."
+    },
+    {
+      "path": "tests/test_study_config.py",
+      "kind": "legacy_test",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": "archive/legacy-study-v1/tests/test_study_config.py",
+      "reason": "Tests only the archived StudyConfig contract."
+    },
+    {
+      "path": "tests/test_study_report.py",
+      "kind": "legacy_test",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": "archive/legacy-study-v1/tests/test_study_report.py",
+      "reason": "Tests only the archived study report format."
+    },
+    {
+      "path": "tests/test_study_runner.py",
+      "kind": "legacy_test",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": "archive/legacy-study-v1/tests/test_study_runner.py",
+      "reason": "Tests only MutationStudyRunner and its legacy resume behavior."
+    },
+    {
+      "path": "tests/test_toy_dataset.py",
+      "kind": "legacy_test",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": "archive/legacy-study-v1/tests/test_toy_dataset.py",
+      "reason": "Validates only the generic-tool toy pack selected by archived configs."
+    },
+    {
+      "path": "run_first_study_mimo.py",
+      "kind": "root_entrypoint",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc027",
+      "implementation_goal": "RC-027",
+      "archive_path": "archive/legacy-study-v1/run_first_study_mimo.py",
+      "reason": "Stage wrapper for the retired first mutation study."
+    },
+    {
+      "path": "run_first_study_real_provider.py",
+      "kind": "root_entrypoint",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc027",
+      "implementation_goal": "RC-027",
+      "archive_path": "archive/legacy-study-v1/run_first_study_real_provider.py",
+      "reason": "Stage wrapper for the retired real-provider study path."
+    },
+    {
+      "path": "run_p3b_real_provider_compaction_acceptance.py",
+      "kind": "root_entrypoint",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc027",
+      "implementation_goal": "RC-027",
+      "archive_path": "archive/legacy-study-v1/run_p3b_real_provider_compaction_acceptance.py",
+      "reason": "Historical P3B stage wrapper; the underlying compaction contract remains active."
+    },
+    {
+      "path": "run_schema_attribution_mimo.py",
+      "kind": "root_entrypoint",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc027",
+      "implementation_goal": "RC-027",
+      "archive_path": "archive/legacy-study-v1/run_schema_attribution_mimo.py",
+      "reason": "Stage wrapper for the retired schema-attribution study."
+    },
+    {
+      "path": "run_schema_following_sft.py",
+      "kind": "root_entrypoint",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc027",
+      "implementation_goal": "RC-027",
+      "archive_path": "archive/legacy-study-v1/run_schema_following_sft.py",
+      "reason": "Stage wrapper is retired while the auxiliary synthetic baseline module remains."
+    },
+    {
+      "path": "verify_p3b_real_provider_compaction_acceptance.py",
+      "kind": "root_entrypoint",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc027",
+      "implementation_goal": "RC-027",
+      "archive_path": "archive/legacy-study-v1/verify_p3b_real_provider_compaction_acceptance.py",
+      "reason": "Historical P3B verification wrapper; core verifier remains protected."
+    },
+    {
+      "path": "tests/test_mimo_entrypoints.py",
+      "kind": "legacy_test",
+      "owner": "legacy-study-archive",
+      "disposition": "archive_rc027",
+      "implementation_goal": "RC-027",
+      "archive_path": "archive/legacy-study-v1/tests/test_mimo_entrypoints.py",
+      "reason": "Tests only the two archived Mimo study wrappers."
+    },
+    {
+      "path": "pycodeagent/eval/__init__.py",
+      "kind": "package_boundary",
+      "owner": "evaluation-maintainers",
+      "disposition": "edit_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": null,
+      "reason": "Remove legacy eager imports and exports when the cluster moves."
+    },
+    {
+      "path": "tests/test_task_pack_integrity.py",
+      "kind": "shared_test",
+      "owner": "runtime-maintainers",
+      "disposition": "edit_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": null,
+      "reason": "Retain realistic task-pack checks while removing archived toy-study references."
+    },
+    {
+      "path": "PYCODEAGENT_MULTI_AGENT_SCAFFOLD_DESIGN.md",
+      "kind": "canonical_design_document",
+      "owner": "scaffold-maintainers",
+      "disposition": "edit_rc026",
+      "implementation_goal": "RC-026",
+      "archive_path": null,
+      "reason": "Replace the obsolete recommendation to extend the archived ExperimentRunner with an active runtime evaluation surface."
+    },
+    {
+      "path": "tests/test_root_cli.py",
+      "kind": "shared_test",
+      "owner": "repository-governance",
+      "disposition": "edit_rc027",
+      "implementation_goal": "RC-027",
+      "archive_path": null,
+      "reason": "Retain active CLI coverage while removing the archived schema-following wrapper case."
+    },
+    {
+      "path": "configs/local/mimo_v25pro.local.example.json",
+      "kind": "shared_local_config_example",
+      "owner": "provider-integration-maintainers",
+      "disposition": "edit_rc027",
+      "implementation_goal": "RC-027",
+      "archive_path": null,
+      "reason": "Retain shared Mimo connection fields while removing retired study and output defaults."
+    },
+    {
+      "path": "configs/local/README.md",
+      "kind": "shared_local_config_documentation",
+      "owner": "provider-integration-maintainers",
+      "disposition": "edit_rc027",
+      "implementation_goal": "RC-027",
+      "archive_path": null,
+      "reason": "Remove commands for two archived study wrappers while retaining active real-provider guidance."
+    },
+    {
+      "path": "pycodeagent/eval/tables.py",
+      "kind": "separately_owned_module",
+      "owner": "evaluation-maintainers",
+      "disposition": "retired_rc057",
+      "implementation_goal": "RC-057",
+      "archive_path": null,
+      "reason": "RC-057 removed this separately owned module after RC-031 narrowed the public eval facade."
+    }
+  ],
+  "protected_shared_dependencies": [
+    {
+      "path": "pycodeagent/eval/layout.py",
+      "owner": "runtime-maintainers",
+      "reason": "Used by current runtime-observed fixture generation."
+    },
+    {
+      "path": "pycodeagent/eval/runtime_observed_postrun.py",
+      "owner": "training-data-maintainers",
+      "reason": "Current runtime-observed training-data mainline."
+    },
+    {
+      "path": "pycodeagent/testing/runtime_observed.py",
+      "owner": "training-data-maintainers",
+      "reason": "Current native-family generated mainline evidence."
+    },
+    {
+      "path": "pycodeagent/dev/mimo_local.py",
+      "owner": "provider-integration-maintainers",
+      "reason": "Shared Mimo provider configuration and client construction."
+    },
+    {
+      "path": "pycodeagent/agent/compaction_acceptance.py",
+      "owner": "runtime-maintainers",
+      "reason": "Active compaction verifier independent of historical P3B wrappers."
+    },
+    {
+      "path": "pycodeagent/rl/schema_following_sft.py",
+      "owner": "training-data-maintainers",
+      "reason": "Auxiliary synthetic baseline retained by RC-028."
+    },
+    {
+      "path": "tests/test_p3b_compaction_acceptance.py",
+      "owner": "runtime-maintainers",
+      "reason": "Tests the protected core compaction verifier, not a root wrapper."
+    },
+    {
+      "path": "tests/test_schema_following_sft.py",
+      "owner": "training-data-maintainers",
+      "reason": "Tests the protected auxiliary module, not the root wrapper."
+    },
+    {
+      "path": "tests/test_training_prep.py",
+      "owner": "training-data-maintainers",
+      "reason": "Generic study-shaped input remains a supported training-prep source."
+    }
+  ],
+  "cross_goal_constraints": [
+    {
+      "source": "pycodeagent/eval/tables.py",
+      "target": "pycodeagent/eval/analysis.py",
+      "constraint": "RC-026 must remove default exposure without claiming tables is healthy; RC-057 owns final removal after RC-031."
+    },
+    {
+      "source": "tests/test_root_cli.py",
+      "target": "run_schema_following_sft.py",
+      "constraint": "RC-027 edits one shared test case and must not archive the complete test module."
+    },
+    {
+      "source": "tests/test_task_pack_integrity.py",
+      "target": "pycodeagent/eval/study_config.py",
+      "constraint": "RC-026 removes the legacy StudyConfig dependency and toy-study coverage while preserving realistic task-pack integrity gates."
+    },
+    {
+      "source": "configs/local/mimo_v25pro.local.example.json",
+      "target": "configs/studies/first_mutation_sensitivity.json",
+      "constraint": "RC-027 removes legacy study/output fields while preserving the shared Mimo provider example."
+    },
+    {
+      "source": "configs/local/README.md",
+      "target": "run_first_study_mimo.py",
+      "constraint": "RC-027 removes the archived Mimo wrapper example while preserving generic connection guidance."
+    },
+    {
+      "source": "configs/local/README.md",
+      "target": "run_first_study_real_provider.py",
+      "constraint": "RC-027 replaces the archived study wrapper with active runtime campaign entrypoints."
+    },
+    {
+      "source": "PYCODEAGENT_MULTI_AGENT_SCAFFOLD_DESIGN.md",
+      "target": "pycodeagent/eval/experiment_runner.py",
+      "constraint": "RC-026 updates the canonical design inventory so it no longer recommends extending an archived module."
+    }
+  ],
+  "active_reverse_dependencies": {
+    "status": "none",
+    "count": 0,
+    "policy": "Every source edge into an archive target is itself archived, edited at the owning migration boundary, a negative guard, or separately retired."
+  },
+  "edges": [
+    {"source": "PYCODEAGENT_MULTI_AGENT_SCAFFOLD_DESIGN.md", "target": "pycodeagent/eval/experiment_runner.py", "kind": "path_reference"},
+    {"source": "configs/local/README.md", "target": "run_first_study_mimo.py", "kind": "path_reference"},
+    {"source": "configs/local/README.md", "target": "run_first_study_real_provider.py", "kind": "path_reference"},
+    {"source": "configs/local/mimo_v25pro.local.example.json", "target": "configs/studies/first_mutation_sensitivity.json", "kind": "path_reference"},
+    {"source": "configs/studies/first_mutation_sensitivity.json", "target": "datasets/tasks/toy_tasks.jsonl", "kind": "path_reference"},
+    {"source": "configs/studies/schema_failure_attribution_v1.json", "target": "datasets/tasks/toy_tasks.jsonl", "kind": "path_reference"},
+    {"source": "pycodeagent/eval/__init__.py", "target": "pycodeagent/eval/analysis.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/__init__.py", "target": "pycodeagent/eval/batch_runner.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/__init__.py", "target": "pycodeagent/eval/experiment_config.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/__init__.py", "target": "pycodeagent/eval/experiment_runner.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/__init__.py", "target": "pycodeagent/eval/metrics.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/__init__.py", "target": "pycodeagent/eval/report.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/__init__.py", "target": "pycodeagent/eval/run_study.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/__init__.py", "target": "pycodeagent/eval/study_config.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/__init__.py", "target": "pycodeagent/eval/study_report.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/__init__.py", "target": "pycodeagent/eval/study_runner.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/analysis.py", "target": "pycodeagent/eval/metrics.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/batch_runner.py", "target": "pycodeagent/eval/metrics.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/batch_runner.py", "target": "pycodeagent/eval/report.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/experiment_runner.py", "target": "pycodeagent/eval/experiment_config.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/experiment_runner.py", "target": "pycodeagent/eval/metrics.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/experiment_runner.py", "target": "pycodeagent/eval/report.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/metrics.py", "target": "pycodeagent/eval/batch_runner.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/report.py", "target": "pycodeagent/eval/batch_runner.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/run_study.py", "target": "pycodeagent/eval/study_config.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/run_study.py", "target": "pycodeagent/eval/study_report.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/run_study.py", "target": "pycodeagent/eval/study_runner.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/study_report.py", "target": "pycodeagent/eval/study_config.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/study_report.py", "target": "pycodeagent/eval/study_runner.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/study_runner.py", "target": "pycodeagent/eval/analysis.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/study_runner.py", "target": "pycodeagent/eval/experiment_config.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/study_runner.py", "target": "pycodeagent/eval/experiment_runner.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/study_runner.py", "target": "pycodeagent/eval/metrics.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/study_runner.py", "target": "pycodeagent/eval/report.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/study_runner.py", "target": "pycodeagent/eval/study_config.py", "kind": "python_import"},
+    {"source": "pycodeagent/eval/tables.py", "target": "pycodeagent/eval/analysis.py", "kind": "python_import"},
+    {"source": "run_first_study_mimo.py", "target": "configs/studies/first_mutation_sensitivity.json", "kind": "path_reference"},
+    {"source": "run_first_study_real_provider.py", "target": "configs/studies/first_mutation_sensitivity.json", "kind": "path_reference"},
+    {"source": "run_schema_attribution_mimo.py", "target": "configs/studies/schema_failure_attribution_v1.json", "kind": "path_reference"},
+    {"source": "tests/test_batch_report.py", "target": "pycodeagent/eval/batch_runner.py", "kind": "python_import"},
+    {"source": "tests/test_batch_report.py", "target": "pycodeagent/eval/report.py", "kind": "python_import"},
+    {"source": "tests/test_experiment_config.py", "target": "datasets/tasks/toy_tasks.jsonl", "kind": "path_reference"},
+    {"source": "tests/test_experiment_config.py", "target": "pycodeagent/eval/experiment_config.py", "kind": "python_import"},
+    {"source": "tests/test_metrics.py", "target": "pycodeagent/eval/batch_runner.py", "kind": "python_import"},
+    {"source": "tests/test_metrics.py", "target": "pycodeagent/eval/metrics.py", "kind": "python_import"},
+    {"source": "tests/test_mimo_entrypoints.py", "target": "configs/studies/first_mutation_sensitivity.json", "kind": "path_reference"},
+    {"source": "tests/test_mimo_entrypoints.py", "target": "configs/studies/schema_failure_attribution_v1.json", "kind": "path_reference"},
+    {"source": "tests/test_mimo_entrypoints.py", "target": "run_first_study_mimo.py", "kind": "python_import"},
+    {"source": "tests/test_mimo_entrypoints.py", "target": "run_schema_attribution_mimo.py", "kind": "python_import"},
+    {"source": "tests/test_phase2_batch_consistency.py", "target": "pycodeagent/eval/batch_runner.py", "kind": "python_import"},
+    {"source": "tests/test_phase2_batch_consistency.py", "target": "pycodeagent/eval/metrics.py", "kind": "python_import"},
+    {"source": "tests/test_phase2_batch_consistency.py", "target": "pycodeagent/eval/report.py", "kind": "python_import"},
+    {"source": "tests/test_root_cli.py", "target": "run_schema_following_sft.py", "kind": "python_import"},
+    {"source": "tests/test_run_study.py", "target": "configs/studies/first_mutation_sensitivity.json", "kind": "path_reference"},
+    {"source": "tests/test_run_study.py", "target": "pycodeagent/eval/run_study.py", "kind": "python_import"},
+    {"source": "tests/test_run_study.py", "target": "pycodeagent/eval/study_config.py", "kind": "python_import"},
+    {"source": "tests/test_study_config.py", "target": "configs/studies/schema_failure_attribution_v1.json", "kind": "path_reference"},
+    {"source": "tests/test_study_config.py", "target": "pycodeagent/eval/study_config.py", "kind": "python_import"},
+    {"source": "tests/test_study_report.py", "target": "pycodeagent/eval/study_config.py", "kind": "python_import"},
+    {"source": "tests/test_study_report.py", "target": "pycodeagent/eval/study_report.py", "kind": "python_import"},
+    {"source": "tests/test_study_report.py", "target": "pycodeagent/eval/study_runner.py", "kind": "python_import"},
+    {"source": "tests/test_study_runner.py", "target": "pycodeagent/eval/study_config.py", "kind": "python_import"},
+    {"source": "tests/test_study_runner.py", "target": "pycodeagent/eval/study_runner.py", "kind": "python_import"},
+    {"source": "tests/test_task_pack_integrity.py", "target": "pycodeagent/eval/study_config.py", "kind": "python_import"},
+    {"source": "tests/test_toy_dataset.py", "target": "datasets/tasks/toy_tasks.jsonl", "kind": "path_reference"}
+  ],
+  "historical_edge_count": 65,
+  "historical_edges_sha256": "475433bb2fec6050695bff82101347aa1cdb39715312d34a4480ad24b6df4134",
+  "post_archive_edges": []
+}

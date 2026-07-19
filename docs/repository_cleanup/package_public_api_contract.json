@@ -1,0 +1,140 @@
+{
+  "schema": "repository-cleanup-package-public-api/v1",
+  "goal_id": "RC-031",
+  "policy": {
+    "package_roots_are": "small_stable_contract_facades",
+    "operational_helpers": "import_from_owning_submodule",
+    "baseline_namespace": "pycodeagent.baselines",
+    "auxiliary_namespace": "pycodeagent.auxiliary",
+    "compatibility_shims": "none",
+    "compatibility_reason": "All tracked aggregate-import consumers were migrated; direct owning submodules remain available, and retaining broad aliases would defeat the reviewed boundary.",
+    "external_consumer_risk": "unknown_no_repository_evidence_or_declared_stable_distribution_contract"
+  },
+  "packages": {
+    "pycodeagent.rl": {
+      "facade_file": "pycodeagent/rl/__init__.py",
+      "role": "stable_cross_route_training_data_contracts",
+      "exports_by_owner": [
+        {
+          "module": "pycodeagent.rl.loss_mask",
+          "symbols": [
+            "LossMask",
+            "build_loss_mask"
+          ]
+        },
+        {
+          "module": "pycodeagent.rl.prepared_sample",
+          "symbols": [
+            "ASSISTANT_TOOL_CALL_ONLY",
+            "PREPARED_SAMPLE_SCHEMA_VERSION",
+            "PreparedSample",
+            "read_prepared_samples",
+            "write_prepared_samples"
+          ]
+        },
+        {
+          "module": "pycodeagent.rl.serializer",
+          "symbols": [
+            "SerializedSchemaFollowingSample",
+            "SerializedSegment",
+            "SerializedTrajectory",
+            "serialize_schema_following_sample",
+            "serialize_trajectory"
+          ]
+        },
+        {
+          "module": "pycodeagent.rl.training_bundle",
+          "symbols": [
+            "TRAINING_BUNDLE_SCHEMA",
+            "TRAINING_BUNDLE_VERSION",
+            "TrainingBundleArtifact",
+            "TrainingBundleBuildResult",
+            "TrainingBundleBuilder",
+            "TrainingBundleManifest",
+            "verify_training_bundle_manifest"
+          ]
+        },
+        {
+          "module": "pycodeagent.rl.training_prep",
+          "symbols": [
+            "RuntimeObservedSchemaFollowingTrainingPrepRecommendation",
+            "SchemaFollowingTrainingPrepRecommendation",
+            "TrainingPrepRecommendation",
+            "prepare_runtime_observed_schema_following_training_input",
+            "prepare_schema_following_training_input",
+            "prepare_slime_training_input"
+          ]
+        }
+      ],
+      "tracked_aggregate_consumers_before": [
+        "tests/test_slime_bridge.py"
+      ],
+      "tracked_aggregate_consumers_after": [],
+      "forbidden_root_exports": [
+        "CanonicalIntentBaselinePredictor",
+        "FakeTokenizerAdapter",
+        "RolloutDatasetBuilder",
+        "SchemaFollowingSFTExperimentResult",
+        "TrainDataset",
+        "generate_schema_following_from_runtime_runs",
+        "run_schema_following_sft_experiment"
+      ]
+    },
+    "pycodeagent.eval": {
+      "facade_file": "pycodeagent/eval/__init__.py",
+      "role": "active_runtime_campaign_entrypoints",
+      "exports_by_owner": [
+        {
+          "module": "pycodeagent.eval.native_family_acceptance",
+          "symbols": [
+            "run_native_family_acceptance"
+          ]
+        },
+        {
+          "module": "pycodeagent.eval.real_provider_behavior_baseline",
+          "symbols": [
+            "run_real_provider_behavior_baseline"
+          ]
+        },
+        {
+          "module": "pycodeagent.eval.real_provider_credibility_bundle",
+          "symbols": [
+            "run_real_provider_credibility_bundle"
+          ]
+        },
+        {
+          "module": "pycodeagent.eval.run_campaign",
+          "symbols": [
+            "RunCampaign",
+            "RunMatrix"
+          ]
+        },
+        {
+          "module": "pycodeagent.eval.toolview_mutation_data_generation",
+          "symbols": [
+            "run_real_provider_toolview_mutation_data_generation"
+          ]
+        }
+      ],
+      "tracked_aggregate_consumers_before": [
+        "run_real_provider_behavior_baseline.py",
+        "run_real_provider_credibility_bundle.py"
+      ],
+      "tracked_aggregate_consumers_after": [],
+      "forbidden_root_exports": [
+        "BatchRunner",
+        "ExperimentRunner",
+        "MutationStudyRunner",
+        "RuntimeBehaviorAudit",
+        "StudyConfig",
+        "build_category_profile_table",
+        "build_error_breakdown_table",
+        "build_profile_comparison_table",
+        "build_seed_comparison_table",
+        "run_study",
+        "table_to_csv",
+        "table_to_markdown"
+      ]
+    }
+  }
+}

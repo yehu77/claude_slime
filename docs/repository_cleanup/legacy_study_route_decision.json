@@ -1,0 +1,124 @@
+{
+  "schema": "repository-cleanup-legacy-study-route-decision/v1",
+  "goal_id": "RC-024",
+  "decided_at": "2026-07-18",
+  "decision": {
+    "disposition": "archive_read_only_historical_reference",
+    "active_mainline": false,
+    "current_runtime_compatibility_required": false,
+    "executable_reproducibility_required": false,
+    "deletion_authorized": false,
+    "archive_requirement": "repository_owned_read_only_archive_outside_active_package_and_test_discovery",
+    "archive_location": "selected_by_RC-025"
+  },
+  "candidate_boundary": {
+    "archive_with_study_cluster": {
+      "modules": [
+        "pycodeagent/eval/analysis.py",
+        "pycodeagent/eval/batch_runner.py",
+        "pycodeagent/eval/experiment_config.py",
+        "pycodeagent/eval/experiment_runner.py",
+        "pycodeagent/eval/metrics.py",
+        "pycodeagent/eval/report.py",
+        "pycodeagent/eval/run_study.py",
+        "pycodeagent/eval/study_config.py",
+        "pycodeagent/eval/study_report.py",
+        "pycodeagent/eval/study_runner.py"
+      ],
+      "study_configs": [
+        "configs/studies/first_mutation_sensitivity.json",
+        "configs/studies/schema_failure_attribution_v1.json"
+      ],
+      "task_packs": [
+        "datasets/tasks/toy_tasks.jsonl"
+      ],
+      "tests": [
+        "tests/test_batch_report.py",
+        "tests/test_experiment_config.py",
+        "tests/test_metrics.py",
+        "tests/test_phase2_batch_consistency.py",
+        "tests/test_run_study.py",
+        "tests/test_study_config.py",
+        "tests/test_study_report.py",
+        "tests/test_study_runner.py",
+        "tests/test_toy_dataset.py"
+      ]
+    },
+    "archive_with_root_entrypoints_via_RC-027": {
+      "entrypoints": [
+        "run_first_study_mimo.py",
+        "run_first_study_real_provider.py",
+        "run_p3b_real_provider_compaction_acceptance.py",
+        "run_schema_attribution_mimo.py",
+        "run_schema_following_sft.py",
+        "verify_p3b_real_provider_compaction_acceptance.py"
+      ],
+      "known_entrypoint_tests": [
+        "tests/test_mimo_entrypoints.py",
+        "tests/test_p3b_compaction_acceptance.py",
+        "tests/test_root_cli.py",
+        "tests/test_schema_following_sft.py"
+      ]
+    },
+    "separately_owned": [
+      {
+        "asset": "pycodeagent/eval/tables.py",
+        "disposition": "retire",
+        "owner_goal": "RC-057",
+        "reason": "RC-039 assigned a separate atomic retirement after RC-031"
+      }
+    ]
+  },
+  "protected_exclusions": [
+    {
+      "asset": "pycodeagent/dev/mimo_local.py",
+      "reason": "MimoNativeToolClient remains a shared provider-runtime client"
+    },
+    {
+      "asset": "datasets/tasks/realistic_runtime_tasks.jsonl",
+      "reason": "current native-family runtime and provider acceptance workload"
+    },
+    {
+      "asset": "pycodeagent/eval/runtime_observed_postrun.py",
+      "reason": "current runtime-observed training-data mainline"
+    },
+    {
+      "asset": "pycodeagent/testing/runtime_observed.py",
+      "reason": "current native-family generated study fixtures and mainline tests"
+    },
+    {
+      "asset": "pycodeagent/rl/serializer.py",
+      "reason": "shared training-data contract"
+    },
+    {
+      "asset": "pycodeagent/rl/loss_mask.py",
+      "reason": "shared training-data contract"
+    },
+    {
+      "asset": "pycodeagent/rl/training_prep.py",
+      "reason": "shared training-data contract"
+    },
+    {
+      "asset": "pycodeagent/cli.py",
+      "reason": "formal six-command mainline entrypoint established by RC-045"
+    },
+    {
+      "asset": "pycodeagent/application/cli_services.py",
+      "reason": "application-service boundary for active run, campaign, training, verification, and acceptance routes"
+    },
+    {
+      "asset": "datasets/tasks/real_provider_smoke_tasks.jsonl",
+      "reason": "declared provider-runtime smoke task identity replacing the retired fixed wrapper"
+    },
+    {
+      "asset": "pycodeagent/eval/native_family_acceptance.py",
+      "reason": "active native-family acceptance implementation behind the formal CLI"
+    }
+  ],
+  "downstream": {
+    "RC-025": "done_exact_closure_and_archive_mechanism_frozen",
+    "RC-026": "done_archive_cluster",
+    "RC-027": "done_archive_stage_entrypoints",
+    "RC-043": "done_campaign_defined_without_legacy_study_semantics"
+  }
+}

@@ -279,12 +279,13 @@ class TestGetTrainableTextSegments:
             assert seg["kind"] in ("assistant", "assistant_tool_call")
 
     def test_full_trajectory_trainable_count(self):
-        """Full trajectory should have 3 trainable segments."""
+        """Full trajectory trains only its tool-call segment."""
         traj = make_full_trajectory()
         rollout = trajectory_to_slime_rollout(traj)
         trainable = get_trainable_text_segments(rollout)
-        # 2 assistant + 1 assistant_tool_call
-        assert len(trainable) == 3
+        assert [segment["kind"] for segment in trainable] == [
+            "assistant_tool_call"
+        ]
 
     def test_minimal_trajectory_no_trainable(self):
         """Minimal trajectory has no assistant messages."""
@@ -316,8 +317,8 @@ class TestGetTrainableTextSegments:
             extracted = rollout.text[seg["start"]:seg["end"]]
             assert extracted == seg["text"]
 
-    def test_multiple_assistant_segments_offsets(self):
-        """Multiple trainable segments of the same kind should get distinct offsets."""
+    def test_natural_language_assistant_segments_are_not_targets(self):
+        """Assistant text without tool calls produces no trainable segment."""
         traj = Trajectory(
             task_id="multi_asst",
             repo="r",
@@ -328,22 +329,13 @@ class TestGetTrainableTextSegments:
         )
         traj.add_system("sys")       # 3 chars, not trainable
         traj.add_user("usr")         # 3 chars, not trainable
-        traj.add_assistant("abc")    # 3 chars, trainable -> start=6, end=9
-        traj.add_assistant("def")    # 3 chars, trainable -> start=9, end=12
-        traj.add_assistant("ghi")    # 3 chars, trainable -> start=12, end=15
+        traj.add_assistant("abc")
+        traj.add_assistant("def")
+        traj.add_assistant("ghi")
 
         rollout = trajectory_to_slime_rollout(traj)
         trainable = get_trainable_text_segments(rollout)
-        expected = self._expected_trainable_segments(rollout)
-
-        assert len(trainable) == 3
-        # All should be kind "assistant"
-        for seg in trainable:
-            assert seg["kind"] == "assistant"
-            assert seg["text"].startswith("<assistant>\n")
-            assert seg["text"].endswith("\n</assistant>\n")
-
-        assert trainable == expected
+        assert trainable == []
 
     def test_mixed_assistant_and_tool_call_offsets(self):
         """Assistant + assistant_tool_call segments should get correct offsets."""
@@ -366,18 +358,10 @@ class TestGetTrainableTextSegments:
         trainable = get_trainable_text_segments(rollout)
         expected = self._expected_trainable_segments(rollout)
 
-        # 3 trainable: assistant block for "A", tool call block, assistant block for "B"
-        assert len(trainable) == 3
-        assert trainable[0]["kind"] == "assistant"
-        assert "A" in trainable[0]["text"]
-        assert trainable[0]["text"].startswith("<assistant>\n")
-
-        assert trainable[1]["kind"] == "assistant_tool_call"
-        assert trainable[1]["text"].startswith("<|tool|>\n")
-        assert trainable[1]["text"].endswith("\n<|end|>\n")
-
-        assert trainable[2]["kind"] == "assistant"
-        assert "B" in trainable[2]["text"]
+        assert len(trainable) == 1
+        assert trainable[0]["kind"] == "assistant_tool_call"
+        assert trainable[0]["text"].startswith("<|tool|>\n")
+        assert trainable[0]["text"].endswith("\n<|end|>\n")
 
         assert trainable == expected
 
@@ -587,4 +571,4 @@ class TestIntegration:
 
         # Count trainable
         trainable_kinds = [s["kind"] for s in rollout.segments if s["trainable"]]
-        assert len(trainable_kinds) == 7  # 3 assistant + 3 tool_call + 1 final
+        assert trainable_kinds == ["assistant_tool_call"] * 3

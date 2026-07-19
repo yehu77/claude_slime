@@ -1,4 +1,7 @@
-"""Trajectory-derived schema-following dataset generation."""
+"""Compatibility implementation for trajectory-derived baselines.
+
+New callers should import the public generator from :mod:`pycodeagent.baselines`.
+"""
 
 from __future__ import annotations
 
@@ -396,6 +399,8 @@ def generate_schema_following_from_trajectories(
         dataset_manifest_path,
         {
             "dataset_type": "schema_following_trajectory_derived",
+            "route_role": "controlled_baseline",
+            "artifact_owner": "pycodeagent.baselines",
             "version": 1,
             "seed": seed,
             "family": family,
@@ -414,6 +419,8 @@ def generate_schema_following_from_trajectories(
         source_manifest_path,
         {
             "version": 1,
+            "route_role": "controlled_baseline",
+            "artifact_owner": "pycodeagent.baselines",
             "source_dir": str(source_dir),
             "source_type": source_type,
             "discovered_run_count": len(run_dirs),

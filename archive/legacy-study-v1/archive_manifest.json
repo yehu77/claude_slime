@@ -1,0 +1,189 @@
+{
+  "schema": "repository-cleanup-legacy-study-archive-manifest/v1",
+  "archive_id": "legacy-study-readonly-v1",
+  "created": "2026-07-18",
+  "goals": [
+    "RC-026",
+    "RC-027"
+  ],
+  "boundary_ref": "docs/repository_cleanup/legacy_study_archive_boundary.json",
+  "execution_status": "historical_reference_only",
+  "checksum_algorithm": "sha256",
+  "source_count": 29,
+  "entries": [
+    {
+      "source": "configs/studies/first_mutation_sensitivity.json",
+      "archive_path": "archive/legacy-study-v1/configs/studies/first_mutation_sensitivity.json",
+      "implementation_goal": "RC-026",
+      "sha256": "a86525585b43ecc2d4d85e896f29c4f7f0f5757ed5c4596db6656efddcd58789"
+    },
+    {
+      "source": "configs/studies/schema_failure_attribution_v1.json",
+      "archive_path": "archive/legacy-study-v1/configs/studies/schema_failure_attribution_v1.json",
+      "implementation_goal": "RC-026",
+      "sha256": "53485fd44863a4201399178f5b3f4d0a017a030bc014f80fe00fc5a74a17f6f8"
+    },
+    {
+      "source": "datasets/tasks/toy_tasks.jsonl",
+      "archive_path": "archive/legacy-study-v1/datasets/tasks/toy_tasks.jsonl",
+      "implementation_goal": "RC-026",
+      "sha256": "e526b3f99ab862d0b232050e6b739fb51c7e98c82bdb597aee82658275f24586"
+    },
+    {
+      "source": "pycodeagent/eval/analysis.py",
+      "archive_path": "archive/legacy-study-v1/pycodeagent/eval/analysis.py",
+      "implementation_goal": "RC-026",
+      "sha256": "266cfb4e4eaf43a38d351ee2c97d2af24062b6fda81e8471b3c91205a6bb24ce"
+    },
+    {
+      "source": "pycodeagent/eval/batch_runner.py",
+      "archive_path": "archive/legacy-study-v1/pycodeagent/eval/batch_runner.py",
+      "implementation_goal": "RC-026",
+      "sha256": "7930840a9985cd070ff1b48b60c62ca2906aa063cb783e7a66c79e59e5803f7f"
+    },
+    {
+      "source": "pycodeagent/eval/experiment_config.py",
+      "archive_path": "archive/legacy-study-v1/pycodeagent/eval/experiment_config.py",
+      "implementation_goal": "RC-026",
+      "sha256": "899478171368db4b759c2d2b961547c100dea48cc4988848ca28ac293a5626b3"
+    },
+    {
+      "source": "pycodeagent/eval/experiment_runner.py",
+      "archive_path": "archive/legacy-study-v1/pycodeagent/eval/experiment_runner.py",
+      "implementation_goal": "RC-026",
+      "sha256": "5ab0ebc5fe48622dd319270ae0209b0663e32cda56ef1bd3f671938297f1af5f"
+    },
+    {
+      "source": "pycodeagent/eval/metrics.py",
+      "archive_path": "archive/legacy-study-v1/pycodeagent/eval/metrics.py",
+      "implementation_goal": "RC-026",
+      "sha256": "329201022ffd0af2db879a06478c8171b4104ebc31b2d74ee1de71c6c80cb9b7"
+    },
+    {
+      "source": "pycodeagent/eval/report.py",
+      "archive_path": "archive/legacy-study-v1/pycodeagent/eval/report.py",
+      "implementation_goal": "RC-026",
+      "sha256": "34a33a5734522f4579f2b4f1d9844f26dedc185a5a7d735360f9b4236a4ee693"
+    },
+    {
+      "source": "pycodeagent/eval/run_study.py",
+      "archive_path": "archive/legacy-study-v1/pycodeagent/eval/run_study.py",
+      "implementation_goal": "RC-026",
+      "sha256": "0d0840649d09da73cbd59b7b39fb8d014f77d119890ad8a76eb4236c6868a8d1"
+    },
+    {
+      "source": "pycodeagent/eval/study_config.py",
+      "archive_path": "archive/legacy-study-v1/pycodeagent/eval/study_config.py",
+      "implementation_goal": "RC-026",
+      "sha256": "4f1630eb1545dbd18517fe81e04c8c86027d296f96206e286705552a627456ae"
+    },
+    {
+      "source": "pycodeagent/eval/study_report.py",
+      "archive_path": "archive/legacy-study-v1/pycodeagent/eval/study_report.py",
+      "implementation_goal": "RC-026",
+      "sha256": "35fb5339d2b49c0cedb59746070bffccbe51b1b99a98e18ca860cc3502b80f8c"
+    },
+    {
+      "source": "pycodeagent/eval/study_runner.py",
+      "archive_path": "archive/legacy-study-v1/pycodeagent/eval/study_runner.py",
+      "implementation_goal": "RC-026",
+      "sha256": "d0f692e7331eedd91379fddeef57069857ac3c5b8211352ad2d131b30eab1ff1"
+    },
+    {
+      "source": "run_first_study_mimo.py",
+      "archive_path": "archive/legacy-study-v1/run_first_study_mimo.py",
+      "implementation_goal": "RC-027",
+      "sha256": "56d9821dc9ebf601ed50354d476f06cd563d01ae3fe24728ae780bb9c790e681"
+    },
+    {
+      "source": "run_first_study_real_provider.py",
+      "archive_path": "archive/legacy-study-v1/run_first_study_real_provider.py",
+      "implementation_goal": "RC-027",
+      "sha256": "a6007e54dad31ab8c8d77e3df2e4a1582cbc13d1bd7bb07036a5874aefe7c3c4"
+    },
+    {
+      "source": "run_p3b_real_provider_compaction_acceptance.py",
+      "archive_path": "archive/legacy-study-v1/run_p3b_real_provider_compaction_acceptance.py",
+      "implementation_goal": "RC-027",
+      "sha256": "9b1c27283711c975847ce2232d714a98e8ddff9a1081dea5a9bb795798b6ddc7"
+    },
+    {
+      "source": "run_schema_attribution_mimo.py",
+      "archive_path": "archive/legacy-study-v1/run_schema_attribution_mimo.py",
+      "implementation_goal": "RC-027",
+      "sha256": "be294b41b97e934813e3803a7c474798f186c0006b95ff9de24108aff968a611"
+    },
+    {
+      "source": "run_schema_following_sft.py",
+      "archive_path": "archive/legacy-study-v1/run_schema_following_sft.py",
+      "implementation_goal": "RC-027",
+      "sha256": "28e419e6270a7436c09db307a7ab1709311027c9787a8a46bae461b79f403e3c"
+    },
+    {
+      "source": "tests/test_batch_report.py",
+      "archive_path": "archive/legacy-study-v1/tests/test_batch_report.py",
+      "implementation_goal": "RC-026",
+      "sha256": "7ee2c53c4518018f03d68de95c5ade8152b2fbbfe188f50513eb48f5f95fa48d"
+    },
+    {
+      "source": "tests/test_experiment_config.py",
+      "archive_path": "archive/legacy-study-v1/tests/test_experiment_config.py",
+      "implementation_goal": "RC-026",
+      "sha256": "b3e79c24330c758d9954d4db900fb6a1f27c7d7506a73a3bc53b5523f2d745fc"
+    },
+    {
+      "source": "tests/test_metrics.py",
+      "archive_path": "archive/legacy-study-v1/tests/test_metrics.py",
+      "implementation_goal": "RC-026",
+      "sha256": "55238f9bdc449e1306f8545a6bfa1bc540ef083b5b3aea7a546e966b4ca084e7"
+    },
+    {
+      "source": "tests/test_mimo_entrypoints.py",
+      "archive_path": "archive/legacy-study-v1/tests/test_mimo_entrypoints.py",
+      "implementation_goal": "RC-027",
+      "sha256": "141d039081cea4311192cda5d25167a48e4b0afd3f2a12ebaf239c00b6abd42c"
+    },
+    {
+      "source": "tests/test_phase2_batch_consistency.py",
+      "archive_path": "archive/legacy-study-v1/tests/test_phase2_batch_consistency.py",
+      "implementation_goal": "RC-026",
+      "sha256": "6c3f5f85fd0d202493cd3bade400bd1861b30d6da9dd48d0c0ac960b91d11b10"
+    },
+    {
+      "source": "tests/test_run_study.py",
+      "archive_path": "archive/legacy-study-v1/tests/test_run_study.py",
+      "implementation_goal": "RC-026",
+      "sha256": "6e697fb3bca4e5f9305d834eee096618777ded4c606b50485a86d6d7e3fd6d82"
+    },
+    {
+      "source": "tests/test_study_config.py",
+      "archive_path": "archive/legacy-study-v1/tests/test_study_config.py",
+      "implementation_goal": "RC-026",
+      "sha256": "305232cdd60933f8a9979f803674ef4e38d133dec79234ede3190dd4e617bb55"
+    },
+    {
+      "source": "tests/test_study_report.py",
+      "archive_path": "archive/legacy-study-v1/tests/test_study_report.py",
+      "implementation_goal": "RC-026",
+      "sha256": "61e91c2f97e82f3350318aa7516deaf22750639ba871d9534b560875270ad5c9"
+    },
+    {
+      "source": "tests/test_study_runner.py",
+      "archive_path": "archive/legacy-study-v1/tests/test_study_runner.py",
+      "implementation_goal": "RC-026",
+      "sha256": "3b334ecb79dd2412ca961e06e29ff2a06e7dc36bf38ad00865f004785006dd40"
+    },
+    {
+      "source": "tests/test_toy_dataset.py",
+      "archive_path": "archive/legacy-study-v1/tests/test_toy_dataset.py",
+      "implementation_goal": "RC-026",
+      "sha256": "67bc6afc324f722835baea886d61615584e725d24200b5d090f178c94aaf2e5d"
+    },
+    {
+      "source": "verify_p3b_real_provider_compaction_acceptance.py",
+      "archive_path": "archive/legacy-study-v1/verify_p3b_real_provider_compaction_acceptance.py",
+      "implementation_goal": "RC-027",
+      "sha256": "cb6dc1c41066c39d87bc8cf185b8c34f5687e5f5c1d41e1f28128e705a695039"
+    }
+  ]
+}

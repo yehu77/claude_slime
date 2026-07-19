@@ -19,7 +19,8 @@ from pydantic import BaseModel, Field
 
 from pycodeagent.rl.dataset_builder import build_rollout_dataset
 from pycodeagent.rl.dataset_manifest import FilterConfig
-from pycodeagent.rl.packing import pack_examples, unpack_sequence
+from pycodeagent.rl.packing import PackedBatch, pack_examples, unpack_sequence
+from pycodeagent.rl.prepared_sample import PreparedSample
 from pycodeagent.rl.schema_following_training import (
     SchemaFollowingPreparedSample,
     build_schema_following_prepared_samples,
@@ -81,6 +82,262 @@ class ContractVerificationResult(BaseModel):
     @property
     def ok(self) -> bool:
         return not self.issues and all(child.ok for child in self.children)
+
+
+def verify_prepared_bundle(
+    samples: list[PreparedSample],
+    tokenized_examples: list[TokenizedExample],
+    packed: PackedBatch,
+    *,
+    source_type: str,
+    source_path: str,
+    dataset_dir: str | Path,
+    rollout_count: int = 0,
+    initial_issues: list[ContractIssue] | None = None,
+    allow_empty: bool = False,
+) -> ContractVerificationResult:
+    """Verify the shared RC-042 PreparedSample training-bundle boundary."""
+    issues = list(initial_issues or [])
+    if not samples and not allow_empty:
+        issues.append(
+            ContractIssue(
+                code="prepared_empty_bundle",
+                message="Training bundle must contain at least one PreparedSample",
+            )
+        )
+    sample_ids = [sample.sample_id for sample in samples]
+    duplicate_ids = sorted(
+        sample_id for sample_id in set(sample_ids) if sample_ids.count(sample_id) > 1
+    )
+    if duplicate_ids:
+        issues.append(
+            ContractIssue(
+                code="prepared_duplicate_sample_id",
+                message="PreparedSample sample_id values must be unique within a bundle",
+                context={"duplicate_sample_ids": duplicate_ids},
+            )
+        )
+
+    if len(samples) != len(tokenized_examples):
+        issues.append(
+            ContractIssue(
+                code="prepared_tokenized_count_mismatch",
+                message="Prepared and tokenized example counts differ",
+                context={
+                    "prepared_count": len(samples),
+                    "tokenized_count": len(tokenized_examples),
+                },
+            )
+        )
+
+    for index, example in enumerate(tokenized_examples):
+        _validate_tokenized_example(example, issues, index)
+        if index >= len(samples):
+            continue
+        sample = samples[index]
+        for field_name in ("task_id", "tool_profile_id", "sample_id", "source_type"):
+            if example.metadata.get(field_name) != getattr(sample, field_name):
+                issues.append(
+                    ContractIssue(
+                        code=f"prepared_{field_name}_not_preserved",
+                        message=(
+                            f"Tokenized metadata did not preserve PreparedSample "
+                            f"{field_name}"
+                        ),
+                        context={
+                            "index": index,
+                            "expected": getattr(sample, field_name),
+                            "actual": example.metadata.get(field_name),
+                        },
+                    )
+                )
+
+    loaded_examples = _roundtrip_tokenized_examples(tokenized_examples)
+    if [item.model_dump(mode="json") for item in loaded_examples] != [
+        item.model_dump(mode="json") for item in tokenized_examples
+    ]:
+        issues.append(
+            ContractIssue(
+                code="prepared_tokenized_roundtrip_mismatch",
+                message="Tokenized JSONL round-trip changed bundle content",
+            )
+        )
+
+    if packed.total_examples != len(tokenized_examples):
+        issues.append(
+            ContractIssue(
+                code="prepared_packed_example_count_mismatch",
+                message="Packed batch total_examples does not match tokenized count",
+                context={
+                    "packed_total_examples": packed.total_examples,
+                    "tokenized_count": len(tokenized_examples),
+                },
+            )
+        )
+    unpacked_count = 0
+    for sequence_index, sequence in enumerate(packed.sequences):
+        unpacked = unpack_sequence(sequence)
+        unpacked_count += len(unpacked)
+        if len(unpacked) != len(sequence.source_spans):
+            issues.append(
+                ContractIssue(
+                    code="prepared_packed_source_count_mismatch",
+                    message="Packed sequence source spans do not round-trip",
+                    context={"sequence_index": sequence_index},
+                )
+            )
+        for unpacked_index, example in enumerate(unpacked):
+            _validate_tokenized_example(
+                example,
+                issues,
+                unpacked_index,
+                prefix=f"prepared_packed_seq_{sequence_index}",
+            )
+    if unpacked_count != len(tokenized_examples):
+        issues.append(
+            ContractIssue(
+                code="prepared_unpack_count_mismatch",
+                message="Unpacked source count does not match tokenized count",
+                context={
+                    "unpacked_count": unpacked_count,
+                    "tokenized_count": len(tokenized_examples),
+                },
+            )
+        )
+
+    statuses = [sample.status for sample in samples if sample.status is not None]
+    status_counts = {
+        status: statuses.count(status)
+        for status in sorted(set(statuses))
+    }
+    rewards = [sample.reward for sample in samples if sample.reward is not None]
+    return ContractVerificationResult(
+        source_type=source_type,
+        source_path=source_path,
+        dataset_dir=str(dataset_dir),
+        sample_count=len(samples),
+        rollout_count=rollout_count,
+        tokenized_count=len(tokenized_examples),
+        packed_sequence_count=len(packed.sequences),
+        loaded_example_count=len(loaded_examples),
+        task_ids=sorted({sample.task_id for sample in samples}),
+        profile_ids=sorted({sample.tool_profile_id for sample in samples}),
+        status_counts=status_counts,
+        reward_summary=_summarize(rewards),
+        token_length_summary=_summarize(
+            [example.length for example in tokenized_examples]
+        ),
+        trainable_token_summary=_summarize(
+            [example.trainable_token_count for example in tokenized_examples]
+        ),
+        issues=issues,
+    )
+
+
+def validate_rollout_dataset_source(
+    dataset_dir: str | Path,
+) -> tuple[list[TrainingSample], list[SlimeRolloutRecord], list[ContractIssue]]:
+    """Validate rollout-specific artifacts without tokenizing or packing."""
+    dataset_dir = Path(dataset_dir)
+    manifest_path = dataset_dir / "dataset_manifest.json"
+    rollouts_path = dataset_dir / "rollouts.jsonl"
+    samples_path = dataset_dir / "samples.jsonl"
+    if not manifest_path.exists():
+        raise FileNotFoundError(f"Missing dataset manifest: {manifest_path}")
+    if not rollouts_path.exists():
+        raise FileNotFoundError(f"Missing rollouts file: {rollouts_path}")
+    if not samples_path.exists():
+        raise FileNotFoundError(f"Missing samples file: {samples_path}")
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    rollouts = _load_jsonl(rollouts_path, SlimeRolloutRecord)
+    samples = _load_jsonl(samples_path, TrainingSample)
+    issues: list[ContractIssue] = []
+    if manifest.get("rollout_count") != len(rollouts):
+        issues.append(
+            ContractIssue(
+                code="manifest_rollout_count_mismatch",
+                message="Manifest rollout_count does not match rollouts.jsonl",
+                context={
+                    "manifest_rollout_count": manifest.get("rollout_count"),
+                    "actual_rollout_count": len(rollouts),
+                },
+            )
+        )
+    if manifest.get("sample_count") != len(samples):
+        issues.append(
+            ContractIssue(
+                code="manifest_sample_count_mismatch",
+                message="Manifest sample_count does not match samples.jsonl",
+                context={
+                    "manifest_sample_count": manifest.get("sample_count"),
+                    "actual_sample_count": len(samples),
+                },
+            )
+        )
+    if len(rollouts) != len(samples):
+        issues.append(
+            ContractIssue(
+                code="sample_rollout_count_mismatch",
+                message="samples.jsonl and rollouts.jsonl have different counts",
+                context={"sample_count": len(samples), "rollout_count": len(rollouts)},
+            )
+        )
+    for index in range(min(len(rollouts), len(samples))):
+        _validate_sample(samples[index], issues, index)
+        _validate_rollout(rollouts[index], issues, index)
+        _validate_pair(samples[index], rollouts[index], issues, index)
+    return samples, rollouts, issues
+
+
+def validate_schema_following_source(
+    dataset_dir: str | Path,
+    *,
+    split: str = "train",
+) -> tuple[list[SchemaFollowingPreparedSample], list[ContractIssue]]:
+    """Validate schema-following source artifacts without tokenizing or packing."""
+    dataset_dir = Path(dataset_dir)
+    manifest_path = dataset_dir / "dataset_manifest.json"
+    split_path = dataset_dir / f"{split}.jsonl"
+    split_metrics_path = dataset_dir / "split_metrics.json"
+    if not manifest_path.exists():
+        raise FileNotFoundError(f"Missing schema-following manifest: {manifest_path}")
+    if not split_path.exists():
+        raise FileNotFoundError(f"Missing schema-following split file: {split_path}")
+    if not split_metrics_path.exists():
+        raise FileNotFoundError(
+            f"Missing schema-following split metrics: {split_metrics_path}"
+        )
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    split_metrics = json.loads(split_metrics_path.read_text(encoding="utf-8"))
+    raw_samples = load_schema_following_split(dataset_dir, split=split)
+    prepared_samples = build_schema_following_prepared_samples(raw_samples)
+    issues: list[ContractIssue] = []
+    expected_split_count = split_metrics.get("split_counts", {}).get(split)
+    if expected_split_count != len(raw_samples):
+        issues.append(
+            ContractIssue(
+                code="schema_following_split_count_mismatch",
+                message="split_metrics.json does not match the selected split JSONL count",
+                context={
+                    "split": split,
+                    "expected_count": expected_split_count,
+                    "actual_count": len(raw_samples),
+                },
+            )
+        )
+    if manifest.get("loss_mask_policy") != "assistant_tool_call_only":
+        issues.append(
+            ContractIssue(
+                code="schema_following_loss_mask_policy_mismatch",
+                message="dataset_manifest.json must declare assistant_tool_call_only",
+                context={"manifest_loss_mask_policy": manifest.get("loss_mask_policy")},
+            )
+        )
+    for index, sample in enumerate(prepared_samples):
+        _validate_schema_following_prepared_sample(sample, issues, index)
+    return prepared_samples, issues
 
 
 def verify_slime_contract(
@@ -153,61 +410,7 @@ def verify_dataset_dir(
 ) -> ContractVerificationResult:
     """Verify an already-built dataset directory."""
     dataset_dir = Path(dataset_dir)
-    issues: list[ContractIssue] = []
-
-    manifest_path = dataset_dir / "dataset_manifest.json"
-    rollouts_path = dataset_dir / "rollouts.jsonl"
-    samples_path = dataset_dir / "samples.jsonl"
-
-    if not manifest_path.exists():
-        raise FileNotFoundError(f"Missing dataset manifest: {manifest_path}")
-    if not rollouts_path.exists():
-        raise FileNotFoundError(f"Missing rollouts file: {rollouts_path}")
-    if not samples_path.exists():
-        raise FileNotFoundError(f"Missing samples file: {samples_path}")
-
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    rollouts = _load_jsonl(rollouts_path, SlimeRolloutRecord)
-    samples = _load_jsonl(samples_path, TrainingSample)
-
-    if manifest.get("rollout_count") != len(rollouts):
-        issues.append(
-            ContractIssue(
-                code="manifest_rollout_count_mismatch",
-                message="Manifest rollout_count does not match rollouts.jsonl",
-                context={
-                    "manifest_rollout_count": manifest.get("rollout_count"),
-                    "actual_rollout_count": len(rollouts),
-                },
-            )
-        )
-
-    if manifest.get("sample_count") != len(samples):
-        issues.append(
-            ContractIssue(
-                code="manifest_sample_count_mismatch",
-                message="Manifest sample_count does not match samples.jsonl",
-                context={
-                    "manifest_sample_count": manifest.get("sample_count"),
-                    "actual_sample_count": len(samples),
-                },
-            )
-        )
-
-    if len(rollouts) != len(samples):
-        issues.append(
-            ContractIssue(
-                code="sample_rollout_count_mismatch",
-                message="samples.jsonl and rollouts.jsonl have different counts",
-                context={"sample_count": len(samples), "rollout_count": len(rollouts)},
-            )
-        )
-
-    paired_count = min(len(rollouts), len(samples))
-    for idx in range(paired_count):
-        _validate_sample(samples[idx], issues, idx)
-        _validate_rollout(rollouts[idx], issues, idx)
-        _validate_pair(samples[idx], rollouts[idx], issues, idx)
+    samples, rollouts, issues = validate_rollout_dataset_source(dataset_dir)
 
     tokenizer, tokenizer_config = resolve_tokenizer_adapter(
         tokenizer=tokenizer,
@@ -349,49 +552,10 @@ def verify_schema_following_dataset_dir(
     """Verify an existing schema-following dataset directory."""
     dataset_dir = Path(dataset_dir)
     resolved_output_dir = Path(output_dir) if output_dir is not None else dataset_dir
-    issues: list[ContractIssue] = []
-
-    manifest_path = dataset_dir / "dataset_manifest.json"
-    split_path = dataset_dir / f"{split}.jsonl"
-    split_metrics_path = dataset_dir / "split_metrics.json"
-
-    if not manifest_path.exists():
-        raise FileNotFoundError(f"Missing schema-following manifest: {manifest_path}")
-    if not split_path.exists():
-        raise FileNotFoundError(f"Missing schema-following split file: {split_path}")
-    if not split_metrics_path.exists():
-        raise FileNotFoundError(f"Missing schema-following split metrics: {split_metrics_path}")
-
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    split_metrics = json.loads(split_metrics_path.read_text(encoding="utf-8"))
-    raw_samples = load_schema_following_split(dataset_dir, split=split)
-    prepared_samples = build_schema_following_prepared_samples(raw_samples)
-
-    expected_split_count = split_metrics.get("split_counts", {}).get(split)
-    if expected_split_count != len(raw_samples):
-        issues.append(
-            ContractIssue(
-                code="schema_following_split_count_mismatch",
-                message="split_metrics.json does not match the selected split JSONL count",
-                context={
-                    "split": split,
-                    "expected_count": expected_split_count,
-                    "actual_count": len(raw_samples),
-                },
-            )
-        )
-
-    if manifest.get("loss_mask_policy") != "assistant_tool_call_only":
-        issues.append(
-            ContractIssue(
-                code="schema_following_loss_mask_policy_mismatch",
-                message="dataset_manifest.json must declare assistant_tool_call_only",
-                context={"manifest_loss_mask_policy": manifest.get("loss_mask_policy")},
-            )
-        )
-
-    for index, sample in enumerate(prepared_samples):
-        _validate_schema_following_prepared_sample(sample, issues, index)
+    prepared_samples, issues = validate_schema_following_source(
+        dataset_dir,
+        split=split,
+    )
 
     tokenizer, tokenizer_config = resolve_tokenizer_adapter(
         tokenizer=tokenizer,

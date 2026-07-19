@@ -23,6 +23,27 @@ The practical target is narrower and more relevant to this repository:
 - keep those changes white-box and auditable
 - keep the resulting source runs useful for observed training-data production
 
+Native-family terminology, explicit stack selection, fallback rules, and
+artifact boundaries are fixed by
+[ADR-0001](./adr/0001-native-family-runtime-boundary.md). This plan orders
+implementation work but does not redefine that contract.
+
+The optional ignored `codex-rs/` source tree is governed by the
+[reference lock and bootstrap contract](./codex_rs_reference.md) and the
+machine-readable
+[`references/codex-rs.lock.json`](../references/codex-rs.lock.json). The
+current reference is the official `openai/codex` `codex-rs` subtree at the
+full immutable commit recorded there. Before using local source as subsystem
+evidence, run:
+
+```bash
+python -B -m pycodeagent.dev.codex_reference verify
+```
+
+An absent tree does not block repository runtime or tests. A mismatched tree
+must not be used as implementation evidence until it has been reconciled; do
+not infer its version from the containing repository's Git `HEAD`.
+
 ## Role Separation
 
 This document is the current local-runtime implementation mainline.
@@ -137,7 +158,7 @@ Why it matters for data quality:
 Current repo baseline:
 
 - structured high-frequency builtin tools
-- command safety core
+- workspace/path enforcement and a shared process-execution substrate
 - normalized tool results and error metadata
 
 Nearest `codex-rs` reference area:
@@ -161,7 +182,7 @@ Why it matters for data quality:
 
 Current repo baseline:
 
-- structured protected-path and command policy boundaries
+- structured protected-path boundaries and trace-visible execution metadata
 - runtime trace events for request, parse, mapping, execution, and stop
 
 Nearest `codex-rs` reference area:
@@ -173,6 +194,8 @@ Nearest `codex-rs` reference area:
 
 Current gap:
 
+- no active command-policy engine exists; the legacy two-state argv allowlist
+  was deleted by RC-038 rather than activated
 - permission-like runtime facts are still thinner than in a mature runtime
 - trace explains more than before, but policy visibility still has room to grow
 

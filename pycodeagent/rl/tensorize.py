@@ -24,6 +24,7 @@ from pycodeagent.rl.mask_alignment import (
     validate_character_mask_length,
     validate_token_alignment_lengths,
 )
+from pycodeagent.rl.prepared_sample import PreparedSample
 from pycodeagent.rl.schema_following_training import SchemaFollowingPreparedSample
 from pycodeagent.rl.tokenizer import BaseTokenizerAdapter
 from pycodeagent.rl.tokenizer_config import IGNORE_INDEX, TokenizerConfig
@@ -94,31 +95,9 @@ def tensorize_sample(
     Returns:
         TokenizedExample with aligned labels and masks
     """
-    text = sample.text
-    character_mask = sample.character_mask
+    if isinstance(sample, PreparedSample):
+        return tensorize_prepared_sample(sample, tokenizer, config)
 
-    # Tokenize
-    input_ids = tokenizer.encode(text)
-    offsets = tokenizer.get_offsets(text)
-
-    # Align character mask to tokens
-    token_train_mask = align_character_mask_to_tokens(character_mask, offsets)
-
-    # Ensure lengths match
-    validate_token_alignment_lengths(input_ids, token_train_mask)
-
-    # Apply truncation
-    if config.truncation and len(input_ids) > config.max_length:
-        input_ids = input_ids[: config.max_length]
-        token_train_mask = token_train_mask[: config.max_length]
-
-    # Build labels
-    labels = _build_labels(input_ids, token_train_mask)
-
-    # Build attention mask (all 1s for real tokens)
-    attention_mask = [1] * len(input_ids)
-
-    # Preserve metadata
     metadata = {
         "task_id": sample.task_id,
         "tool_profile_id": sample.tool_profile_id,
@@ -129,11 +108,11 @@ def tensorize_sample(
         "trainable_char_count": sample.trainable_char_count,
     }
 
-    return TokenizedExample(
-        input_ids=input_ids,
-        attention_mask=attention_mask,
-        labels=labels,
-        token_train_mask=token_train_mask,
+    return tensorize_text(
+        sample.text,
+        sample.character_mask,
+        tokenizer,
+        config,
         metadata=metadata,
     )
 
@@ -203,9 +182,19 @@ def tensorize_schema_following_sample(
     config: TokenizerConfig,
 ) -> TokenizedExample:
     """Convert a prepared schema-following sample into a tokenized example."""
+    return tensorize_prepared_sample(sample, tokenizer, config)
+
+
+def tensorize_prepared_sample(
+    sample: PreparedSample,
+    tokenizer: BaseTokenizerAdapter,
+    config: TokenizerConfig,
+) -> TokenizedExample:
+    """Convert the versioned source-neutral contract into tokenized tensors."""
     metadata = dict(sample.metadata)
     metadata.update(
         {
+            "prepared_sample_schema_version": sample.schema_version,
             "sample_id": sample.sample_id,
             "sample_type": sample.sample_type,
             "source_type": sample.source_type,
@@ -215,6 +204,20 @@ def tensorize_schema_following_sample(
             "mutation_category": sample.mutation_category,
             "trainable_char_count": sample.trainable_char_count,
             "loss_mask_policy": sample.loss_mask_policy,
+        }
+    )
+    if sample.mutation_category is None:
+        metadata.pop("mutation_category")
+    metadata.update(
+        {
+            key: value
+            for key, value in {
+                "reward": sample.reward,
+                "status": sample.status,
+                "verifier_passed": sample.verifier_passed,
+                "verifier_score": sample.verifier_score,
+            }.items()
+            if value is not None
         }
     )
     return tensorize_text(

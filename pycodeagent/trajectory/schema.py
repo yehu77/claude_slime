@@ -199,7 +199,7 @@ class Trajectory(BaseModel):
         )
 
     def to_dict(self) -> dict[str, Any]:
-        """Serialize to the trajectory JSON format specified in CLAUDE.md."""
+        """Serialize to the repository trajectory JSON format."""
         return {
             "task_id": self.task_id,
             "repo": self.repo,

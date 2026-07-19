@@ -1,5 +1,10 @@
 # Agent Training Infrastructure Architecture
 
+> **Auxiliary architecture reference:** This document describes earlier
+> Claude API/native-transformed routes, not the runtime-observed construction
+> mainline. See [source route boundaries](./source_route_boundaries.md); RC-030
+> owns migration of the registered auxiliary code.
+
 本文档整理当前仓库已经建设好的 Agent 训练基础设施。它描述的是
 `claude_slime` 目前能稳定表达的数据流、接口边界和验证状态，不把尚未完成的
 远端训练实验说成已经闭环。
@@ -52,8 +57,8 @@ SFT 和 RL 的关键差异：
 
 相关文档：
 
-- [native_transformed_sft_pipeline.md](./native_transformed_sft_pipeline.md)
-- [claude_gateway_proxy.md](./claude_gateway_proxy.md)
+- [native_transformed_sft_pipeline.md](./auxiliary/native_transformed_sft_pipeline.md)
+- [claude_gateway_proxy.md](./auxiliary/claude_gateway_proxy.md)
 
 主要职责：
 
@@ -100,15 +105,15 @@ SFT 和 RL 的关键差异：
 
 相关文档：
 
-- [native_transformed_rl_pipeline.md](./native_transformed_rl_pipeline.md)
+- [native_transformed_rl_pipeline.md](./auxiliary/native_transformed_rl_pipeline.md)
 
 主要职责：
 
 - `export_native_transformed_rl_dataset.py` 从 native-transformed SFT dataset
   生成 prompt-only `rl_prompts.jsonl`。
-- `pycodeagent.rl.native_transformed_rl_dataset` 定义 RL prompt sample 和 reward
+- `pycodeagent.auxiliary.native_transformed.rl_dataset` 定义 RL prompt sample 和 reward
   reference 数据结构。
-- `pycodeagent.rl.native_transformed_reward` 解析模型 completion 中的
+- `pycodeagent.auxiliary.native_transformed.reward` 解析模型 completion 中的
   `<|tool|> ... <|end|>` JSON block，并根据 expected tool call 打分。
 - `slime-main/slime/rollout/pycodeagent_native_rl.py` 提供 slime datasource 和
   `reward_func`，把 prompt 数据接入 slime online RL。

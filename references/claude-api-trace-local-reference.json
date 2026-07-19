@@ -1,0 +1,42 @@
+{
+  "schema": "claude-api-trace-local-reference/v1",
+  "fixture_path": "tests/fixtures/claude_api_tool_use_session.jsonl",
+  "original": {
+    "sha256": "d0afd3fb0f82a1f74dff6712f0735939a44ecc723ac214f14a1769cafc148e87",
+    "bytes": 3933704,
+    "line_count": 569,
+    "message_request_count": 27
+  },
+  "local_backup": {
+    "storage_boundary": "local_git_worktree_external",
+    "root_hint": "~/.local/share/pycodeagent/references/claude-api-traces",
+    "relative_path": "claude-api-tool-use-session/original.jsonl",
+    "verified_at": "2026-07-19",
+    "checks": {
+      "sha256_match": true,
+      "byte_count_match": true,
+      "line_count_match": true,
+      "byte_for_byte_match": true
+    },
+    "tracked_or_published": false
+  },
+  "replacement": {
+    "role": "fully_synthetic_sanitized_mini_trace",
+    "sha256": "4174a836788162a443d1e3960f448271b2112c0b299f93618aa85d2ae5940d32",
+    "bytes": 5318,
+    "line_count": 8,
+    "message_request_count": 2,
+    "retained_behaviors": [
+      "request_tool_catalog",
+      "assistant_tool_use",
+      "later_matching_tool_result",
+      "tool_use_stop_reason",
+      "end_turn_stop_reason"
+    ]
+  },
+  "policy": {
+    "raw_original_must_remain_local": true,
+    "raw_original_must_remain_outside_git_worktree": true,
+    "repository_copy_must_be_synthetic_and_sanitized": true
+  }
+}

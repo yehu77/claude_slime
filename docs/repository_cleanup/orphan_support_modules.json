@@ -1,0 +1,78 @@
+{
+  "schema": "repository-cleanup-orphan-support-modules/v2",
+  "goal_id": "RC-039",
+  "reviewed_at": "2026-07-17",
+  "modules": [
+    {
+      "module": "pycodeagent/rl/train_loop.py",
+      "owner": "training-data-maintainers",
+      "repository_consumers": [],
+      "decision_evidence_consumers": [
+        "pycodeagent/rl/__init__.py",
+        "tests/test_train_loop.py"
+      ],
+      "contract_value": "Test-only ToyModel and minimal supervised loop; not a production training contract.",
+      "replacement": "pycodeagent.rl.training_prep followed by the slime-compatible training boundary.",
+      "external_import_risk": "RC-056 removed the package-level re-export after finding no repository docs, CLI, runtime, packaging entrypoint, dynamic import, or known external integration.",
+      "disposition": "retire",
+      "implementation_status": "retired",
+      "child_goal": "RC-056"
+    },
+    {
+      "module": "pycodeagent/rl/export.py",
+      "owner": "training-data-maintainers",
+      "repository_consumers": [
+        "pycodeagent/rl/__init__.py",
+        "tests/test_rollout_export.py",
+        "tests/test_phase2_rollout_consistency.py"
+      ],
+      "decision_evidence_consumers": [
+        "pycodeagent/rl/__init__.py",
+        "tests/test_rollout_export.py",
+        "tests/test_phase2_rollout_consistency.py"
+      ],
+      "contract_value": "Deterministic JSON and JSONL I/O for SlimeRolloutRecord, including append and batch summary behavior.",
+      "replacement": "None; retain the dedicated rollout-artifact I/O boundary while downstream builders keep their format-specific writers.",
+      "external_import_risk": "Package-level re-export is an intentional compatibility surface until RC-031 reviews public exports.",
+      "disposition": "keep",
+      "implementation_status": "active",
+      "child_goal": null
+    },
+    {
+      "module": "pycodeagent/eval/tables.py",
+      "owner": "evaluation-maintainers",
+      "repository_consumers": [],
+      "decision_evidence_consumers": [
+        "pycodeagent/eval/__init__.py"
+      ],
+      "contract_value": "Generic legacy comparison-table formatting with no runtime, report, CLI, documentation, or test consumer.",
+      "replacement": "Existing report/study_report boundaries and the future RC-043 campaign report contract.",
+      "external_import_risk": "RC-031 removed the package-level re-export after finding no repository docs, CLI, runtime, packaging entrypoint, dynamic import, known external integration, or declared stable distribution contract.",
+      "disposition": "retire",
+      "implementation_status": "retired",
+      "child_goal": "RC-057"
+    },
+    {
+      "module": "pycodeagent/traces/render.py",
+      "owner": "trace-contract-maintainers",
+      "repository_consumers": [
+        "pycodeagent/traces/__init__.py",
+        "pycodeagent/testing/multi_agent_mock_golden.py",
+        "tests/test_multi_agent_scaffold_contracts.py",
+        "PYCODEAGENT_MULTI_AGENT_SCAFFOLD_DESIGN.md"
+      ],
+      "decision_evidence_consumers": [
+        "pycodeagent/traces/__init__.py",
+        "pycodeagent/testing/multi_agent_mock_golden.py",
+        "tests/test_multi_agent_scaffold_contracts.py",
+        "PYCODEAGENT_MULTI_AGENT_SCAFFOLD_DESIGN.md"
+      ],
+      "contract_value": "Canonical-trace to ToolView-projected schema-following sample renderer used by the reproducible multi-agent golden.",
+      "replacement": "None; this is the current implementation of the long-term AugmentationRenderer boundary.",
+      "external_import_risk": "Public trace export is supported by an active repository consumer and mainline golden verification.",
+      "disposition": "keep",
+      "implementation_status": "active",
+      "child_goal": null
+    }
+  ]
+}

@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from pycodeagent.rl.native_transformed_rl_dataset import (
+from pycodeagent.auxiliary.native_transformed.rl_dataset import (
     export_native_transformed_rl_dataset,
 )
 

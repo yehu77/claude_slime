@@ -1,8 +1,9 @@
-"""Synthetic schema-following dataset generation.
+"""Compatibility implementation for synthetic schema-following baselines.
 
 This path intentionally remains text-rendered because the training target is a
 serialized tool-call block, not a live runtime provider exchange. It is not a
-runtime-mainline transport contract.
+runtime-mainline transport contract. New callers should import its public API
+from :mod:`pycodeagent.baselines`.
 """
 
 from __future__ import annotations
@@ -502,6 +503,8 @@ def generate_synthetic_schema_following_data(
         dataset_manifest_path,
         {
             "dataset_type": "schema_following_synthetic",
+            "route_role": "controlled_baseline",
+            "artifact_owner": "pycodeagent.baselines",
             "version": 1,
             "seed": seed,
             "family": family,

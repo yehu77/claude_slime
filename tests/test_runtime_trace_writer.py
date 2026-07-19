@@ -40,6 +40,8 @@ def test_runtime_trace_writer_creates_manifest_and_event_log() -> None:
         assert manifest["tool_profile_id"] == "base"
         assert manifest["payload_dir"] == "payloads"
         assert manifest["event_log_path"] == "runtime_trace.jsonl"
+        assert manifest["retention"]["purpose_class"] == "unclassified_hold"
+        assert manifest["retention"]["index_path"] == "retained-run.index.jsonl"
         assert (tmp_path / "runtime_trace.jsonl").exists()
         assert (tmp_path / "payloads").is_dir()
 

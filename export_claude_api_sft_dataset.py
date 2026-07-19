@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from pycodeagent.rl.claude_api_sft_dataset import build_claude_api_sft_dataset
+from pycodeagent.auxiliary.claude_api.sft_dataset import build_claude_api_sft_dataset
 
 
 def _build_parser() -> argparse.ArgumentParser:

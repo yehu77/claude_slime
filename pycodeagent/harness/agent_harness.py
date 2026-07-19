@@ -9,6 +9,11 @@ from pydantic import BaseModel
 
 from pycodeagent.adapters.base import AgentRunContext, ToolCatalogProvider
 from pycodeagent.env.task import CodingTask
+from pycodeagent.runtime_trace.retention import (
+    DEFAULT_RETENTION_CLASS,
+    DEFAULT_RETENTION_OWNER,
+    RunRetentionTracker,
+)
 from pycodeagent.traces import (
     AgentToolCatalog,
     NormalizationResult,
@@ -55,8 +60,22 @@ class AgentHarness:
         *,
         output_dir: str | Path,
         run_id: str,
+        retention_class: str = DEFAULT_RETENTION_CLASS,
+        retention_owner: str = DEFAULT_RETENTION_OWNER,
     ) -> HarnessRunResult:
         bundle = create_run_bundle_paths(output_dir, run_id=run_id)
+        retention_tracker = RunRetentionTracker.create_or_resume(
+            bundle.run_dir,
+            run_id=run_id,
+            task_id=task.task_id,
+            purpose_class=retention_class,
+            owner=retention_owner,
+            risk_labels=(
+                "raw_provider_content",
+                "raw_trace_content",
+                "workspace_snapshot_content",
+            ),
+        )
         materialize_workspace(task, bundle.workspace_dir)
         write_task_artifact(task, bundle.task_json_path)
 
@@ -92,6 +111,7 @@ class AgentHarness:
             ),
             encoding="utf-8",
         )
+        retention_tracker.finalize()
 
         return HarnessRunResult(
             run_artifacts=run_result,

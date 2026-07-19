@@ -1,0 +1,57 @@
+{
+  "schema": "pycodeagent-vendor-baseline-report/v1",
+  "vendor_id": "thudm-slime",
+  "generated_at": "2026-07-18",
+  "source_lock": "references/slime-upstream.lock.json",
+  "comparison": {
+    "method": "official full-commit archive compared path-by-path against the tracked vendor tree",
+    "upstream_commit": "16924b697e86adab96eded3a3d0bf6098a943bb4",
+    "upstream_entry_count": 465,
+    "tracked_vendor_entry_count": 474,
+    "upstream_tree_sha256": "64f378f4a0e32102fd82d6e95e07fefcd502bf1ffc4332c3365b3258a87d5835"
+  },
+  "classification": {
+    "unchanged_upstream_entries": 465,
+    "modified_upstream_paths": [],
+    "missing_upstream_paths": [],
+    "portable_materialization": [
+      {
+        "path": ".agents/skills",
+        "upstream_type": "symlink",
+        "upstream_target": "../.claude/skills",
+        "vendor_type": "regular link-target placeholder"
+      }
+    ],
+    "overlay_candidate_paths": [
+      "VENDORING.md",
+      "examples/pycodeagent_offline/README.md",
+      "examples/pycodeagent_offline/convert_qwen3_0p6b_to_torch_dist.sh",
+      "examples/pycodeagent_offline/run_qwen3_0p6b_native_transformed_rl_smoke.sh",
+      "examples/pycodeagent_offline/run_qwen3_0p6b_native_transformed_smoke.sh",
+      "examples/pycodeagent_offline/run_qwen3_0p6b_offline.sh",
+      "examples/pycodeagent_offline/run_qwen3_4b_offline.sh",
+      "slime/rollout/pycodeagent_native_rl.py",
+      "slime/rollout/pycodeagent_offline.py"
+    ],
+    "unknown_source_paths": [],
+    "ignored_ephemeral_observation": {
+      "count": 41,
+      "pattern": "**/__pycache__/*.pyc",
+      "tracked": false
+    }
+  },
+  "working_tree_observation": {
+    "observed_at": "2026-07-18",
+    "modified_overlay_paths": [
+      "slime/rollout/pycodeagent_native_rl.py"
+    ],
+    "diff_summary": "2 lines added, 2 lines removed; auxiliary namespace migration",
+    "preservation_rule": "RC-047 did not rewrite, restore, or sync any slime-main file"
+  },
+  "boundary": {
+    "rc_047_result": "upstream provenance and upstream-only checksum are frozen",
+    "rc_048_result": "all nine overlay paths have owner/reason/mode/checksum records and deterministic reconstruction verification",
+    "overlay_manifest": "references/slime-overlay.manifest.json",
+    "overlay_candidates_are_final_manifest": true
+  }
+}

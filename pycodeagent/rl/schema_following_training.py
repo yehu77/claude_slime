@@ -2,35 +2,22 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field
-
 from pycodeagent.rl.loss_mask import build_loss_mask
+from pycodeagent.rl.prepared_sample import (
+    PreparedSample,
+    read_prepared_samples,
+    write_prepared_samples,
+)
 from pycodeagent.rl.schema_following import SchemaFollowingSample
 from pycodeagent.rl.schema_following_dataset import read_schema_following_jsonl
 from pycodeagent.rl.serializer import serialize_schema_following_sample
 
 
-class SchemaFollowingPreparedSample(BaseModel):
-    """Schema-following sample after serialization and mask construction."""
-
-    sample_id: str
-    sample_type: str
-    source_type: str
-    split: str
-    task_id: str
-    tool_profile_id: str
-    mutation_category: str
-    loss_mask_policy: str
-    text: str
-    segments: list[dict[str, Any]]
-    character_mask: list[int]
-    spans: list[dict[str, Any]]
-    trainable_char_count: int
-    metadata: dict[str, Any] = Field(default_factory=dict)
+# Compatibility name for callers that predate the unified RC-041 contract.
+SchemaFollowingPreparedSample = PreparedSample
 
 
 def load_schema_following_split(
@@ -63,7 +50,7 @@ def build_schema_following_prepared_sample(
         task_id=serialized.task_id,
         tool_profile_id=serialized.tool_profile_id,
         mutation_category=serialized.mutation_category,
-        loss_mask_policy=serialized.loss_mask_policy,
+        loss_mask_policy="assistant_tool_call_only",
         text=serialized.text,
         segments=[segment.model_dump(mode="json") for segment in serialized.segments],
         character_mask=loss_mask.character_mask,
@@ -85,30 +72,11 @@ def write_schema_following_prepared_samples(
     path: str | Path,
 ) -> None:
     """Write prepared schema-following samples to JSONL."""
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as handle:
-        for sample in samples:
-            handle.write(
-                json.dumps(
-                    sample.model_dump(mode="json"),
-                    sort_keys=True,
-                    ensure_ascii=False,
-                )
-            )
-            handle.write("\n")
+    write_prepared_samples(samples, path)
 
 
 def read_schema_following_prepared_samples(
     path: str | Path,
 ) -> list[SchemaFollowingPreparedSample]:
     """Read prepared schema-following samples from JSONL."""
-    path = Path(path)
-    records: list[SchemaFollowingPreparedSample] = []
-    with open(path, encoding="utf-8") as handle:
-        for raw_line in handle:
-            line = raw_line.strip()
-            if not line:
-                continue
-            records.append(SchemaFollowingPreparedSample.model_validate(json.loads(line)))
-    return records
+    return read_prepared_samples(path)

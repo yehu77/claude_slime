@@ -338,9 +338,11 @@ class TestBuildTrainingSampleEdgeCases:
 
         sample = build_training_sample(traj)
         assert sample.status == "timeout"
-        # The assistant content and tool call should be trainable
+        # RC-041 trains only the assistant tool-call target.
         trainable_segs = [s for s in sample.segments if s["trainable"]]
-        assert len(trainable_segs) == 2  # assistant + assistant_tool_call
+        assert [segment["kind"] for segment in trainable_segs] == [
+            "assistant_tool_call"
+        ]
 
 
 class TestEndToEndIntegration:
@@ -426,12 +428,9 @@ class TestEndToEndIntegration:
             for i in range(span["start"], span["end"]):
                 assert sample.character_mask[i] == expected
 
-        # Verify trainable content is only assistant
+        # Verify the unique PreparedSample target policy.
         for seg in sample.segments:
-            if seg["kind"] in ("assistant", "assistant_tool_call"):
-                assert seg["trainable"] is True
-            else:
-                assert seg["trainable"] is False
+            assert seg["trainable"] is (seg["kind"] == "assistant_tool_call")
 
         # Verify metadata
         assert sample.metadata["repo"] == "examples/buggy_calculator"

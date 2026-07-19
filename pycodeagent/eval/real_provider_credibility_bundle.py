@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import shutil
 from collections import Counter
 from pathlib import Path
 from typing import Any, Callable
@@ -16,7 +15,6 @@ from pycodeagent.agent.provider_runtime import (
     build_llm_client,
     resolve_runtime_provider_config,
 )
-from pycodeagent.env.coding_env import run_coding_task
 from pycodeagent.env.task import CodingTask
 from pycodeagent.eval.real_provider_behavior_baseline import (
     build_behavior_baseline_summary,
@@ -27,17 +25,13 @@ from pycodeagent.eval.runtime_behavior_audit import (
     RuntimeBehaviorAudit,
     build_runtime_behavior_audit,
 )
+from pycodeagent.eval.run_campaign import execute_profile_run_campaigns
 from pycodeagent.eval.runtime_observed_postrun import (
     RuntimeObservedStudyBundleResult,
     prepare_study_runtime_observed_bundle,
 )
-from pycodeagent.mutations.profile_sampler import ToolProfileSampler
 from pycodeagent.rl.dataset_manifest import FilterConfig
-from pycodeagent.tools.bootstrap import (
-    ToolStackKind,
-    build_native_claude_runtime,
-    build_native_codex_runtime,
-)
+from pycodeagent.tools.bootstrap import ToolStackKind
 
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -71,6 +65,7 @@ class RealProviderCredibilityBundleResult(BaseModel):
     source_runs_root: str
     tasks_path: str | None = None
     provider: dict[str, Any] = Field(default_factory=dict)
+    tool_stack_kind: ToolStackKind
     profile_modes: list[str] = Field(default_factory=list)
     profile_seed_by_mode: dict[str, int] = Field(default_factory=dict)
     repeat_count: int
@@ -91,6 +86,9 @@ class RealProviderCredibilityBundleResult(BaseModel):
     credibility_summary_path: str
     credibility_manifest_path: str
     credibility_gates_path: str
+    campaign_group_spec_path: str | None = None
+    campaign_group_manifest_path: str | None = None
+    campaign_contract_ok: bool | None = None
 
 
 def run_real_provider_credibility_bundle(
@@ -172,15 +170,20 @@ def run_provider_credibility_bundle(
     output_root = Path(output_root)
     source_runs_root = output_root / "runs"
     source_runs_root.mkdir(parents=True, exist_ok=True)
-
-    _materialize_credibility_source_runs(
-        tasks,
-        client_factory,
-        source_runs_root,
-        profile_modes=profile_modes,
-        profile_seed_by_mode=profile_seed_by_mode,
+    normalized_modes = [str(mode) for mode in profile_modes]
+    normalized_profile_seeds = _normalized_profile_seed_by_mode(
+        normalized_modes,
+        profile_seed_by_mode,
+    )
+    campaign_result = execute_profile_run_campaigns(
+        campaign_id="real_provider_credibility_bundle",
+        tasks=tasks,
+        client_factory=client_factory,
+        output_root=source_runs_root,
+        profile_seed_by_mode=normalized_profile_seeds,
         repeat_count=repeat_count,
         tool_stack_kind=tool_stack_kind,
+        provider=provider,
     )
     return build_real_provider_credibility_bundle_from_runs(
         source_runs_root,
@@ -202,6 +205,9 @@ def run_provider_credibility_bundle(
         tokenizer_config=tokenizer_config,
         fake_tokenizer_config=fake_tokenizer_config,
         run_id=run_id,
+        campaign_group_spec_path=campaign_result.spec_path,
+        campaign_group_manifest_path=campaign_result.manifest_path,
+        campaign_contract_ok=campaign_result.contract_ok,
     )
 
 
@@ -226,6 +232,9 @@ def build_real_provider_credibility_bundle_from_runs(
     tokenizer_config: Any | None = None,
     fake_tokenizer_config: Any | None = None,
     run_id: str = "real_provider_credibility_bundle",
+    campaign_group_spec_path: str | Path | None = None,
+    campaign_group_manifest_path: str | Path | None = None,
+    campaign_contract_ok: bool | None = None,
 ) -> RealProviderCredibilityBundleResult:
     """Build credibility reports and nested observed bundle from existing source runs."""
     source_runs_root = Path(source_runs_root)
@@ -252,6 +261,7 @@ def build_real_provider_credibility_bundle_from_runs(
         task_count=_count_unique_tasks(behavior_audit),
         tasks_path=tasks_path,
         provider=normalized_provider,
+        tool_stack_kind=tool_stack_kind,
     )
     behavior_summary_path = output_root / "behavior_baseline_summary.json"
     _write_json(behavior_summary_path, behavior_summary.model_dump(mode="json"))
@@ -295,7 +305,9 @@ def build_real_provider_credibility_bundle_from_runs(
         runtime_observed_bundle=runtime_observed_bundle,
         configured_modes=normalized_modes,
     )
-    contract_ok = all(gate.passed for gate in gates.values())
+    contract_ok = all(gate.passed for gate in gates.values()) and (
+        campaign_contract_ok is not False
+    )
 
     credibility_summary = {
         "version": 1,
@@ -343,6 +355,17 @@ def build_real_provider_credibility_bundle_from_runs(
         "runs_with_no_tool_progress": behavior_summary.runs_with_no_tool_progress,
         "runs_with_schema_malformed": behavior_summary.runs_with_schema_malformed,
         "runs_with_parse_error": behavior_summary.runs_with_parse_error,
+        "campaign_group_spec_path": (
+            str(campaign_group_spec_path)
+            if campaign_group_spec_path is not None
+            else None
+        ),
+        "campaign_group_manifest_path": (
+            str(campaign_group_manifest_path)
+            if campaign_group_manifest_path is not None
+            else None
+        ),
+        "campaign_contract_ok": campaign_contract_ok,
         "contract_ok": contract_ok,
     }
     credibility_summary_path = output_root / "real_provider_credibility_summary.json"
@@ -375,7 +398,18 @@ def build_real_provider_credibility_bundle_from_runs(
             "credibility_gates_path": str(
                 output_root / "real_provider_credibility_gates.json"
             ),
+            "campaign_group_spec_path": (
+                str(campaign_group_spec_path)
+                if campaign_group_spec_path is not None
+                else None
+            ),
+            "campaign_group_manifest_path": (
+                str(campaign_group_manifest_path)
+                if campaign_group_manifest_path is not None
+                else None
+            ),
         },
+        "campaign_contract_ok": campaign_contract_ok,
     }
     credibility_manifest_path = output_root / "real_provider_credibility_manifest.json"
     _write_json(credibility_manifest_path, credibility_manifest)
@@ -396,6 +430,7 @@ def build_real_provider_credibility_bundle_from_runs(
         source_runs_root=str(source_runs_root),
         tasks_path=(str(tasks_path) if tasks_path is not None else None),
         provider=normalized_provider,
+        tool_stack_kind=tool_stack_kind,
         profile_modes=normalized_modes,
         profile_seed_by_mode=normalized_profile_seeds,
         repeat_count=repeat_count,
@@ -422,71 +457,18 @@ def build_real_provider_credibility_bundle_from_runs(
         credibility_summary_path=str(credibility_summary_path),
         credibility_manifest_path=str(credibility_manifest_path),
         credibility_gates_path=str(credibility_gates_path),
+        campaign_group_spec_path=(
+            str(campaign_group_spec_path)
+            if campaign_group_spec_path is not None
+            else None
+        ),
+        campaign_group_manifest_path=(
+            str(campaign_group_manifest_path)
+            if campaign_group_manifest_path is not None
+            else None
+        ),
+        campaign_contract_ok=campaign_contract_ok,
     )
-
-
-def _materialize_credibility_source_runs(
-    tasks: list[CodingTask],
-    client_factory: Callable[[CodingTask, str, int], BaseLLMClient],
-    source_runs_root: Path,
-    *,
-    profile_modes: list[str] | tuple[str, ...],
-    profile_seed_by_mode: dict[str, int] | None,
-    repeat_count: int,
-    tool_stack_kind: ToolStackKind,
-) -> None:
-    family = "claude" if tool_stack_kind == "native_claude" else "codex"
-    if tool_stack_kind == "native_claude":
-        _, _, runtime = build_native_claude_runtime()
-    else:
-        _, _, runtime = build_native_codex_runtime()
-    normalized_modes = [str(mode) for mode in profile_modes]
-    normalized_profile_seeds = _normalized_profile_seed_by_mode(
-        normalized_modes,
-        profile_seed_by_mode,
-    )
-
-    for mode in normalized_modes:
-        profile_seed = normalized_profile_seeds[mode]
-        expected_profile = ToolProfileSampler(
-            seed=profile_seed,
-            family=family,
-        ).sample(mode)
-        profile_id = expected_profile.profile_id
-        for task in tasks:
-            for repeat_index in range(repeat_count):
-                run_dir = source_runs_root / _source_run_dir_name(
-                    task.task_id,
-                    mode,
-                    repeat_index,
-                    profile_id,
-                )
-                if run_dir.exists():
-                    shutil.rmtree(run_dir)
-                client = client_factory(task, mode, repeat_index)
-                trajectory = run_coding_task(
-                    task,
-                    client,
-                    run_dir,
-                    runtime=runtime,
-                    profile_mode=mode,
-                    profile_seed=profile_seed,
-                    tool_stack_kind=tool_stack_kind,
-                )
-                if trajectory.tool_profile_id != profile_id:
-                    raise ValueError(
-                        "Runtime returned unexpected tool_profile_id for credibility source run: "
-                        f"expected {profile_id}, got {trajectory.tool_profile_id}"
-                    )
-
-
-def _source_run_dir_name(
-    task_id: str,
-    mode: str,
-    repeat_index: int,
-    profile_id: str,
-) -> str:
-    return f"{task_id}__{mode}__rep_{repeat_index:02d}__{profile_id}"
 
 
 def _normalized_profile_seed_by_mode(

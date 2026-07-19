@@ -1,0 +1,60 @@
+name: Mainline Tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  offline-mainline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install mainline test dependencies
+        run: >-
+          python -m pip install
+          "pytest>=8,<9"
+          "pydantic>=2,<3"
+          "PyYAML>=6,<7"
+          "httpx>=0.27,<1"
+      - name: Run offline mainline gates
+        run: >-
+          python -B -m pytest -q --strict-markers -m mainline
+          tests/test_native_runtime_mainline.py
+          tests/test_runtime_observed_mainline.py
+          tests/test_task_pack_integrity.py
+          tests/test_realistic_task_consumers.py
+          tests/test_route_boundaries.py
+          tests/test_package_public_api.py
+          tests/test_multi_agent_scaffold_contracts.py
+          tests/test_compaction_contract.py
+          tests/test_repository_cleanup_decisions.py
+          tests/test_command_policy_decision.py
+          tests/test_command_safety_retirement.py
+          tests/test_training_prep_characterization.py
+          tests/test_prepared_sample_contract.py
+          tests/test_training_bundle.py
+          tests/test_run_campaign.py
+          tests/test_formal_cli.py
+          tests/test_root_wrapper_disposition.py
+          tests/test_docs_taxonomy.py
+          tests/test_codex_reference_lock.py
+          tests/test_slime_upstream_lock.py
+          tests/test_slime_overlay_manifest.py
+          tests/test_runs_inventory.py
+          tests/test_runs_retention.py
+          tests/test_runs_archive.py
+          tests/test_run_retention_enforcement.py
+          tests/test_legacy_study_boundary.py
+          tests/test_local_ignored_assets.py

@@ -6,23 +6,22 @@ from pathlib import Path
 
 import pytest
 
-from pycodeagent.rl import (
-    FakeTokenizerAdapter,
-    FakeTokenizerConfig,
+from pycodeagent.rl.slime_bridge import (
     build_tokenized_slime_train_samples,
     is_tokenized_training_path,
     load_bundle_tokenizer_config,
     load_prepared_rollout_bundle,
     map_run_status_to_slime_status,
-    prepare_slime_training_input,
     resolve_tokenized_jsonl_path,
     rollout_to_slime_train_sample,
-    tensorize_rollout,
     tokenized_example_to_slime_train_sample,
-    trajectory_to_slime_rollout,
 )
-from pycodeagent.rl.tensorize import TokenizedExample
+from pycodeagent.rl.slime_rollout import trajectory_to_slime_rollout
+from pycodeagent.rl.tensorize import TokenizedExample, tensorize_rollout
+from pycodeagent.rl.tokenizer import FakeTokenizerAdapter
+from pycodeagent.rl.tokenizer_config import FakeTokenizerConfig
 from pycodeagent.rl.train_dataset import TrainDataset
+from pycodeagent.rl.training_prep import prepare_slime_training_input
 from pycodeagent.testing import cleanup_test_path, make_unique_test_dir
 from pycodeagent.trajectory.schema import (
     Message,

@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
 from typing import Any
 
 from pycodeagent.adapters.base import AgentRunContext, ToolCatalogProvider
+from pycodeagent.adapters.workspace_digest import (
+    WORKSPACE_DIGEST_ALGORITHM,
+    WORKSPACE_DIGEST_VERSION,
+    compute_workspace_digest,
+)
 from pycodeagent.env.task import CodingTask
 from pycodeagent.tools.families import build_claude_canonical_registry
 from pycodeagent.tools.profile_factory import build_native_claude_profile
@@ -23,7 +27,6 @@ from pycodeagent.traces.raw_trace import (
     RawAgentTrace,
     RawEvent,
     RawTraceSummary,
-    read_raw_trace,
     write_raw_trace,
 )
 from pycodeagent.traces.tool_catalog import AgentToolCatalog, CatalogToolEntry, write_tool_catalog
@@ -59,7 +62,7 @@ class MockAdapter:
                 write_tool_catalog(catalog, context.run_dir / "tool_catalog.json")
             )
 
-        before_hash = hash_workspace(context.workspace_dir)
+        before_hash = compute_workspace_digest(context.workspace_dir)
         trace = generate_synthetic_raw_trace(
             task=task,
             agent_name=self.agent_id(),
@@ -89,13 +92,15 @@ class MockAdapter:
                     "agent_id": self.agent_id(),
                     "agent_version": self.agent_version(),
                     "tool_catalog_emitted": self._emit_tool_catalog,
+                    "workspace_digest_algorithm": WORKSPACE_DIGEST_ALGORITHM,
+                    "workspace_digest_version": WORKSPACE_DIGEST_VERSION,
                 },
                 indent=2,
                 ensure_ascii=False,
             ),
             encoding="utf-8",
         )
-        after_hash = hash_workspace(context.workspace_dir)
+        after_hash = compute_workspace_digest(context.workspace_dir)
         return RawAgentRunResult(
             run_id=context.run_id,
             task_id=task.task_id,
@@ -111,7 +116,11 @@ class MockAdapter:
             verifier_result_path=str(verifier_path),
             workspace_before_hash=before_hash,
             workspace_after_hash=after_hash,
-            metadata={"trace_id": trace.trace_id},
+            metadata={
+                "trace_id": trace.trace_id,
+                "workspace_digest_algorithm": WORKSPACE_DIGEST_ALGORITHM,
+                "workspace_digest_version": WORKSPACE_DIGEST_VERSION,
+            },
         )
 
 
@@ -157,10 +166,20 @@ class MockTraceNormalizer:
         tool_catalog: AgentToolCatalog | None = None,
     ) -> NormalizationResult:
         events_by_id = {event.event_id: event for event in raw_trace.events}
+        agent_command_children: dict[str, list[RawEvent]] = {}
+        for event in raw_trace.events:
+            if (
+                event.event_kind == "command_exec"
+                and event.parsed_payload.get("command_role") == "agent_command"
+                and event.parent_event_id is not None
+            ):
+                agent_command_children.setdefault(event.parent_event_id, []).append(event)
+
         actions: list[CanonicalAction] = []
         mapped_events: list[str] = []
         unmapped_events: list[str] = []
         warnings: list[str] = []
+        represented_command_event_ids: set[str] = set()
 
         for event in raw_trace.events:
             if event.event_kind == "tool_call":
@@ -178,23 +197,29 @@ class MockTraceNormalizer:
                     unmapped_events.append(event.event_id)
                     warnings.append(f"Failed to normalize {event.event_id}: {exc}")
                     continue
+                raw_event_refs = [event.event_id]
+                for command_event in agent_command_children.get(event.event_id, []):
+                    raw_event_refs.append(command_event.event_id)
+                    represented_command_event_ids.add(command_event.event_id)
                 actions.append(
                     CanonicalAction(
                         action_id=f"action_{len(actions) + 1}",
                         capability=view.canonical_name.upper(),
                         canonical_args=canonical_args,
-                        raw_event_refs=[event.event_id],
+                        raw_event_refs=raw_event_refs,
                         raw_tool_name=tool_name,
                         metadata={"tool_call_event_id": event.event_id},
                     )
                 )
-                mapped_events.append(event.event_id)
+                mapped_events.extend(raw_event_refs)
                 continue
 
             if event.event_kind == "command_exec":
                 role = event.parsed_payload.get("command_role")
                 if role != "agent_command":
                     unmapped_events.append(event.event_id)
+                    continue
+                if event.event_id in represented_command_event_ids:
                     continue
                 parent_id = event.parent_event_id
                 parent = events_by_id.get(parent_id or "")
@@ -207,11 +232,16 @@ class MockTraceNormalizer:
                 parsed = parent.parsed_payload
                 tool_name = str(parsed["tool_name"])
                 arguments = dict(parsed.get("arguments", {}))
-                view, canonical_args = self._profile.map_call_arguments(
-                    tool_name,
-                    arguments,
-                    canonical_tool=self._registry.get("Bash"),
-                )
+                try:
+                    view, canonical_args = self._profile.map_call_arguments(
+                        tool_name,
+                        arguments,
+                        canonical_tool=self._registry.get("Bash"),
+                    )
+                except Exception as exc:
+                    unmapped_events.append(event.event_id)
+                    warnings.append(f"Failed to normalize {event.event_id}: {exc}")
+                    continue
                 actions.append(
                     CanonicalAction(
                         action_id=f"action_{len(actions) + 1}",
@@ -452,32 +482,6 @@ def generate_synthetic_raw_trace(
         ),
         events=events,
     )
-
-
-def read_mock_raw_trace(run_result: RawAgentRunResult) -> RawAgentTrace:
-    """Load the raw trace referenced by a run result."""
-    if run_result.raw_trace_path is None or run_result.raw_trace_summary_path is None:
-        raise ValueError("Run result is missing raw trace artifact paths")
-    return read_raw_trace(run_result.raw_trace_path, run_result.raw_trace_summary_path)
-
-
-def hash_workspace(workspace_dir: Path) -> str:
-    """Create a deterministic hash for the workspace tree."""
-    digest = hashlib.sha256()
-    if not workspace_dir.exists():
-        digest.update(b"<missing>")
-        return digest.hexdigest()
-
-    for path in sorted(workspace_dir.rglob("*")):
-        relative = path.relative_to(workspace_dir).as_posix().encode("utf-8")
-        digest.update(relative)
-        digest.update(b"\0")
-        if path.is_file():
-            digest.update(path.read_bytes())
-        else:
-            digest.update(b"<dir>")
-        digest.update(b"\0")
-    return digest.hexdigest()
 
 
 def _default_mock_plan(task: CodingTask) -> list[dict[str, Any]]:

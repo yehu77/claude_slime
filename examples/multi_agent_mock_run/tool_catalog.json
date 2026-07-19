@@ -1,0 +1,673 @@
+{
+  "schema_version": 1,
+  "catalog_id": "mock_agent__phase1_multi_agent_mock_task__catalog",
+  "agent_name": "mock_agent",
+  "agent_version": "v1",
+  "capture_mode": "synthetic",
+  "source_kind": "mock_provider",
+  "captured_at": null,
+  "tools": [
+    {
+      "raw_tool_name": "Bash",
+      "description": "Execute a shell command in Bash.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string"
+          },
+          "timeout": {
+            "type": "number"
+          },
+          "description": {
+            "type": "string"
+          },
+          "run_in_background": {
+            "type": "boolean"
+          },
+          "dangerouslyDisableSandbox": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "command"
+        ],
+        "additionalProperties": false
+      },
+      "contract_kind": "function",
+      "input_format": null,
+      "output_format_hint": "text",
+      "availability_conditions": {},
+      "tool_family": "Bash",
+      "canonical_name": "Bash",
+      "version": "Bash_v1",
+      "metadata": {
+        "canonical_name": "Bash",
+        "exposed_name": "Bash"
+      }
+    },
+    {
+      "raw_tool_name": "Read",
+      "description": "Read a file from the workspace using Claude-style semantics.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "file_path": {
+            "type": "string"
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "pages": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "file_path"
+        ],
+        "additionalProperties": false
+      },
+      "contract_kind": "function",
+      "input_format": null,
+      "output_format_hint": "text",
+      "availability_conditions": {},
+      "tool_family": "Read",
+      "canonical_name": "Read",
+      "version": "Read_v1",
+      "metadata": {
+        "canonical_name": "Read",
+        "exposed_name": "Read"
+      }
+    },
+    {
+      "raw_tool_name": "Edit",
+      "description": "Edit a file by replacing exact text.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "file_path": {
+            "type": "string"
+          },
+          "old_string": {
+            "type": "string"
+          },
+          "new_string": {
+            "type": "string"
+          },
+          "replace_all": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "file_path",
+          "old_string",
+          "new_string"
+        ],
+        "additionalProperties": false
+      },
+      "contract_kind": "function",
+      "input_format": null,
+      "output_format_hint": "text",
+      "availability_conditions": {},
+      "tool_family": "Edit",
+      "canonical_name": "Edit",
+      "version": "Edit_v1",
+      "metadata": {
+        "canonical_name": "Edit",
+        "exposed_name": "Edit"
+      }
+    },
+    {
+      "raw_tool_name": "Write",
+      "description": "Write full file contents.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "file_path": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "file_path",
+          "content"
+        ],
+        "additionalProperties": false
+      },
+      "contract_kind": "function",
+      "input_format": null,
+      "output_format_hint": "text",
+      "availability_conditions": {},
+      "tool_family": "Write",
+      "canonical_name": "Write",
+      "version": "Write_v1",
+      "metadata": {
+        "canonical_name": "Write",
+        "exposed_name": "Write"
+      }
+    },
+    {
+      "raw_tool_name": "Grep",
+      "description": "Regex-aware code search with Claude-style parameters.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "pattern": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "glob": {
+            "type": "string"
+          },
+          "output_mode": {
+            "type": "string",
+            "enum": [
+              "content",
+              "files_with_matches",
+              "count"
+            ]
+          },
+          "-B": {
+            "type": "number"
+          },
+          "-A": {
+            "type": "number"
+          },
+          "-C": {
+            "type": "number"
+          },
+          "context": {
+            "type": "number"
+          },
+          "-n": {
+            "type": "boolean"
+          },
+          "-i": {
+            "type": "boolean"
+          },
+          "type": {
+            "type": "string"
+          },
+          "head_limit": {
+            "type": "number"
+          },
+          "offset": {
+            "type": "number"
+          },
+          "multiline": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "pattern"
+        ],
+        "additionalProperties": false
+      },
+      "contract_kind": "function",
+      "input_format": null,
+      "output_format_hint": "text",
+      "availability_conditions": {},
+      "tool_family": "Grep",
+      "canonical_name": "Grep",
+      "version": "Grep_v1",
+      "metadata": {
+        "canonical_name": "Grep",
+        "exposed_name": "Grep"
+      }
+    },
+    {
+      "raw_tool_name": "Glob",
+      "description": "Match workspace paths with a glob pattern.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "pattern": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "pattern"
+        ],
+        "additionalProperties": false
+      },
+      "contract_kind": "function",
+      "input_format": null,
+      "output_format_hint": "text",
+      "availability_conditions": {},
+      "tool_family": "Glob",
+      "canonical_name": "Glob",
+      "version": "Glob_v1",
+      "metadata": {
+        "canonical_name": "Glob",
+        "exposed_name": "Glob"
+      }
+    }
+  ],
+  "metadata": {
+    "tool_profile": {
+      "profile_id": "mock_base",
+      "tools": [
+        {
+          "canonical_name": "Bash",
+          "exposed_name": "Bash",
+          "description": "Execute a shell command in Bash.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "command": {
+                "type": "string"
+              },
+              "timeout": {
+                "type": "number"
+              },
+              "description": {
+                "type": "string"
+              },
+              "run_in_background": {
+                "type": "boolean"
+              },
+              "dangerouslyDisableSandbox": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "command"
+            ],
+            "additionalProperties": false
+          },
+          "contract_kind": "function",
+          "input_format": null,
+          "version": "Bash_v1",
+          "metadata": {
+            "family": "claude",
+            "source_runtime": "claude_shell",
+            "native_tool_name": "Bash",
+            "native_name": "Bash",
+            "native_profile_kind": "native_claude",
+            "mutation_source_family": "claude",
+            "canonical_mapping_status": "native_identity_not_canonicalized",
+            "transformation_mode": "base",
+            "name_mutated": false,
+            "description_mutated": false,
+            "schema_mutated": false,
+            "tool_order_index_base": 0,
+            "tool_order_index_exposed": 0,
+            "tool_reordered": false,
+            "name_variant_id": "Bash_name_native_base",
+            "description_variant_id": "Bash_description_native_base",
+            "schema_variant_id": "Bash_schema_native_base",
+            "schema_variant_category": null
+          }
+        },
+        {
+          "canonical_name": "Read",
+          "exposed_name": "Read",
+          "description": "Read a file from the workspace using Claude-style semantics.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "file_path": {
+                "type": "string"
+              },
+              "offset": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "pages": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "file_path"
+            ],
+            "additionalProperties": false
+          },
+          "contract_kind": "function",
+          "input_format": null,
+          "version": "Read_v1",
+          "metadata": {
+            "family": "claude",
+            "source_runtime": "claude_file",
+            "native_tool_name": "Read",
+            "native_name": "Read",
+            "native_profile_kind": "native_claude",
+            "mutation_source_family": "claude",
+            "canonical_mapping_status": "native_identity_not_canonicalized",
+            "transformation_mode": "base",
+            "name_mutated": false,
+            "description_mutated": false,
+            "schema_mutated": false,
+            "tool_order_index_base": 1,
+            "tool_order_index_exposed": 1,
+            "tool_reordered": false,
+            "name_variant_id": "Read_name_native_base",
+            "description_variant_id": "Read_description_native_base",
+            "schema_variant_id": "Read_schema_native_base",
+            "schema_variant_category": null
+          }
+        },
+        {
+          "canonical_name": "Edit",
+          "exposed_name": "Edit",
+          "description": "Edit a file by replacing exact text.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "file_path": {
+                "type": "string"
+              },
+              "old_string": {
+                "type": "string"
+              },
+              "new_string": {
+                "type": "string"
+              },
+              "replace_all": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "file_path",
+              "old_string",
+              "new_string"
+            ],
+            "additionalProperties": false
+          },
+          "contract_kind": "function",
+          "input_format": null,
+          "version": "Edit_v1",
+          "metadata": {
+            "family": "claude",
+            "source_runtime": "claude_file",
+            "native_tool_name": "Edit",
+            "native_name": "Edit",
+            "native_profile_kind": "native_claude",
+            "mutation_source_family": "claude",
+            "canonical_mapping_status": "native_identity_not_canonicalized",
+            "transformation_mode": "base",
+            "name_mutated": false,
+            "description_mutated": false,
+            "schema_mutated": false,
+            "tool_order_index_base": 2,
+            "tool_order_index_exposed": 2,
+            "tool_reordered": false,
+            "name_variant_id": "Edit_name_native_base",
+            "description_variant_id": "Edit_description_native_base",
+            "schema_variant_id": "Edit_schema_native_base",
+            "schema_variant_category": null
+          }
+        },
+        {
+          "canonical_name": "Write",
+          "exposed_name": "Write",
+          "description": "Write full file contents.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "file_path": {
+                "type": "string"
+              },
+              "content": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "file_path",
+              "content"
+            ],
+            "additionalProperties": false
+          },
+          "contract_kind": "function",
+          "input_format": null,
+          "version": "Write_v1",
+          "metadata": {
+            "family": "claude",
+            "source_runtime": "claude_file",
+            "native_tool_name": "Write",
+            "native_name": "Write",
+            "native_profile_kind": "native_claude",
+            "mutation_source_family": "claude",
+            "canonical_mapping_status": "native_identity_not_canonicalized",
+            "transformation_mode": "base",
+            "name_mutated": false,
+            "description_mutated": false,
+            "schema_mutated": false,
+            "tool_order_index_base": 3,
+            "tool_order_index_exposed": 3,
+            "tool_reordered": false,
+            "name_variant_id": "Write_name_native_base",
+            "description_variant_id": "Write_description_native_base",
+            "schema_variant_id": "Write_schema_native_base",
+            "schema_variant_category": null
+          }
+        },
+        {
+          "canonical_name": "Grep",
+          "exposed_name": "Grep",
+          "description": "Regex-aware code search with Claude-style parameters.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "pattern": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "glob": {
+                "type": "string"
+              },
+              "output_mode": {
+                "type": "string",
+                "enum": [
+                  "content",
+                  "files_with_matches",
+                  "count"
+                ]
+              },
+              "-B": {
+                "type": "number"
+              },
+              "-A": {
+                "type": "number"
+              },
+              "-C": {
+                "type": "number"
+              },
+              "context": {
+                "type": "number"
+              },
+              "-n": {
+                "type": "boolean"
+              },
+              "-i": {
+                "type": "boolean"
+              },
+              "type": {
+                "type": "string"
+              },
+              "head_limit": {
+                "type": "number"
+              },
+              "offset": {
+                "type": "number"
+              },
+              "multiline": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "pattern"
+            ],
+            "additionalProperties": false
+          },
+          "contract_kind": "function",
+          "input_format": null,
+          "version": "Grep_v1",
+          "metadata": {
+            "family": "claude",
+            "source_runtime": "claude_search",
+            "native_tool_name": "Grep",
+            "native_name": "Grep",
+            "native_profile_kind": "native_claude",
+            "mutation_source_family": "claude",
+            "canonical_mapping_status": "native_identity_not_canonicalized",
+            "transformation_mode": "base",
+            "name_mutated": false,
+            "description_mutated": false,
+            "schema_mutated": false,
+            "tool_order_index_base": 4,
+            "tool_order_index_exposed": 4,
+            "tool_reordered": false,
+            "name_variant_id": "Grep_name_native_base",
+            "description_variant_id": "Grep_description_native_base",
+            "schema_variant_id": "Grep_schema_native_base",
+            "schema_variant_category": null
+          }
+        },
+        {
+          "canonical_name": "Glob",
+          "exposed_name": "Glob",
+          "description": "Match workspace paths with a glob pattern.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "pattern": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "pattern"
+            ],
+            "additionalProperties": false
+          },
+          "contract_kind": "function",
+          "input_format": null,
+          "version": "Glob_v1",
+          "metadata": {
+            "family": "claude",
+            "source_runtime": "claude_search",
+            "native_tool_name": "Glob",
+            "native_name": "Glob",
+            "native_profile_kind": "native_claude",
+            "mutation_source_family": "claude",
+            "canonical_mapping_status": "native_identity_not_canonicalized",
+            "transformation_mode": "base",
+            "name_mutated": false,
+            "description_mutated": false,
+            "schema_mutated": false,
+            "tool_order_index_base": 5,
+            "tool_order_index_exposed": 5,
+            "tool_reordered": false,
+            "name_variant_id": "Glob_name_native_base",
+            "description_variant_id": "Glob_description_native_base",
+            "schema_variant_id": "Glob_schema_native_base",
+            "schema_variant_category": null
+          }
+        }
+      ],
+      "adapters": {
+        "Bash": {
+          "exposed_to_canonical": {},
+          "defaults": {}
+        },
+        "Read": {
+          "exposed_to_canonical": {},
+          "defaults": {}
+        },
+        "Edit": {
+          "exposed_to_canonical": {},
+          "defaults": {}
+        },
+        "Write": {
+          "exposed_to_canonical": {},
+          "defaults": {}
+        },
+        "Grep": {
+          "exposed_to_canonical": {},
+          "defaults": {}
+        },
+        "Glob": {
+          "exposed_to_canonical": {},
+          "defaults": {}
+        }
+      },
+      "metadata": {
+        "family": "claude",
+        "native_profile_kind": "native_claude",
+        "mutation_source_family": "claude",
+        "profile_origin": "strict_family_canonical_tools",
+        "transformation_mode": "base",
+        "native_schema_snapshot": true,
+        "canonical_mapping_status": "native_identity_not_canonicalized",
+        "tool_order_preserved": true,
+        "mode": "native_family_base",
+        "seed": 0,
+        "mutation_manifest_version": 1,
+        "mutation_axes": [],
+        "compat_mode": null,
+        "reorder_anchor_policy": "preserve_source_order",
+        "tool_order_seed": null,
+        "schema_variant_categories": {
+          "Bash": null,
+          "Read": null,
+          "Edit": null,
+          "Write": null,
+          "Grep": null,
+          "Glob": null
+        },
+        "selected_variant_ids": {
+          "Bash": {
+            "name_variant_id": "Bash_name_native_base",
+            "description_variant_id": "Bash_description_native_base",
+            "schema_variant_id": "Bash_schema_native_base"
+          },
+          "Read": {
+            "name_variant_id": "Read_name_native_base",
+            "description_variant_id": "Read_description_native_base",
+            "schema_variant_id": "Read_schema_native_base"
+          },
+          "Edit": {
+            "name_variant_id": "Edit_name_native_base",
+            "description_variant_id": "Edit_description_native_base",
+            "schema_variant_id": "Edit_schema_native_base"
+          },
+          "Write": {
+            "name_variant_id": "Write_name_native_base",
+            "description_variant_id": "Write_description_native_base",
+            "schema_variant_id": "Write_schema_native_base"
+          },
+          "Grep": {
+            "name_variant_id": "Grep_name_native_base",
+            "description_variant_id": "Grep_description_native_base",
+            "schema_variant_id": "Grep_schema_native_base"
+          },
+          "Glob": {
+            "name_variant_id": "Glob_name_native_base",
+            "description_variant_id": "Glob_description_native_base",
+            "schema_variant_id": "Glob_schema_native_base"
+          }
+        }
+      }
+    }
+  }
+}

@@ -55,7 +55,10 @@ def main(argv: list[str] | None = None) -> int:
                 "visibility": "internal",
                 "evidence_level": "observed",
                 "raw_payload": {},
-                "parsed_payload": {"status": "completed", "wrapper_prompt": prompt},
+                "parsed_payload": {
+                    "execution_status": "completed",
+                    "wrapper_prompt": prompt,
+                },
                 "parent_event_id": None,
                 "artifact_refs": [],
                 "error": None,
@@ -75,14 +78,6 @@ def main(argv: list[str] | None = None) -> int:
                 "task_id": os.environ["PYCODEAGENT_TASK_ID"],
                 "workspace_dir": str(workspace_dir),
                 "tool_catalog_id": None,
-                "status": "completed",
-                "final_diff": "",
-                "verifier_result": {
-                    "passed": True,
-                    "score": 1.0,
-                    "stdout": "",
-                    "stderr": ""
-                },
                 "metadata": {
                     "capture_mode": "sidecar",
                     "wrapper": "claude_code_sidecar_wrapper"

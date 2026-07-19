@@ -8,7 +8,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 from pydantic import BaseModel, Field
 
@@ -48,27 +48,13 @@ _LOCAL_CONFIG_EXAMPLE_PATH = (
 _DEFAULT_NATIVE_FAMILY_MUTATION_CONFIG = (
     _PROJECT_ROOT / "configs" / "tools" / "native_family_mutation_v1.yaml"
 )
-_REGRESSION_DETERMINISTIC = [
-    "tests/test_process_exec.py",
-    "tests/test_shell_runtimes.py",
-    "tests/test_patch_runtime.py",
-    "tests/test_step_c0_tool_contracts.py",
-    "tests/test_strict_family_tools.py",
-    "tests/test_tools_bootstrap.py",
-    "tests/test_tool_stack_selection.py",
-    "tests/test_native_profile_transform.py",
-    "tests/test_profile_sampler.py",
-    "tests/test_schema_following_sample.py",
-]
-_REGRESSION_RUNTIME_OBSERVED = [
-    "tests/test_schema_following_from_runtime.py",
-    "tests/test_schema_following_from_runtime_golden.py",
-    "tests/test_runtime_observed_postrun.py",
-    "tests/test_runtime_observed_postrun_golden.py",
-    "tests/test_runtime_observed_training_prep_golden.py",
-    "tests/test_toolview_mutation_data_generation.py",
-    "tests/test_runtime_execution_reconciliation.py",
-]
+_REGRESSION_NATIVE_RUNTIME = (
+    "tests/test_native_runtime_mainline.py",
+    "tests/test_task_pack_integrity.py",
+    "tests/test_realistic_task_consumers.py",
+    "tests/test_route_boundaries.py",
+)
+_REGRESSION_RUNTIME_OBSERVED = ("tests/test_runtime_observed_mainline.py",)
 _CLAUDE_NATIVE_TOOLS = ["Bash", "Read", "Edit", "Write", "Grep", "Glob"]
 _CODEX_NATIVE_TOOLS = ["exec_command", "write_stdin", "apply_patch"]
 
@@ -158,6 +144,7 @@ def run_native_family_acceptance(
     include_real_provider: bool = True,
 ) -> NativeFamilyAcceptanceReport:
     """Run the native-family acceptance pack and write a JSON report."""
+    regression_suites = _validated_regression_suites()
     output_root = Path(output_root).resolve()
     output_root.mkdir(parents=True, exist_ok=True)
 
@@ -172,17 +159,12 @@ def run_native_family_acceptance(
     entrypoint_checks = _run_entrypoint_checks()
     regression_commands = [
         _run_pytest_suite(
-            "deterministic_regression",
-            _REGRESSION_DETERMINISTIC,
+            name,
+            test_paths,
             output_root / "regression",
             pytest_python,
-        ),
-        _run_pytest_suite(
-            "runtime_observed_regression",
-            _REGRESSION_RUNTIME_OBSERVED,
-            output_root / "regression",
-            pytest_python,
-        ),
+        )
+        for name, test_paths in regression_suites
     ]
 
     real_provider_tasks: list[TaskAcceptanceResult] = []
@@ -260,16 +242,82 @@ def _resolve_pytest_python() -> Path:
     raise RuntimeError("Could not find a Python interpreter with pytest available")
 
 
+def _validated_regression_suites() -> list[tuple[str, list[str]]]:
+    """Return the checked-in, offline regression suites used by acceptance."""
+    configured = [
+        ("native_runtime_mainline", _REGRESSION_NATIVE_RUNTIME),
+        ("runtime_observed_mainline", _REGRESSION_RUNTIME_OBSERVED),
+    ]
+    return [
+        (name, _validate_regression_test_paths(test_paths))
+        for name, test_paths in configured
+    ]
+
+
+def _validate_regression_test_paths(test_paths: Sequence[str]) -> list[str]:
+    """Fail before pytest execution when a configured regression path is invalid."""
+    if not test_paths:
+        raise ValueError("Native-family acceptance regression suite cannot be empty")
+
+    project_root = _PROJECT_ROOT.resolve()
+    normalized: list[str] = []
+    invalid_paths: list[str] = []
+    missing_paths: list[str] = []
+
+    for raw_path in test_paths:
+        configured_path = Path(raw_path)
+        if configured_path.is_absolute():
+            invalid_paths.append(raw_path)
+            continue
+
+        resolved_path = (project_root / configured_path).resolve()
+        try:
+            relative_path = resolved_path.relative_to(project_root)
+        except ValueError:
+            invalid_paths.append(raw_path)
+            continue
+
+        normalized_path = relative_path.as_posix()
+        if not resolved_path.is_file():
+            missing_paths.append(normalized_path)
+            continue
+        normalized.append(normalized_path)
+
+    if invalid_paths:
+        rendered = ", ".join(sorted(invalid_paths))
+        raise ValueError(
+            "Native-family acceptance regression paths must be repo-relative: "
+            f"{rendered}"
+        )
+    if missing_paths:
+        rendered = ", ".join(sorted(missing_paths))
+        raise FileNotFoundError(
+            "Native-family acceptance regression paths do not exist: "
+            f"{rendered}"
+        )
+    return normalized
+
+
 def _run_pytest_suite(
     name: str,
-    test_paths: list[str],
+    test_paths: Sequence[str],
     logs_root: Path,
     python_executable: Path,
 ) -> CommandResult:
+    validated_test_paths = _validate_regression_test_paths(test_paths)
     logs_root.mkdir(parents=True, exist_ok=True)
     stdout_path = logs_root / f"{name}.stdout.log"
     stderr_path = logs_root / f"{name}.stderr.log"
-    command = [str(python_executable), "-m", "pytest", "-q", *test_paths]
+    command = [
+        str(python_executable),
+        "-m",
+        "pytest",
+        "-q",
+        "--strict-markers",
+        "-m",
+        "mainline",
+        *validated_test_paths,
+    ]
     started = time.perf_counter()
     completed = subprocess.run(
         command,
@@ -426,7 +474,7 @@ def _run_real_provider_task(
         prompt=task_spec.prompt,
         test_command=task_spec.test_command,
         max_turns=task_spec.max_turns,
-        metadata={"category": "native_family_acceptance", "family": "claude"},
+        metadata={"category": "native_family_acceptance"},
     )
     trajectory = run_coding_task(
         task,
@@ -546,7 +594,7 @@ def _run_native_codex_repo_task(
         prompt=task_spec.prompt,
         test_command=task_spec.test_command,
         max_turns=task_spec.max_turns,
-        metadata={"category": "native_family_acceptance", "family": "codex"},
+        metadata={"category": "native_family_acceptance"},
     )
     client = _native_codex_acceptance_client(task_spec.task_id)
     trajectory = run_coding_task(

@@ -1,6 +1,8 @@
 """Tool mutation and profile sampling modules."""
 
 from pycodeagent.mutations.profile_loader import (
+    MUTATION_CONFIG_SCHEMA_VERSION,
+    load_mutation_config,
     load_tool_profile,
     load_tool_profile_from_dict,
 )
@@ -27,6 +29,8 @@ from pycodeagent.mutations.schema_mutator import (
 
 __all__ = [
     # Loader
+    "MUTATION_CONFIG_SCHEMA_VERSION",
+    "load_mutation_config",
     "load_tool_profile",
     "load_tool_profile_from_dict",
     # Sampler

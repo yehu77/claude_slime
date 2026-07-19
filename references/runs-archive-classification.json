@@ -1,0 +1,83 @@
+{
+  "schema": "pycodeagent-runs-archive-classification/v1",
+  "classification_id": "rc054-owner-classification-20260718",
+  "policy_id": "rc053-conservative-local-manual-v1",
+  "inventory_state_fingerprint": "fea8f4f533fc2a1e6bf5289a067e90703d60f8d4ccbeed5e57ca22b7f7568089",
+  "archive_id": "rc054-20260718",
+  "storage_location_ref": "local-archive:rc054-20260718",
+  "delete_authorized_count": 0,
+  "campaigns": [
+    {
+      "campaign": "native_family_acceptance",
+      "purpose_class": "superseded",
+      "owner": "runtime-maintainers",
+      "provider_payload_override": false
+    },
+    {
+      "campaign": "native_family_acceptance_cli_check",
+      "purpose_class": "superseded",
+      "owner": "runtime-maintainers",
+      "provider_payload_override": false
+    },
+    {
+      "campaign": "native_family_acceptance_cli_check_v2",
+      "purpose_class": "superseded",
+      "owner": "runtime-maintainers",
+      "provider_payload_override": false
+    },
+    {
+      "campaign": "native_family_acceptance_final",
+      "purpose_class": "superseded",
+      "owner": "runtime-maintainers",
+      "provider_payload_override": false
+    },
+    {
+      "campaign": "native_family_acceptance_final_v2",
+      "purpose_class": "superseded",
+      "owner": "runtime-maintainers",
+      "provider_payload_override": false
+    },
+    {
+      "campaign": "native_family_acceptance_final_v3",
+      "purpose_class": "superseded",
+      "owner": "runtime-maintainers",
+      "provider_payload_override": false
+    },
+    {
+      "campaign": "native_family_acceptance_final_v4",
+      "purpose_class": "unique_research_evidence",
+      "owner": "runtime-maintainers",
+      "provider_payload_override": true
+    },
+    {
+      "campaign": "p3b_real_provider_compaction_acceptance",
+      "purpose_class": "unique_research_evidence",
+      "owner": "runtime-maintainers",
+      "provider_payload_override": true
+    },
+    {
+      "campaign": "real_provider_behavior_baseline",
+      "purpose_class": "unique_research_evidence",
+      "owner": "provider-integration-maintainers",
+      "provider_payload_override": true
+    },
+    {
+      "campaign": "real_provider_credibility_bundle",
+      "purpose_class": "unique_research_evidence",
+      "owner": "provider-integration-maintainers",
+      "provider_payload_override": true
+    },
+    {
+      "campaign": "real_provider_smoke",
+      "purpose_class": "debug",
+      "owner": "provider-integration-maintainers",
+      "provider_payload_override": false
+    },
+    {
+      "campaign": "toolview_mutation_data_generation",
+      "purpose_class": "unique_research_evidence",
+      "owner": "training-data-maintainers",
+      "provider_payload_override": true
+    }
+  ]
+}

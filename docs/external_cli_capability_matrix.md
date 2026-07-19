@@ -11,7 +11,7 @@ do without claiming full semantic normalization.
 | `AgentRunContext` support | Yes | Yes |
 | Sidecar env injection | Yes | Yes |
 | Preserve `raw_trace.jsonl` sidecar | Yes | Yes |
-| Preserve `raw_trace_summary.json` sidecar | Yes | Yes |
+| Preserve sidecar summary identity; reconcile outcome fields | Yes | Yes |
 | Preserve `tool_catalog.json` sidecar | Yes | Yes |
 | Observed fallback raw trace | Yes | Yes |
 | `stdout.log` / `stderr.log` capture | Yes | Yes |
@@ -40,6 +40,7 @@ Its fidelity level should be understood precisely:
 This means the fixture is useful for:
 
 - validating sidecar handoff
+- validating field-level truth precedence and conflict rejection
 - validating adapter/harness/catalog fallback integration
 - freezing raw artifact contract shape
 

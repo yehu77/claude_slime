@@ -1,20 +1,20 @@
 {
   "schema_version": 1,
-  "trace_id": "task_001__trace",
-  "task_id": "task_001",
+  "trace_id": "phase1_multi_agent_mock_task__trace",
+  "task_id": "phase1_multi_agent_mock_task",
   "agent_name": "mock_agent",
   "agent_version": "v1",
   "actions": [
     {
       "action_id": "action_1",
-      "capability": "READ_FILE",
+      "capability": "READ",
       "canonical_args": {
-        "path": "README.md"
+        "file_path": "README.md"
       },
       "raw_event_refs": [
         "event_004"
       ],
-      "raw_tool_name": "read_file",
+      "raw_tool_name": "Read",
       "mapping_confidence": 1.0,
       "normalization_notes": [],
       "metadata": {
@@ -23,36 +23,19 @@
     },
     {
       "action_id": "action_2",
-      "capability": "RUN_COMMAND",
+      "capability": "BASH",
       "canonical_args": {
-        "command": "pytest -q",
-        "cwd": "."
+        "command": "pytest -q"
       },
       "raw_event_refs": [
         "event_007",
         "event_008"
       ],
-      "raw_tool_name": "run_command",
+      "raw_tool_name": "Bash",
       "mapping_confidence": 1.0,
       "normalization_notes": [],
       "metadata": {
         "tool_call_event_id": "event_007"
-      }
-    },
-    {
-      "action_id": "action_3",
-      "capability": "FINISH",
-      "canonical_args": {
-        "summary": "Completed the requested mock task."
-      },
-      "raw_event_refs": [
-        "event_011"
-      ],
-      "raw_tool_name": "finish",
-      "mapping_confidence": 1.0,
-      "normalization_notes": [],
-      "metadata": {
-        "tool_call_event_id": "event_011"
       }
     }
   ],

@@ -6,52 +6,18 @@ object suitable for downstream export (e.g., to slime rollout format).
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
-
-from pycodeagent.rl.loss_mask import LossMask, build_loss_mask
+from pycodeagent.rl.loss_mask import build_loss_mask
+from pycodeagent.rl.prepared_sample import PreparedSample
 from pycodeagent.rl.serializer import SerializedTrajectory, serialize_trajectory
 
 if TYPE_CHECKING:
     from pycodeagent.trajectory.schema import Trajectory
 
 
-class TrainingSample(BaseModel):
-    """Complete training sample built from a trajectory.
-
-    Contains all information needed for supervised or RL training:
-    - Serialized text and segments
-    - Loss mask for computing gradients
-    - Run metadata (task, profile, reward, status, verifier)
-
-    Attributes:
-        task_id: Task identifier
-        tool_profile_id: Tool profile used for this run
-        reward: Final reward value
-        status: Run status (completed, error, timeout, etc.)
-        verifier_passed: Whether verification passed
-        verifier_score: Verification score
-        text: Full serialized text
-        segments: List of serialized segments with trainability
-        character_mask: Character-level loss mask (0 or 1 per char)
-        spans: Span-level loss mask
-        trainable_char_count: Number of trainable characters
-        metadata: Additional run metadata
-    """
-
-    task_id: str
-    tool_profile_id: str
-    reward: float
-    status: str
-    verifier_passed: bool
-    verifier_score: float
-    text: str
-    segments: list[dict[str, Any]]
-    character_mask: list[int]
-    spans: list[dict[str, Any]]
-    trainable_char_count: int
-    metadata: dict[str, Any] = Field(default_factory=dict)
+# Compatibility name for callers that predate the unified RC-041 contract.
+TrainingSample = PreparedSample
 
 
 def build_training_sample(
@@ -83,6 +49,9 @@ def build_training_sample(
         metadata.update(extra_metadata)
 
     return TrainingSample(
+        sample_id=f"trajectory::{serialized.task_id}::{serialized.tool_profile_id}",
+        sample_type="trajectory",
+        source_type="trajectory",
         task_id=serialized.task_id,
         tool_profile_id=serialized.tool_profile_id,
         reward=serialized.reward,
@@ -124,6 +93,9 @@ def build_training_sample_from_serialized(
         metadata.update(extra_metadata)
 
     return TrainingSample(
+        sample_id=f"trajectory::{serialized.task_id}::{serialized.tool_profile_id}",
+        sample_type="trajectory",
+        source_type="trajectory",
         task_id=serialized.task_id,
         tool_profile_id=serialized.tool_profile_id,
         reward=serialized.reward,

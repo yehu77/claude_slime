@@ -14,6 +14,10 @@ The current implementation driver is:
 
 - `docs/codex_rs_subsystem_implementation_plan.md`
 
+The native-family runtime boundary used by this maturity framework is fixed by
+[ADR-0001](./adr/0001-native-family-runtime-boundary.md). This roadmap defines
+gaps and acceptance expectations, not alternate family-selection semantics.
+
 That companion document defines the concrete subsystem-by-subsystem build
 order. This document defines what maturity gaps still exist and what kinds of
 runtime properties count as meaningful progress.
@@ -194,11 +198,14 @@ Do not follow:
 
 Current repo foundation:
 
-- shared command safety core exists
-- policy decisions are already surfaced through structured metadata
+- workspace/path enforcement and shared process execution exist
+- execution and path-policy facts are surfaced through structured metadata
+- the legacy two-state argv allowlist was deleted by RC-038 rather than
+  activated
 
 Current gap:
 
+- no active command-policy engine currently evaluates shell commands
 - permission-like runtime decisions remain narrower than a mature runtime
 - the runtime does not yet expose a broader permission or escalation model as
   a formal runtime contract
@@ -420,7 +427,9 @@ What not to overbuild:
 
 Current state:
 
-- command safety and protected write-surface rules are structured
+- protected write-surface and workspace cwd rules are enforced
+- command results carry policy-shaped metadata, but this is not evidence that
+  an executable allowlist or approval policy was enforced
 
 Target state:
 

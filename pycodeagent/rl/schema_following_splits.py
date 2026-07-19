@@ -1,4 +1,4 @@
-"""Deterministic split/profile planning for synthetic schema-following data."""
+"""Deterministic split/profile planning for controlled baseline data."""
 
 from __future__ import annotations
 

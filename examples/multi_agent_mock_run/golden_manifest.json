@@ -1,0 +1,57 @@
+{
+  "artifacts": {
+    "README.md": {
+      "bytes": 748,
+      "sha256": "eef4078df016177238b04b00a0dc572c8256510b0ebeff01c4736919c88b5e6a"
+    },
+    "canonical_trace.json": {
+      "bytes": 1263,
+      "sha256": "6b3e6ea4806e0b073a71a8a990cc56eef957dfd46e17ef65674d3e27d13dc0c1"
+    },
+    "normalization_report.json": {
+      "bytes": 327,
+      "sha256": "2eb7f3e9081d3ce5f3cdf0519368814f337f5a6fef56b5ef2d34d6eff54bb93e"
+    },
+    "raw_trace.jsonl": {
+      "bytes": 3885,
+      "sha256": "461ed6f84995cada9d507fe7ab7c841db95c09a67bad00184a2a19b20247291a"
+    },
+    "raw_trace_summary.json": {
+      "bytes": 580,
+      "sha256": "ba078b656f5fbfb3c09fdee0414846263e6c57df35148286626035a869057647"
+    },
+    "schema_following_sample.json": {
+      "bytes": 1330,
+      "sha256": "dd6c23ae55e14413dc0d712df7722abc7a285197ab6a10df59ce40929d216330"
+    },
+    "tool_catalog.json": {
+      "bytes": 19945,
+      "sha256": "9b4306e74797be798724c6492dff8fcdf9920f2b136114db8b83f80ec583642a"
+    }
+  },
+  "contract": {
+    "agent_name": "mock_agent",
+    "agent_version": "v1",
+    "canonical_action_count": 2,
+    "canonical_capabilities": [
+      "READ",
+      "BASH"
+    ],
+    "family": "claude",
+    "native_profile_kind": "native_claude",
+    "raw_event_count": 11,
+    "sample_action_id": "action_1",
+    "sample_target_tool_name": "Read",
+    "status": "completed",
+    "task_id": "phase1_multi_agent_mock_task",
+    "tool_catalog_id": "mock_agent__phase1_multi_agent_mock_task__catalog",
+    "tool_profile_id": "mock_base"
+  },
+  "generator": {
+    "check_command": "python -B -m pycodeagent.testing.multi_agent_mock_golden --check",
+    "module": "pycodeagent.testing.multi_agent_mock_golden",
+    "update_command": "python -B -m pycodeagent.testing.multi_agent_mock_golden --write"
+  },
+  "golden_id": "phase1_multi_agent_mock_native_claude_v1",
+  "schema_version": 1
+}

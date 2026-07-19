@@ -104,7 +104,12 @@ class TestExternalCliClaudeRealSmoke:
                 "expected_event_kinds"
             ]
             assert raw_trace.events[0].parsed_payload["content"] == fixture["prompt"]
-            assert raw_trace.events[-1].parsed_payload["status"] == fixture["expected_status"]
+            assert raw_trace.events[-1].parsed_payload["execution_status"] == fixture[
+                "expected_status"
+            ]
+            assert raw_trace.events[-1].parsed_payload["final_status"] == fixture[
+                "expected_status"
+            ]
 
             assert stdout_text.strip()
             for expected in fixture["expected_diff_contains"]:

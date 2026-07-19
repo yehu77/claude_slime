@@ -1,11 +1,11 @@
 {
-  "sample_id": "sf__task_001__action_1__base",
+  "sample_id": "sf__phase1_multi_agent_mock_task__action_1__mock_base",
   "sample_type": "schema_following",
   "source_type": "synthetic",
   "split": "train",
-  "task_id": "task_001",
-  "tool_profile_id": "base",
-  "mutation_category": "base",
+  "task_id": "phase1_multi_agent_mock_task",
+  "tool_profile_id": "mock_base",
+  "mutation_category": "native_family_base",
   "messages": [
     {
       "role": "system",
@@ -24,27 +24,29 @@
     }
   ],
   "canonical_intent": {
-    "tool": "read_file",
+    "tool": "Read",
     "arguments": {
-      "path": "README.md"
-    }
+      "file_path": "README.md"
+    },
+    "input_text": null
   },
   "target_tool_call": {
     "call_id": "call_1",
-    "name": "read_file",
+    "name": "Read",
     "arguments": {
-      "path": "README.md"
-    }
+      "file_path": "README.md"
+    },
+    "input_text": null
   },
-  "target_text": "<|tool|>\n{\"arguments\": {\"path\": \"README.md\"}, \"id\": \"call_1\", \"name\": \"read_file\"}\n<|end|>\n",
+  "target_text": "<|tool|>\n{\"arguments\": {\"file_path\": \"README.md\"}, \"id\": \"call_1\", \"name\": \"Read\"}\n<|end|>\n",
   "loss_mask_policy": "assistant_tool_call_only",
   "metadata": {
-    "trace_id": "task_001__trace",
+    "trace_id": "phase1_multi_agent_mock_task__trace",
     "action_id": "action_1",
     "raw_event_refs": [
       "event_004"
     ],
     "agent_name": "mock_agent",
-    "profile_mode": "base"
+    "profile_mode": "native_family_base"
   }
 }

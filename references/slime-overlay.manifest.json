@@ -1,0 +1,115 @@
+{
+  "schema": "pycodeagent-vendor-overlay-manifest/v1",
+  "vendor_id": "thudm-slime",
+  "purpose": "repo_owned_slime_integration_overlay",
+  "upstream_lock": "references/slime-upstream.lock.json",
+  "upstream_commit": "16924b697e86adab96eded3a3d0bf6098a943bb4",
+  "vendor_path": "slime-main",
+  "files": [
+    {
+      "path": "VENDORING.md",
+      "operation": "add",
+      "owner": "repository-governance",
+      "reason": "Record the pinned upstream, owned integration boundary, verification commands, and safe refresh workflow.",
+      "source_path": "slime-main/VENDORING.md",
+      "mode": "0644",
+      "size": 4675,
+      "sha256": "b985ce8cdcc41ddb04eef2b0af58eab1c09629f3fc785f918c37f26929dbd8e6"
+    },
+    {
+      "path": "examples/pycodeagent_offline/README.md",
+      "operation": "add",
+      "owner": "slime-integration-maintainers",
+      "reason": "Document the repo-owned offline SFT and native-transformed RL bridge workflows.",
+      "source_path": "slime-main/examples/pycodeagent_offline/README.md",
+      "mode": "0644",
+      "size": 6504,
+      "sha256": "e14d9ca6c3296fbb9f10ef00dc2c0c5823d0a1cabca3743bed8be5cd5f4465b0"
+    },
+    {
+      "path": "examples/pycodeagent_offline/convert_qwen3_0p6b_to_torch_dist.sh",
+      "operation": "add",
+      "owner": "slime-integration-maintainers",
+      "reason": "Prepare the small Qwen checkpoint format used by the repo-owned offline smoke workflows.",
+      "source_path": "slime-main/examples/pycodeagent_offline/convert_qwen3_0p6b_to_torch_dist.sh",
+      "mode": "0644",
+      "size": 1009,
+      "sha256": "a168b481a9e863ded6001acb2bfb99fd3b69e2b7dc51e70f0906ff0817d975eb"
+    },
+    {
+      "path": "examples/pycodeagent_offline/run_qwen3_0p6b_native_transformed_rl_smoke.sh",
+      "operation": "add",
+      "owner": "slime-integration-maintainers",
+      "reason": "Exercise the auxiliary native-transformed RL datasource and reward bridge with a small checkpoint.",
+      "source_path": "slime-main/examples/pycodeagent_offline/run_qwen3_0p6b_native_transformed_rl_smoke.sh",
+      "mode": "0644",
+      "size": 5213,
+      "sha256": "2de532b77fc2d280816a20bd0d52279631b278b833f0558b71aa3e2726db71fb"
+    },
+    {
+      "path": "examples/pycodeagent_offline/run_qwen3_0p6b_native_transformed_smoke.sh",
+      "operation": "add",
+      "owner": "slime-integration-maintainers",
+      "reason": "Exercise native-transformed prepared bundles through the offline SFT-compatible bridge.",
+      "source_path": "slime-main/examples/pycodeagent_offline/run_qwen3_0p6b_native_transformed_smoke.sh",
+      "mode": "0644",
+      "size": 4017,
+      "sha256": "7404261fce6c88e1cde29a76965e1fd7c83cdc76fef184abf42c18a531fa6104"
+    },
+    {
+      "path": "examples/pycodeagent_offline/run_qwen3_0p6b_offline.sh",
+      "operation": "add",
+      "owner": "slime-integration-maintainers",
+      "reason": "Provide the minimal Qwen 0.6B offline prepared-bundle training smoke entrypoint.",
+      "source_path": "slime-main/examples/pycodeagent_offline/run_qwen3_0p6b_offline.sh",
+      "mode": "0644",
+      "size": 3867,
+      "sha256": "362cb3032266a581cd79a613a09d98473736d5dfe7d7de5f9e24a6636b92743d"
+    },
+    {
+      "path": "examples/pycodeagent_offline/run_qwen3_4b_offline.sh",
+      "operation": "add",
+      "owner": "slime-integration-maintainers",
+      "reason": "Provide the Qwen 4B offline prepared-bundle training entrypoint.",
+      "source_path": "slime-main/examples/pycodeagent_offline/run_qwen3_4b_offline.sh",
+      "mode": "0644",
+      "size": 4020,
+      "sha256": "57657f5d6dd41a60f1e4aaaede99bc444ae1329da2ff0bfb07ee3657f8527722"
+    },
+    {
+      "path": "slime/rollout/pycodeagent_native_rl.py",
+      "operation": "add",
+      "owner": "slime-integration-maintainers",
+      "reason": "Adapt native-transformed RL prompts and exact tool-call rewards to slime without changing upstream rollout modules.",
+      "source_path": "slime-main/slime/rollout/pycodeagent_native_rl.py",
+      "mode": "0644",
+      "size": 8810,
+      "sha256": "c72abf0be8c4ff275027d9d6a13aa2918e1dc13a9f38aaaf5ab6fd42e5ed3055"
+    },
+    {
+      "path": "slime/rollout/pycodeagent_offline.py",
+      "operation": "add",
+      "owner": "slime-integration-maintainers",
+      "reason": "Adapt deterministic pycodeagent prepared bundles to slime's datasource and rollout interfaces.",
+      "source_path": "slime-main/slime/rollout/pycodeagent_offline.py",
+      "mode": "0644",
+      "size": 7654,
+      "sha256": "3e2564a21da38ccbebbc8b2df58b3df8265b4e3beae4ba81d447b2c6461359d7"
+    }
+  ],
+  "expected_tree": {
+    "digest_algorithm": "sha256-tree-manifest-v1",
+    "tree_sha256": "9849ce4d920ee0b39f0a741ec21af66393deccb179fca8cf54b160a17011cdcd",
+    "entry_count": 474,
+    "mode_policy": "overlay modes are verified separately; upstream modes are not part of the tree digest",
+    "ignored_ephemeral_globs": [
+      "**/__pycache__/*.pyc"
+    ]
+  },
+  "rebuild": {
+    "overlay_source": "tracked files at each files[].source_path",
+    "verify_command": "python -B -m pycodeagent.dev.slime_vendor verify",
+    "command": "python -B -m pycodeagent.dev.slime_vendor rebuild",
+    "overwrite_policy": "never overwrite an existing destination"
+  }
+}

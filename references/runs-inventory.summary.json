@@ -1,0 +1,56 @@
+{
+  "artifact_class_counts": {
+    "config": 32,
+    "dataset": 48,
+    "event_log": 7,
+    "log": 28,
+    "manifest": 437,
+    "patch": 138,
+    "raw_provider_payload": 6035,
+    "report": 542,
+    "source_or_text_snapshot": 14,
+    "structured_artifact": 310,
+    "trace": 510,
+    "workspace_snapshot": 754
+  },
+  "artifact_count": 8855,
+  "artifact_group_count": 741,
+  "classification_status": "complete",
+  "classified_artifact_count": 8855,
+  "classified_group_count": 741,
+  "content_policy": "No payload text, tool arguments/results, secret matches, or workspace file contents are serialized.",
+  "duplicate_file_count": 3641,
+  "duplicate_group_count": 494,
+  "duplicate_redundant_bytes": 6619151,
+  "group_class_counts": {
+    "dataset_or_training_bundle": 33,
+    "log_group": 7,
+    "manifested_artifact_group": 16,
+    "provider_payload_group": 132,
+    "runtime_run": 138,
+    "unmanifested_artifact_group": 30,
+    "workspace_snapshot_group": 385
+  },
+  "inventory_file": "references/runs-inventory.jsonl",
+  "inventory_schema": "pycodeagent-runs-inventory/v1",
+  "manifest_status_counts": {
+    "missing_references": 6,
+    "not_manifest": 8418,
+    "valid": 431
+  },
+  "parse_status_counts": {
+    "not_structured": 950,
+    "parsed": 7905
+  },
+  "runs_root": "runs",
+  "sensitive_risk_label_counts": {
+    "absolute_user_path": 936,
+    "log_content": 28,
+    "potential_authorization_material": 205,
+    "raw_provider_content": 6035,
+    "raw_trace_content": 517,
+    "workspace_snapshot_content": 754
+  },
+  "state_fingerprint": "fea8f4f533fc2a1e6bf5289a067e90703d60f8d4ccbeed5e57ca22b7f7568089",
+  "total_bytes": 59472914
+}

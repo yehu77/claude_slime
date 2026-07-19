@@ -14,7 +14,7 @@ from transformers import GPT2Config, GPT2LMHeadModel, PreTrainedTokenizerFast
 
 from pycodeagent.rl.schema_following_dataset import read_schema_following_jsonl
 from pycodeagent.rl.schema_following_eval import build_schema_following_prompt_text
-from pycodeagent.rl.schema_following_generate import generate_synthetic_schema_following_data
+from pycodeagent.baselines import generate_synthetic_schema_following_data
 from pycodeagent.rl.schema_following_sft import run_schema_following_sft_experiment
 from pycodeagent.testing import cleanup_test_path, make_unique_test_dir
 

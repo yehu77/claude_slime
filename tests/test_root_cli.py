@@ -13,12 +13,9 @@ import generate_schema_following_data as schema_following_cli
 import export_claude_api_sft_dataset as claude_api_sft_export_cli
 import prepare_native_transformed_sft_training_data as prepare_native_transformed_sft_cli
 import prepare_schema_following_training_data as prepare_schema_following_cli
-import prepare_slime_training_data as prepare_cli
 import run_native_transformed_sft_smoke as native_transformed_sft_smoke_cli
 import run_external_agent_smoke as external_agent_smoke_cli
-import run_schema_following_sft as schema_following_sft_cli
 import validate_native_transformed_sft_dataset as native_transformed_sft_validate_cli
-import verify_slime_contract as verify_cli
 from pycodeagent.rl.tokenizer_config import FakeTokenizerConfig, TokenizerConfig
 
 
@@ -29,148 +26,6 @@ class _ModelDumpResult:
 
     def model_dump(self, mode: str = "json") -> dict:
         return dict(self._payload)
-
-
-class TestPrepareSlimeTrainingDataCli:
-    def test_fake_tokenizer_path_passes_explicit_fake_config(
-        self,
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        captured: dict = {}
-
-        def fake_prepare(source_dir, output_dir, **kwargs):
-            captured.update(kwargs)
-            return _ModelDumpResult({"prepared": True})
-
-        monkeypatch.setattr(prepare_cli, "prepare_slime_training_input", fake_prepare)
-        monkeypatch.setattr(
-            sys,
-            "argv",
-            [
-                "prepare_slime_training_data.py",
-                "runs/study",
-                "runs/prepared",
-                "--source-type",
-                "study",
-                "--fake-tokenizer",
-                "--fake-vocab-size",
-                "2048",
-                "--fake-chars-per-token",
-                "7",
-            ],
-        )
-
-        assert prepare_cli.main() == 0
-        assert isinstance(captured["tokenizer_config"], TokenizerConfig)
-        assert captured["tokenizer_config"].tokenizer_name == "fake"
-        assert isinstance(captured["fake_tokenizer_config"], FakeTokenizerConfig)
-        assert captured["fake_tokenizer_config"].vocab_size == 2048
-        assert captured["fake_tokenizer_config"].chars_per_token == 7
-
-    def test_real_tokenizer_path_passes_tokenizer_config(
-        self,
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        captured: dict = {}
-
-        def fake_prepare(source_dir, output_dir, **kwargs):
-            captured.update(kwargs)
-            return _ModelDumpResult({"prepared": True})
-
-        monkeypatch.setattr(prepare_cli, "prepare_slime_training_input", fake_prepare)
-        monkeypatch.setattr(
-            sys,
-            "argv",
-            [
-                "prepare_slime_training_data.py",
-                "runs/study",
-                "runs/prepared",
-                "--tokenizer-name",
-                "Qwen/Qwen3-0.6B",
-                "--max-length",
-                "1024",
-            ],
-        )
-
-        assert prepare_cli.main() == 0
-        assert captured["tokenizer_config"].tokenizer_name == "Qwen/Qwen3-0.6B"
-        assert captured["tokenizer_config"].max_length == 1024
-        assert captured["fake_tokenizer_config"] is None
-
-    def test_requires_explicit_tokenizer_selection(
-        self,
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        monkeypatch.setattr(
-            sys,
-            "argv",
-            [
-                "prepare_slime_training_data.py",
-                "runs/study",
-                "runs/prepared",
-            ],
-        )
-        with pytest.raises(SystemExit, match="2"):
-            prepare_cli.main()
-
-
-class TestVerifySlimeContractCli:
-    def test_fake_tokenizer_path_passes_explicit_fake_config(
-        self,
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        captured: dict = {}
-
-        def fake_verify(source_dir, output_dir, **kwargs):
-            captured.update(kwargs)
-            return _ModelDumpResult({"ok": True}, ok=True)
-
-        monkeypatch.setattr(verify_cli, "verify_slime_contract", fake_verify)
-        monkeypatch.setattr(
-            sys,
-            "argv",
-            [
-                "verify_slime_contract.py",
-                "runs/experiment",
-                "runs/verified",
-                "--fake-tokenizer",
-                "--pack-max-length",
-                "1536",
-            ],
-        )
-
-        assert verify_cli.main() == 0
-        assert isinstance(captured["tokenizer_config"], TokenizerConfig)
-        assert captured["tokenizer_config"].tokenizer_name == "fake"
-        assert captured["tokenizer_config"].max_length == 1536
-        assert isinstance(captured["fake_tokenizer_config"], FakeTokenizerConfig)
-
-    def test_real_tokenizer_path_controls_exit_code(
-        self,
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        captured: dict = {}
-
-        def fake_verify(source_dir, output_dir, **kwargs):
-            captured.update(kwargs)
-            return _ModelDumpResult({"ok": False}, ok=False)
-
-        monkeypatch.setattr(verify_cli, "verify_slime_contract", fake_verify)
-        monkeypatch.setattr(
-            sys,
-            "argv",
-            [
-                "verify_slime_contract.py",
-                "runs/experiment",
-                "runs/verified",
-                "--tokenizer-name",
-                "Qwen/Qwen3-0.6B",
-            ],
-        )
-
-        assert verify_cli.main() == 1
-        assert captured["tokenizer_config"].tokenizer_name == "Qwen/Qwen3-0.6B"
-        assert captured["fake_tokenizer_config"] is None
 
 
 class TestGenerateSchemaFollowingDataCli:
@@ -296,57 +151,6 @@ class TestPrepareSchemaFollowingTrainingDataCli:
         assert captured["tokenizer_config"].tokenizer_name == "fake"
         assert isinstance(captured["fake_tokenizer_config"], FakeTokenizerConfig)
         assert captured["fake_tokenizer_config"].vocab_size == 2048
-
-
-class TestRunSchemaFollowingSftCli:
-    def test_passes_expected_arguments(
-        self,
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        captured: dict = {}
-
-        def fake_run(dataset_dir, output_dir, **kwargs):
-            captured["dataset_dir"] = str(dataset_dir)
-            captured["output_dir"] = str(output_dir)
-            captured.update(kwargs)
-            return _ModelDumpResult({"ran": True})
-
-        monkeypatch.setattr(
-            schema_following_sft_cli,
-            "run_schema_following_sft_experiment",
-            fake_run,
-        )
-        monkeypatch.setattr(
-            sys,
-            "argv",
-            [
-                "run_schema_following_sft.py",
-                "outputs/schema_following/v1/synthetic",
-                "outputs/schema_following/v1/experiment",
-                "--model-name-or-path",
-                "models/tiny-model",
-                "--eval-splits",
-                "eval_seen,eval_unseen_name",
-                "--max-steps",
-                "3",
-                "--device",
-                "cpu",
-            ],
-        )
-
-        assert schema_following_sft_cli.main() == 0
-        assert Path(captured["dataset_dir"]).as_posix().endswith(
-            "outputs/schema_following/v1/synthetic"
-        )
-        assert Path(captured["output_dir"]).as_posix().endswith(
-            "outputs/schema_following/v1/experiment"
-        )
-        assert Path(str(captured["model_name_or_path"])).as_posix().endswith(
-            "models/tiny-model"
-        )
-        assert captured["eval_splits"] == ["eval_seen", "eval_unseen_name"]
-        assert captured["max_steps"] == 3
-        assert captured["device"] == "cpu"
 
 
 class TestRunExternalAgentSmokeCli:

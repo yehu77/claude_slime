@@ -54,7 +54,7 @@ class SchemaFollowingTraceRenderer:
                         content=f"Complete task {canonical_trace.task_id}.",
                     )
                 ]
-            canonical_tool = registry.get(action.capability.lower())
+            canonical_tool = _canonical_tool_for_capability(registry, action.capability)
             intent = CanonicalToolIntent(
                 tool=canonical_tool.canonical_name,
                 arguments=action.canonical_args,
@@ -110,6 +110,19 @@ def _canonical_registry_for_profiles(target_profiles: list[ToolProfile]):
         "SchemaFollowingTraceRenderer requires native-family target profiles "
         f"from exactly one family, got {sorted(families)!r}"
     )
+
+
+def _canonical_tool_for_capability(registry, capability: str):
+    """Resolve canonical trace capabilities without losing native name casing."""
+    normalized = capability.casefold()
+    matches = [
+        tool
+        for tool in registry.list()
+        if tool.canonical_name.casefold() == normalized
+    ]
+    if len(matches) == 1:
+        return matches[0]
+    return registry.get(capability)
 
 
 def _context_before_action(

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -9,6 +10,10 @@ import pytest
 from pycodeagent.mutations.profile_sampler import (
     ToolProfileSampler,
     build_sampled_tool_profile,
+)
+from pycodeagent.mutations.profile_loader import (
+    MUTATION_CONFIG_SCHEMA_VERSION,
+    load_mutation_config,
 )
 from pycodeagent.tools.contracts import ToolContractKind
 from pycodeagent.tools.profile_factory import (
@@ -67,6 +72,7 @@ def test_build_sampled_tool_profile_from_claude_family():
     )
 
     assert profile.metadata["family"] == "claude"
+    assert profile.metadata["mutation_config_version"] == 1
     assert profile.metadata["mutation_source_family"] == "claude"
     assert profile.metadata["reorder_anchor_policy"] == "preserve_source_order"
 
@@ -122,3 +128,48 @@ def test_custom_native_config_path_is_supported():
     ).sample("argument_rename")
 
     assert profile.metadata["family"] == "claude"
+
+
+def test_mutation_config_loader_is_versioned_and_accepts_yaml_and_json(
+    tmp_path: Path,
+):
+    yaml_config = load_mutation_config(_NATIVE_MUTATION_CONFIG)
+    assert yaml_config["mutation_config_version"] == MUTATION_CONFIG_SCHEMA_VERSION
+
+    json_path = tmp_path / "mutation.json"
+    json_path.write_text(json.dumps(yaml_config), encoding="utf-8")
+    assert load_mutation_config(json_path) == yaml_config
+
+
+@pytest.mark.parametrize("version", [None, 0, 2, "1"])
+def test_mutation_config_loader_rejects_missing_or_unknown_version(
+    tmp_path: Path,
+    version: object,
+):
+    payload = {
+        "profile_id_prefix": "test_mutation",
+        "tool_variants": {},
+    }
+    if version is not None:
+        payload["mutation_config_version"] = version
+    path = tmp_path / "mutation.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="mutation_config_version=1"):
+        load_mutation_config(path)
+
+
+def test_mutation_config_loader_uses_one_mapping_error_for_yaml_and_json(
+    tmp_path: Path,
+):
+    for name, content in (("bad.yaml", "- item\n"), ("bad.json", "[1, 2]")):
+        path = tmp_path / name
+        path.write_text(content, encoding="utf-8")
+        with pytest.raises(ValueError, match="Mutation config must be a mapping"):
+            load_mutation_config(path)
+
+
+def test_mutation_config_loader_has_one_missing_file_error(tmp_path: Path):
+    missing = tmp_path / "missing.yaml"
+    with pytest.raises(FileNotFoundError, match=r"Mutation config file not found:"):
+        load_mutation_config(missing)

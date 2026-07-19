@@ -1,0 +1,57 @@
+{
+  "schema": "pycodeagent-vendor-upstream-lock/v1",
+  "vendor_id": "thudm-slime",
+  "vendor_path": "slime-main",
+  "purpose": "vendored_upstream_baseline",
+  "source": {
+    "repository_url": "https://github.com/THUDM/slime.git",
+    "commit": "16924b697e86adab96eded3a3d0bf6098a943bb4",
+    "commit_url": "https://github.com/THUDM/slime/commit/16924b697e86adab96eded3a3d0bf6098a943bb4",
+    "archive_url": "https://github.com/THUDM/slime/archive/16924b697e86adab96eded3a3d0bf6098a943bb4.tar.gz"
+  },
+  "acquisition": {
+    "acquired_at": "2026-06-03T16:36:43+08:00",
+    "date_basis": "first repository commit containing slime-main",
+    "repository_import_commit": "c92d21a72dd86dae8838fffa4ec6a7c4d8e8d5f2",
+    "original_transport": "unknown"
+  },
+  "license": {
+    "spdx": "Apache-2.0",
+    "vendor_path": "slime-main/LICENSE",
+    "upstream_path": "LICENSE",
+    "sha256": "bf917707c1e0ffdfe653d63aebc188a48f738f3faad9acc188c346d3618694af",
+    "url": "https://github.com/THUDM/slime/blob/16924b697e86adab96eded3a3d0bf6098a943bb4/LICENSE"
+  },
+  "upstream_tree": {
+    "digest_algorithm": "sha256-tree-manifest-v1",
+    "tree_sha256": "64f378f4a0e32102fd82d6e95e07fefcd502bf1ffc4332c3365b3258a87d5835",
+    "entry_count": 465,
+    "mode_policy": "ignored",
+    "expected_symlinks": {
+      ".agents/skills": "../.claude/skills"
+    },
+    "portable_symlink_policy": "accept an exact link-target placeholder as equivalent to the declared symlink"
+  },
+  "local_projection": {
+    "overlay_candidate_paths": [
+      "VENDORING.md",
+      "examples/pycodeagent_offline/README.md",
+      "examples/pycodeagent_offline/convert_qwen3_0p6b_to_torch_dist.sh",
+      "examples/pycodeagent_offline/run_qwen3_0p6b_native_transformed_rl_smoke.sh",
+      "examples/pycodeagent_offline/run_qwen3_0p6b_native_transformed_smoke.sh",
+      "examples/pycodeagent_offline/run_qwen3_0p6b_offline.sh",
+      "examples/pycodeagent_offline/run_qwen3_4b_offline.sh",
+      "slime/rollout/pycodeagent_native_rl.py",
+      "slime/rollout/pycodeagent_offline.py"
+    ],
+    "ignored_ephemeral_globs": [
+      "**/__pycache__/*.pyc"
+    ],
+    "overlay_governance": "RC-048 complete",
+    "overlay_manifest": "references/slime-overlay.manifest.json"
+  },
+  "evidence": {
+    "baseline_report": "references/slime-vendor-baseline-report.json",
+    "verification_command": "python -B -m pycodeagent.dev.slime_vendor verify-upstream"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "arguments": {
+    "local_only": true,
+    "output_root": "runs/native_family_acceptance"
+  },
+  "command": "acceptance",
+  "schema": "pycodeagent-cli-config/v1"
+}

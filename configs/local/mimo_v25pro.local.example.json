@@ -1,8 +1,6 @@
 {
   "api_key_env": "MIMO_API_KEY",
   "base_url": "https://fill-your-openai-compatible-base-url-here/v1",
-  "study_config_path": "configs/studies/first_mutation_sensitivity.json",
-  "output_dir": "runs/studies/first_mutation_sensitivity_mimo_v25pro",
   "timeout_seconds": 120,
   "max_retries": 3,
   "temperature": null,

@@ -10,12 +10,19 @@ Current examples:
 
 - `claude_code_sidecar_wrapper.py`
   - writes `raw_trace.jsonl` and `raw_trace_summary.json`
+  - leaves harness-derived outcome fields out of the sidecar summary
   - does not write `tool_catalog.json`
   - relies on `ClaudeCodeCatalogProvider` fallback
 - `kilo_code_sidecar_wrapper.py`
   - writes `raw_trace.jsonl` and `raw_trace_summary.json`
+  - leaves harness-derived outcome fields out of the sidecar summary
   - does not write `tool_catalog.json`
   - uses no catalog provider fallback by default
+
+After the wrapper exits, the adapter rebuilds summary `status`, `final_diff`,
+`verifier_result`, and reward metadata from the subprocess, workspace diff,
+and verifier artifacts. A wrapper that explicitly asserts a conflicting value
+causes a hard truth-conflict failure.
 
 ## Fixture And Golden Test
 
@@ -39,7 +46,9 @@ the fixture:
 
 The comparison normalizes machine-local noise such as absolute paths, elapsed
 test duration text, and incidental pytest cache warnings. It does not perform
-semantic trace normalization.
+semantic trace normalization. It additionally asserts that summary diff and
+verifier fields exactly match their standalone artifacts and that execution
+status remains distinct from final task status.
 
 The Kilo wrapper is pinned by a second regression bundle:
 

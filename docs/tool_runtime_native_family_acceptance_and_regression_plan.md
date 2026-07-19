@@ -1,306 +1,199 @@
-# Tool Runtime Native Family Acceptance And Regression Plan
+# Native-Family Runtime Acceptance
 
 ## Status
 
-As of July 1, 2026, the repository mainline is already **native-family-only**.
+This document describes the active acceptance contract as of July 15, 2026.
+The implementation source of truth is
+`pycodeagent/eval/native_family_acceptance.py`; the stable command-line
+entrypoint is `python -B -m pycodeagent acceptance`.
 
-That means older references to a later "legacy demotion" phase are now purely
-historical. The legacy follow-up document is archival and has been superseded
-by the implemented native-only cleanup.
+The terminology, explicit family-selection, no-silent-fallback, artifact, and
+evidence boundaries used by this runbook are defined by
+[ADR-0001](./adr/0001-native-family-runtime-boundary.md).
 
-## Goal
+The repository has two distinct acceptance modes:
 
-This document is the **active next-phase plan** after the Step A-F family-split
-implementation mainline.
+- **local-only** is the deterministic, offline gate used for cleanup and CI
+  evidence.
+- **real-provider** adds the native Claude provider pack and requires an
+  explicit or locally resolved provider configuration.
 
-The goal is to move the landed native-family runtime path from
-"implemented in code" to **accepted, regression-covered, and stable enough to
-be treated as the repo's validated native-family path**.
+Local-only acceptance does not claim network-provider behavior. Real-provider
+acceptance is not part of the default offline gate.
 
-This follow-up is specifically about:
+## Commands
 
-- keeping the family-split runtime surface green
-- auditing runtime-observed and training-prep artifacts for drift
-- running small truthful acceptance tasks on top of the landed native stacks
-- turning fixture and golden updates into an explicit, reviewable procedure
+Run the offline acceptance pack:
 
-It should be read as the acceptance and stabilization driver for:
+```bash
+python -B -m pycodeagent acceptance \
+  --local-only \
+  --output-root <output-root>
+```
 
-- shared process/runtime contracts
-- strict source-aligned canonical tools
-- native family profiles
-- family-aware runtime selection
-- native-family mutation and runtime-observed export
+The report is written below `<output-root>/local_only/`.
 
-## Non-Goals
+Run the provider-backed variant:
 
-This follow-up does **not**:
+```bash
+python -B -m pycodeagent acceptance \
+  --provider-config <provider-config.json> \
+  --output-root <output-root>
+```
 
-- introduce new canonical tools
-- redesign the Step A-F architecture
-- change strict native tool names
-- reintroduce a legacy default path
-- reopen the archived legacy-demotion planning track
-- claim full real-provider parity for every strict native contract
+If `--provider-config` is omitted in real-provider mode, the runner resolves
+`real_provider_runtime.local.json` through the repository's normal local
+configuration flow. Provider-backed output is written below a
+`<client_mode>__<model>/` subdirectory.
 
-The remaining work in this document is acceptance, regression, and artifact
-stabilization for the native-only path.
+The local-only command prints a versioned JSON result envelope and writes
+`pycodeagent_cli_manifest.json`. The linked
+`native_family_acceptance_report.json` is the authoritative application
+result. A non-stabilized report returns contract-failure exit code `1`.
 
-## Current Baseline
+## Offline Regression Boundary
 
-The post-Step-F baseline is already landed in the repo.
+The acceptance runner executes two checked-in pytest suites. Every configured
+path is validated before pytest starts, so a stale or missing test path fails
+the run instead of being silently skipped.
 
-That baseline includes:
+| Suite | Checked-in tests |
+| --- | --- |
+| `native_runtime_mainline` | `tests/test_native_runtime_mainline.py`, `tests/test_task_pack_integrity.py`, `tests/test_realistic_task_consumers.py`, `tests/test_route_boundaries.py` |
+| `runtime_observed_mainline` | `tests/test_runtime_observed_mainline.py` |
 
-- shared process primitives
-- family runtimes for Claude shell, Codex shell, Codex patch, and Codex
-  `write_stdin`
-- strict source-aligned canonical tool families
-- native family profiles:
-  - `native_claude`
-  - `native_codex`
-- family-aware bootstrap/runtime selection
-- native-family mutation/runtime-observed integration
-- freeform local/fake/runtime-observed support for Codex `apply_patch`
+Each suite runs with `--strict-markers -m mainline`. The equivalent aggregate
+gate is:
 
-At this stage, the core question is no longer "what should the design be?"
-The core question is:
+```bash
+python -B -m pytest -q --strict-markers -m mainline \
+  tests/test_native_runtime_mainline.py \
+  tests/test_runtime_observed_mainline.py \
+  tests/test_task_pack_integrity.py \
+  tests/test_realistic_task_consumers.py \
+  tests/test_route_boundaries.py
+```
 
-> Is the landed native-family path stable, regression-covered, and truthful
-> enough to use as the acceptance baseline for later cleanup and broader
-> experiments?
+The acceptance runner uses this aggregate command. The GitHub Actions mainline
+workflow runs it together with the repository's multi-agent golden and docs
+taxonomy asset gates, without provider credentials or network access.
 
-## Acceptance Surface
+## Acceptance Components
 
-The following public entrypoints define the acceptance surface for this
-follow-up:
+### Entrypoint checks
 
-- `build_native_claude_runtime(...)`
-- `build_native_codex_runtime(...)`
-- `build_native_claude_profile(...)`
-- `build_native_codex_profile(...)`
-- `run_coding_task(..., tool_stack_kind=...)`
-- `run_toolview_mutation_data_generation(..., tool_stack_kind=...)`
+The runner verifies both the runtime builders and profile builders:
 
-Acceptance in this document means those entrypoints continue to work with the
-family-aware contract and produce stable traces, manifests, and
-runtime-observed outputs.
+- Claude exposes exactly `Bash`, `Read`, `Edit`, `Write`, `Grep`, and
+  `Glob`.
+- Codex exposes exactly `exec_command`, `write_stdin`, and `apply_patch`.
+- Codex `apply_patch` remains a freeform contract.
 
-## Acceptance Matrix
+### Native Codex local pack
 
-The acceptance work is split into three layers.
+Three deterministic repo tasks are always required:
 
-### 1. Local deterministic regression
+1. an `exec_command` read-only smoke;
+2. an `exec_command` plus `write_stdin` continuation smoke;
+3. an `apply_patch` repository repair.
 
-This is the required always-green layer for the landed Step A-E surfaces.
+The runner also performs a direct runtime flow covering all three Codex tools.
+Missing required tool use, verifier failure, unexpected workspace mutation, or
+an incomplete trajectory marks the corresponding result as failed.
 
-Primary regression coverage:
+### Runtime-observed generation smokes
 
-- `tests/test_process_exec.py`
-- `tests/test_shell_runtimes.py`
-- `tests/test_patch_runtime.py`
-- `tests/test_step_c0_tool_contracts.py`
-- `tests/test_strict_family_tools.py`
-- `tests/test_tools_bootstrap.py`
-- `tests/test_tool_stack_selection.py`
-- `tests/test_native_profile_transform.py`
-- `tests/test_profile_sampler.py`
-- `tests/test_schema_following_sample.py`
+The runner dynamically generates observed data for both native families using
+the current mutation configuration. It verifies:
 
-This layer should verify:
+- Claude samples retain `family=claude` and function contracts;
+- Codex samples retain `family=codex` and freeform contracts;
+- the generated raw dataset and training-prep contract both succeed.
 
-- shared execution primitives still behave deterministically
-- Claude and Codex runtime-family behavior remains distinct
-- strict canonical builders still expose the intended native tool families
-- native profiles remain source-aligned and contract-aware
-- freeform Codex `apply_patch` still survives local runtime dispatch
-- bootstrap/runtime selection does not silently fall back to legacy
+These outputs are generated under the acceptance output root. Legacy
+`family=legacy` runtime-observed directories under `tests/fixtures/` are not
+owned acceptance artifacts and must not be treated as current goldens.
 
-### 2. Runtime-observed and golden regression
+### Native Claude real-provider pack
 
-This is the required always-green layer for the Step F data path.
+Real-provider mode additionally runs three Claude tasks:
 
-Primary regression coverage:
+1. a read-only `Read` smoke;
+2. a small repair requiring `Read` and at least one of `Edit` or `Write`;
+3. a search-and-repair task requiring `Glob`, `Grep`, and at least one of
+   `Edit` or `Write`.
 
-- `tests/test_schema_following_from_runtime.py`
-- `tests/test_schema_following_from_runtime_golden.py`
-- `tests/test_runtime_observed_postrun.py`
-- `tests/test_runtime_observed_postrun_golden.py`
-- `tests/test_runtime_observed_training_prep_golden.py`
-- `tests/test_toolview_mutation_data_generation.py`
-- `tests/test_runtime_execution_reconciliation.py`
+The strict Codex real-provider path remains explicitly transport-limited
+because the current OpenAI-compatible provider transport is function-only
+while strict Codex `apply_patch` is freeform. Codex acceptance therefore
+remains local/fake in both modes.
 
-This layer should verify:
+## Required Families And Failure Semantics
 
-- native-family runtime-observed exports preserve family metadata
-- `contract_kind` and `input_format` survive profile export and training-prep
-- strict Codex freeform `apply_patch` remains freeform in observed artifacts
-- serializer output remains stable enough for fixture-backed tests
-- runtime-observed summaries and manifests remain consistent with the landed
-  family-aware path
+There is no user-selectable `required-families` CLI parameter. The required
+family surface is fixed by the runner:
 
-### 3. Small real-provider mini acceptance
+- both Claude and Codex entrypoint checks are always required;
+- the Codex local task pack, Codex direct flow, and both-family generation
+  smokes are always required;
+- the Claude real-provider task pack is required only in real-provider mode.
 
-This is the truth-check layer for the local runtime under a real provider.
+`stabilized` is true only when:
 
-Scope decision:
+1. every entrypoint check passes;
+2. both regression commands pass;
+3. all three native Codex tasks pass;
+4. the native Codex direct flow passes;
+5. both generation smokes pass; and
+6. in real-provider mode, at least one Claude task exists and every Claude task
+   passes.
 
-- `native_claude` real-provider mini acceptance is **in scope**
-- `native_codex` real-provider acceptance is **not yet in scope** for the
-  full strict path
+An empty `real_provider_tasks` list is expected in local-only mode. The
+`codex_real_provider_transport_limited` field is an explicit capability note,
+not a local-only failure.
 
-Reason:
+Individual task failures retain `required_tools_all`,
+`required_tools_any`, observed tool names, verifier status, workspace-change
+status, and explanatory notes. Regression failures retain the command, exit
+code, duration, and stdout/stderr paths. A missing configured regression file
+raises before acceptance execution.
 
-- the current OpenAI-compatible native client path is still function-only for
-  provider transport
-- strict Codex `apply_patch` is freeform
-- that means the current real-provider transport cannot yet truthfully execute
-  the full strict native Codex tool family end to end
+The formal CLI converts a false aggregate result into contract-failure exit
+code `1`. Automation should require both a successful exit and
+`stabilized=true` in the linked report.
 
-This is an explicit transport limitation, not an accidental omission.
+## Report Contract
 
-## Regression Suites And Fixture Ownership
+`native_family_acceptance_report.json` contains:
 
-The regression owner for this follow-up is the family-aware local runtime
-path, including runtime-observed bundles and training-prep fixtures.
+- `provider`
+- `entrypoint_checks`
+- `regression_commands`
+- `real_provider_tasks`
+- `native_codex_tasks`
+- `native_codex_direct_flow`
+- `generation_smokes`
+- `codex_real_provider_transport_limited`
+- `codex_real_provider_transport_note`
+- `stabilized`
 
-Fixture-backed directories that must be treated as owned acceptance artifacts:
+The report and generated subdirectories are run artifacts. They are not
+committed fixture ownership declarations.
 
-- `tests/fixtures/runtime_observed_dataset_bundle`
-- `tests/fixtures/runtime_observed_dataset_bundle_mutated`
-- `tests/fixtures/runtime_observed_dataset_bundle_tool_reorder`
-- `tests/fixtures/runtime_observed_study_bundle`
-- `tests/fixtures/runtime_observed_training_prep_bundle`
+## Change Validation
 
-Fixture-backed regression means:
+Changes to the native-family acceptance path should run:
 
-- drift must fail loudly
-- fixture refresh is never treated as a blind mechanical update
-- profile-manifest, runtime-observed, serializer, and training-prep changes
-  must be reviewed together
+```bash
+python -B -m pytest -q --strict-markers \
+  tests/test_native_family_acceptance.py \
+  tests/test_runtime_observed_mainline.py
 
-## Real-Provider Mini Acceptance
+python -B -m pycodeagent acceptance \
+  --local-only \
+  --output-root <unique-temp-root>
+```
 
-### Native Claude
-
-`native_claude` should run a small real-provider acceptance pack on top of the
-existing provider configuration flow.
-
-Recommended task count:
-
-- 1 to 3 small repo tasks
-
-Recommended task shapes:
-
-- one read-only smoke task
-- one small single-file inspect/edit/verify task
-- one small search-and-fix task that touches Claude-native `Read` / `Edit` /
-  `Write` / `Grep` / `Glob` behavior
-
-Recommended execution path:
-
-- use the real-provider config already loaded by the repo
-- call `run_coding_task(..., tool_stack_kind="native_claude")`
-- store artifacts under a dedicated native-Claude acceptance output root
-
-Minimum acceptance expectations:
-
-- the run starts and completes through the strict Claude family stack
-- observed traces show strict Claude visible tool names
-- family-aware metadata survives the normal runtime path
-- no silent fallback to legacy tool exposure occurs
-
-### Native Codex
-
-`native_codex` acceptance in this follow-up remains:
-
-- local
-- fake-client
-- runtime-observed
-
-Recommended task count:
-
-- 1 to 3 small repo tasks
-
-Recommended task shapes:
-
-- one `exec_command` foreground task
-- one `exec_command` plus `write_stdin` continuation task
-- one `apply_patch` repo-fix task through the strict freeform local path
-
-Current blocked real-provider note:
-
-- strict real-provider Codex acceptance is blocked by the current
-  function-only provider tool transport for freeform `apply_patch`
-- this follow-up should record that block explicitly and keep local/fake
-  acceptance green rather than faking parity
-
-## Fixture Refresh Policy
-
-Fixture refresh is in scope for this follow-up, but only under a strict audit
-procedure.
-
-Required refresh procedure:
-
-1. Run the relevant targeted regression suite first and confirm the failure is
-   real fixture drift rather than an unrelated test or environment issue.
-2. Identify the drift class before updating files:
-   - runtime behavior change
-   - metadata change
-   - serializer change
-   - manifest/count change
-   - path-normalization or portability fix
-3. Refresh fixtures only after the drift source is understood and judged
-   intentional.
-4. Re-run the same golden/fixture suite immediately after refresh.
-5. Re-run the broader acceptance regression surface before closing the change.
-
-Fail-loud rules:
-
-- unexplained drift is a blocker
-- bulk fixture rewrites without diff review are not acceptable
-- if a fixture update changes family metadata, contract kind, or freeform
-  rendering, that change must be called out explicitly in the change summary
-
-## Stabilization Exit Criteria
-
-The native-family path is considered **stabilized** only when all of the
-following are true:
-
-- local deterministic regression for the Step A-E surface is green
-- runtime-observed and golden regression for the Step F data path is green
-- fixture-backed bundles are either unchanged or refreshed with explicit audit
-- `build_native_claude_runtime(...)` and `build_native_codex_runtime(...)`
-  remain usable entrypoints
-- `build_native_claude_profile(...)` and `build_native_codex_profile(...)`
-  remain the public native-profile entrypoints
-- `run_coding_task(..., tool_stack_kind="native_claude")` and
-  `run_coding_task(..., tool_stack_kind="native_codex")` complete at least one
-  repo-task acceptance flow each
-- `run_toolview_mutation_data_generation(..., tool_stack_kind=...)` remains
-  green for both native families
-- native Claude completes a small real-provider mini acceptance pack
-- native Codex completes local/fake/runtime-observed acceptance for the strict
-  family stack, including `write_stdin` and freeform `apply_patch`
-- the current provider-transport limitation for strict Codex freeform
-  `apply_patch` is documented as an open transport constraint rather than
-  hidden by a partial claim
-
-## Recommended Execution Order
-
-The acceptance work should run in this order:
-
-1. Keep the local deterministic Step A-E regression surface green.
-2. Keep the runtime-observed/golden Step F regression surface green.
-3. Run the native Claude real-provider mini acceptance pack.
-4. Run the native Codex local/fake/runtime-observed acceptance pack.
-5. Refresh fixtures only when drift is understood and intentional.
-6. Call the native-family path stabilized only after the exit criteria above
-   are satisfied.
-
-## Status Rule
-
-This is the **active** follow-up plan after Step F.
-
-The archived legacy-demotion document should now be read only as historical
-sequencing context. It is not a still-pending gate for current work.
+Run the provider-backed mode only when provider behavior is intentionally in
+scope and credentials/configuration are available. Do not present a
+provider-free local-only result as evidence of real-provider success.

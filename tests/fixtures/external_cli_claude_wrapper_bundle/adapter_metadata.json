@@ -11,7 +11,10 @@
   "sidecar_catalog_detected": false,
   "returncode": 0,
   "status": "completed",
+  "execution_status": "completed",
   "error": null,
+  "workspace_digest_algorithm": "sha256-tree-v1",
+  "workspace_digest_version": 1,
   "sidecar_protocol_env": {
     "PYCODEAGENT_AGENT_ID": "claude_code",
     "PYCODEAGENT_RUN_DIR": "<run_dir>",
